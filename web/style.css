@@ -1,0 +1,5 @@
+body{font-family:system-ui,Arial,sans-serif;margin:20px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+#tabla{border-collapse:collapse;width:100%}
+#tabla th,#tabla td{border:1px solid #ddd;padding:6px}
+#paginacion button{margin:2px}
