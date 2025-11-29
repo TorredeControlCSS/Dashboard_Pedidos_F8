@@ -81,4 +81,4 @@ function init(){
 init();
 
 // Botón Editar (lo conectaremos al Web App B en el siguiente paso)
-document.getElementById('btnEditar').href = '#';
+// document.getElementById('btnEditar').href = '#';
