@@ -1,8 +1,36 @@
 const A = window.APP.A_URL;
+// ====== FORMATEO DE FECHAS ======
+const DATE_FIELDS = ['fecha_pedido','fecha_entrega_estimada','fecha_entrega_real','updated_at']; // ajusta a tus encabezados reales
+
+function formatDateDDMonYY(v){
+  const d = new Date(v);
+  if (isNaN(d)) return v; // si no es fecha, deja tal cual
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mon = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][d.getMonth()];
+  const yy = String(d.getFullYear()).slice(-2);
+  return `${dd}-${mon}-${yy}`;
+}
+
+function formatRowDates(row){
+  const out = {...row};
+  for (const f of DATE_FIELDS){
+    if (out[f]) out[f] = formatDateDDMonYY(out[f]);
+  }
+  return out;
+}
+// ====== FIN FORMATEO DE FECHAS ======
+
 function renderKpis(d){ document.getElementById('kpis').innerHTML = `Total pedidos: ${d.totalPedidos}`; }
 function renderTabla(page){
 window.onOrders = (res)=>{
-const {rows,total,page,pageSize}=res.data; const head = document.querySelector('#tabla thead');
+  let {rows,total,page,pageSize} = res.data;
+
+  // 🔽 NUEVO: formatear fechas antes de pintar
+  rows = rows.map(formatRowDates);
+
+  const head = document.querySelector('#tabla thead');
+  const body = document.querySelector('#tabla tbody');
+  // ...
 const body = document.querySelector('#tabla tbody');
 head.innerHTML = rows.length? `<tr>${Object.keys(rows[0]).map(h=>`<th>${h}</th>`).join('')}</tr>`:'';
 body.innerHTML = rows.map(r=>`<tr>${Object.values(r).map(v=>`<td>${v??''}</td>`).join('')}</tr>`).join('');
