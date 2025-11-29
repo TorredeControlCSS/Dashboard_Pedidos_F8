@@ -1,37 +1,54 @@
-// URL del Web App A
+// ===== docs/app.js =====
+
+// URL del Web App A (la pones en index.html como window.APP.A_URL)
 const A = window.APP.A_URL;
 
-// ====== FORMATEO DE FECHAS ======
-const DATE_FIELDS = ['fecha_pedido','fecha_entrega_estimada','fecha_entrega_real','updated_at']; // ajusta a tus headers
-
-function formatDateDDMonYY(v){
-  const d = new Date(v);
-  if (isNaN(d)) return v;
-  const dd = String(d.getDate()).padStart(2, '0');
-  const mon = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][d.getMonth()];
-  const yy = String(d.getFullYear()).slice(-2);
-  return `${dd}-${mon}-${yy}`;
+/* =========================
+   FORMATEO DE FECHAS (GENÉRICO)
+   - Detecta valores ISO tipo: 2025-02-04T00:00:00.000Z
+   - Muestra: dd-mmm-yy (ej: 04-feb-25)
+   ========================= */
+function isIsoDateTimeZ(v){
+  return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v) && v.endsWith('Z');
 }
 
-function formatRowDates(row){
+function formatIsoToDDMonYY(v){
+  // No usamos new Date() para evitar cambios por zona horaria
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v);
+  if (!m) return v;
+  const [_, yyyy, mm, dd] = m;
+  const monIdx = parseInt(mm, 10) - 1;
+  const mon = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][monIdx];
+  return `${dd}-${mon}-${yyyy.slice(-2)}`;
+}
+
+function formatAllIsoDatesInRow(row){
   const out = {...row};
-  for (const f of DATE_FIELDS){
-    if (out[f]) out[f] = formatDateDDMonYY(out[f]);
+  for (const k of Object.keys(out)){
+    if (isIsoDateTimeZ(out[k])) out[k] = formatIsoToDDMonYY(out[k]);
   }
   return out;
 }
-// ====== FIN FORMATEO DE FECHAS ======
+/* ========== FIN FECHAS ========== */
 
+// KPIs
 function renderKpis(d){
   document.getElementById('kpis').innerHTML = `Total pedidos: ${d.totalPedidos}`;
 }
+function loadKpis(){
+  window.onKpis = (res)=>renderKpis(res.data);
+  const s = document.createElement('script');
+  s.src = `${A}?route=kpis&callback=onKpis&_=${Date.now()}`;
+  document.body.appendChild(s);
+}
 
+// Tabla paginada
 function renderTabla(page){
   window.onOrders = (res)=>{
-    let {rows,total,page,pageSize} = res.data;
+    let {rows, total, page, pageSize} = res.data;
 
-    // Formatear fechas antes de pintar
-    rows = rows.map(formatRowDates);
+    // Formatear fechas para cualquier columna ISO
+    rows = rows.map(formatAllIsoDatesInRow);
 
     const head = document.querySelector('#tabla thead');
     const body = document.querySelector('#tabla tbody');
@@ -56,13 +73,7 @@ function renderTabla(page){
   document.body.appendChild(s);
 }
 
-function loadKpis(){
-  window.onKpis = (res)=>renderKpis(res.data);
-  const s = document.createElement('script');
-  s.src = `${A}?route=kpis&callback=onKpis&_=${Date.now()}`;
-  document.body.appendChild(s);
-}
-
+// Init
 function init(){
   loadKpis();
   renderTabla(1);
