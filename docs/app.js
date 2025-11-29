@@ -212,7 +212,7 @@ document.querySelector('#tabla').addEventListener('click', (ev)=>{
     try{
       const res = await jsonp(url);
       if (res.status === 'ok'){
-        // refresca la celda (para fechas mostramos dd-mmm-yy)
+        // refresca la celda en pantalla
         if (isDate){
           const [y,m,d] = value.split('-');
           const mon = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][parseInt(m,10)-1];
@@ -220,11 +220,15 @@ document.querySelector('#tabla').addEventListener('click', (ev)=>{
         } else {
           td.textContent = value;
         }
-      }else{
+    
+        // 🔽 recalcula KPIs y gráfico con TODO el dataset (siempre que hubo éxito)
+        loadMetricsAll();
+    
+      } else {
         td.innerHTML = oldDisplay;
         alert('Error: ' + (res.error || 'desconocido'));
       }
-    }catch(e){
+    } catch(e){
       td.innerHTML = oldDisplay;
       alert('Error de red');
     }
@@ -279,9 +283,24 @@ btnEditMode.onclick = ()=>{
   renderTabla(page);
 };
 
+// Cargar TODO el dataset para KPIs y gráfico (una sola llamada grande)
+async function loadMetricsAll(){
+  return new Promise((resolve)=>{
+    window.onOrdersAll = (res)=>{
+      const all = res.data.rows || [];
+      computeAndRenderMetricsFromRows(all); // viene de metrics.js
+      resolve();
+    };
+    const s = document.createElement('script');
+    s.src = `${A}?route=orders.list&page=1&pageSize=50000&callback=onOrdersAll&_=${Date.now()}`;
+    document.body.appendChild(s);
+  });
+}
+
 // ===== Init =====
 function init(){
   loadKpis();
   renderTabla(1);
+  loadMetricsAll();   // 🔽 añade esta línea
 }
 init();
