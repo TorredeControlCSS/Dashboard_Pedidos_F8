@@ -3,60 +3,77 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Editar F8</title>
+  <title>Edición de Pedidos F8</title>
   <style>
     body{font-family:system-ui,Arial,sans-serif;margin:20px}
     .card{border:1px solid #ddd;padding:16px;border-radius:8px;max-width:520px}
     label{display:block;margin-top:8px}
     input,select,button{padding:8px;margin-top:4px;width:100%}
     .ok{color:green}.err{color:#b00}
+    .row{display:flex;gap:8px}
+    .row > *{flex:1}
   </style>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
   <h1>Edición de Pedidos F8</h1>
+
   <div id="signin"></div>
+
   <div class="card" id="form" style="display:none">
-    <label>RECIBO F8 (ID)
-      <input id="f_id" placeholder="Ej: F8-12345"/>
+    <label>F8 SALMI (ID)
+      <input id="f_id" list="ids" placeholder="Escribe para buscar…"/>
+      <datalist id="ids"></datalist>
     </label>
-    <label>Campo a editar
-      <select id="f_field">
-        <option>ASIGNACIÓN</option>
-        <option>SALIDA</option>
-        <option>DESPACHO</option>
-        <option>FACTURACIÓN</option>
-      </select>
-    </label>
-    <label>Nuevo valor
-      <input id="f_value" placeholder="Ej: 2025-02-11"/>
-    </label>
-    <button onclick="enviar()">Guardar</button>
+
+    <div class="row">
+      <label>Campo a editar
+        <select id="f_field">
+          <option>ASIGNACIÓN</option>
+          <option>SALIDA</option>
+          <option>DESPACHO</option>
+          <option>FACTURACIÓN</option>
+          <option>EMPACADO</option>
+          <option>PROY. ENTREGA</option>
+          <option>ENTREGA REAL</option>
+        </select>
+      </label>
+
+      <label>Nuevo valor (fecha)
+        <input id="f_value" type="date" />
+      </label>
+    </div>
+
+    <button id="btnSave">Guardar</button>
     <p id="msg"></p>
   </div>
 
 <script>
-  // Configura aquí las URLs
+  // ====== CONFIGURA TUS VALORES ======
   const CLIENT_ID = '63868073848-8bfis5g0f8mt14oia3flmbqksg69tejq.apps.googleusercontent.com';
-  const B_URL = 'https://script.google.com/macros/s/AKfycbysdeYW1g-l1p6ZOyk9aPaUIdx5H4GbzYFVeD1T8_SsyQoODqo-dSzjQMeu7lZzYmQ/exec';
+  const B_URL     = 'https://script.google.com/macros/s/AKfycbysdeYW1g-l1p6ZOyk9aPaUIdx5H4GbzYFVeD1T8_SsyQoODqo-dSzjQMeu7lZzYmQ/exec';
+  // ===================================
 
   let idToken = null;
 
+  // --- Login Google (GIS) ---
   window.onload = function(){
     google.accounts.id.initialize({
       client_id: CLIENT_ID,
       callback: (resp) => {
-        idToken = resp.credential;            // JWT
+        idToken = resp.credential;     // JWT
         document.getElementById('signin').style.display='none';
         document.getElementById('form').style.display='block';
       }
     });
-    google.accounts.id.renderButton(document.getElementById('signin'),
-      { type:'standard', theme:'outline', size:'large' });
+    google.accounts.id.renderButton(
+      document.getElementById('signin'),
+      { type:'standard', theme:'outline', size:'large', text:'signin_with' }
+    );
   };
 
-  // JSONP helper
-  function jsonp(url, cbName){
+  // --- Util JSONP ---
+  function jsonp(url){
     return new Promise((resolve,reject)=>{
       const s = document.createElement('script');
       const cb = 'cb_' + Math.random().toString(36).slice(2);
@@ -67,32 +84,55 @@
     });
   }
 
-  function enviar(){
-    if(!idToken){ alert('Inicia sesión primero'); return; }
-    const id = document.getElementById('f_id').value.trim();
+  // --- Autocompletar IDs (F8 SALMI) ---
+  let lastQ = '';
+  const inputId = document.getElementById('f_id');
+  const dataList = document.getElementById('ids');
+
+  async function fetchIds(q){
+    const url = `${B_URL}?route=orders.ids&q=${encodeURIComponent(q||'')}`;
+    const res = await jsonp(url);
+    if(res.status!=='ok') return;
+    dataList.innerHTML = res.data.ids.map(v=>`<option value="${v}">`).join('');
+  }
+
+  inputId.addEventListener('input', async (e)=>{
+    const q = e.target.value.trim();
+    if (q === lastQ) return;
+    lastQ = q;
+    await fetchIds(q);
+  });
+
+  // --- Guardar ---
+  document.getElementById('btnSave').addEventListener('click', async ()=>{
+    const id = inputId.value.trim();
     const field = document.getElementById('f_field').value;
-    const value = document.getElementById('f_value').value.trim();
-    if(!id || !field){ alert('Falta ID o campo'); return; }
+    const value = document.getElementById('f_value').value; // YYYY-MM-DD
+    const msg = document.getElementById('msg');
 
-    document.getElementById('msg').textContent = 'Guardando...';
+    if(!idToken){ alert('Inicia sesión con Google'); return; }
+    if(!id){ alert('Selecciona un F8 SALMI'); return; }
+    if(!value){ alert('Selecciona la fecha'); return; }
 
-    // Llamamos al endpoint GET de escritura (JSONP) en Apps Script B
+    msg.textContent = 'Guardando...';
+
     const url = `${B_URL}?route=orders.update`
       + `&idToken=${encodeURIComponent(idToken)}`
       + `&id=${encodeURIComponent(id)}`
       + `&field=${encodeURIComponent(field)}`
       + `&value=${encodeURIComponent(value)}`;
 
-    jsonp(url).then(res=>{
+    try{
+      const res = await jsonp(url);
       if(res.status==='ok'){
-        document.getElementById('msg').innerHTML = '<span class="ok">Actualizado correctamente</span>';
+        msg.innerHTML = '<span class="ok">Actualizado correctamente</span>';
       }else{
-        document.getElementById('msg').innerHTML = '<span class="err">Error: '+(res.error||'desconocido')+'</span>';
+        msg.innerHTML = '<span class="err">Error: '+(res.error||'desconocido')+'</span>';
       }
-    }).catch(err=>{
-      document.getElementById('msg').innerHTML = '<span class="err">Error de red</span>';
-    });
-  }
+    }catch(e){
+      msg.innerHTML = '<span class="err">Error de red</span>';
+    }
+  });
 </script>
 </body>
 </html>
