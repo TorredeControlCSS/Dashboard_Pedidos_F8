@@ -210,32 +210,48 @@ document.querySelector('#tabla').addEventListener('click', (ev)=>{
   };
 });
 
-// ===== Login con Google + Modo edición =====
+// ===== Login con Google + Modo edición (robusto con modal) =====
 const btnLogin = document.getElementById('btnLogin');
 const btnEditMode = document.getElementById('btnEditMode');
+const loginBox = document.getElementById('loginBox');       // <-- del modal en index.html
+const loginBoxBtn = document.getElementById('loginBoxBtn'); // <-- contenedor del botón de Google
+const loginClose = document.getElementById('loginClose');
 
-btnLogin.onclick = ()=>{
-  // Renderiza un botón flotante de Google y lo clickea
-  const c = document.createElement('div');
-  document.body.appendChild(c);
+function renderGoogleButton() {
+  loginBoxBtn.innerHTML = '';
+  if (!window.google || !google.accounts || !google.accounts.id) {
+    // si el script aún no cargó, reintenta
+    setTimeout(renderGoogleButton, 200);
+    return;
+  }
   google.accounts.id.initialize({
     client_id: CLIENT_ID,
     callback: (resp) => {
       idToken = resp.credential;
       btnEditMode.disabled = false;
       btnLogin.textContent = 'Sesión iniciada';
-      c.remove();
+      loginBox.style.display = 'none';
       alert('Sesión iniciada. Ahora puedes activar “Modo edición”.');
     }
   });
-  google.accounts.id.renderButton(c, { type:'standard', theme:'outline', size:'large', text:'signin_with' });
+  google.accounts.id.renderButton(loginBoxBtn, {
+    type:'standard', theme:'outline', size:'large', text:'signin_with'
+  });
+}
+
+btnLogin.onclick = () => {
+  loginBox.style.display = 'flex';
+  renderGoogleButton();
 };
 
-btnEditMode.onclick = ()=>{
+loginClose.onclick = () => {
+  loginBox.style.display = 'none';
+};
+
+btnEditMode.onclick = () => {
   editMode = !editMode;
   btnEditMode.textContent = `Modo edición: ${editMode ? 'ON' : 'OFF'}`;
-  // Re-render de la página actual para aplicar/quitar celdas editables
-  // buscamos botón de paginación deshabilitado para saber la página actual
+  // re-render de la página actual para aplicar/quitar celdas editables
   const disabled = document.querySelector('#paginacion button[disabled]');
   const page = disabled ? parseInt(disabled.textContent,10) : 1;
   renderTabla(page);
