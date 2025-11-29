@@ -1,18 +1,37 @@
 // ===== CONFIG =====
-const A = window.APP.A_URL;
-const B = window.APP.B_URL;
-const CLIENT_ID = window.APP.CLIENT_ID;
+const A = window.APP.A_URL;                 // Web App A (lectura)
+const B = window.APP.B_URL;                 // Web App B (escritura JSONP)
+const CLIENT_ID = window.APP.CLIENT_ID;     // OAuth Client ID
 
-// Campos editables
+// Campos editables (nombres “canónicos”)
 const ID_HEADER = 'F8 SALMI';
-const EDITABLE_DATE_FIELDS = ['ASIGNACIÓN','SALIDA','DESPACHO','FACTURACIÓN','EMPACADO','PROY. ENTREGA','ENTREGA REAL'];
-const EDITABLE_INT_FIELDS  = ['CANT. ASIG.','CANT. SOL.','RENGLONES ASI.','RENGLONES SOL.'];
+const EDITABLE_DATE_FIELDS = [
+  'ASIGNACIÓN','SALIDA','DESPACHO','FACTURACIÓN',
+  'EMPACADO','PROY. ENTREGA','ENTREGA REAL'
+];
+const EDITABLE_INT_FIELDS = [
+  'CANT. ASIG.','CANT. SOL.','RENGLONES ASI.','RENGLONES SOL.'
+];
+
+// Normalizador de nombres: mayúsculas, sin acentos, sin puntos, espacios colapsados
+function normalizeName(s){
+  return String(s||'')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'') // quita tildes
+    .replace(/\./g,'')                               // quita puntos
+    .replace(/\s+/g,' ')                              // colapsa espacios
+    .trim()
+    .toUpperCase();
+}
+const N_ID_HEADER    = normalizeName(ID_HEADER);
+const N_EDITABLE_DATE= new Set(EDITABLE_DATE_FIELDS.map(normalizeName));
+const N_EDITABLE_INT = new Set(EDITABLE_INT_FIELDS.map(normalizeName));
 
 // Estado global
 let idToken = null;
-let editMode = false; // cuando true, celdas de campos editables se pueden editar
-let currentHeaders = []; // headers de la tabla de la página actual
-let currentRows = [];    // datos crudos de la página actual (post-format)
+let editMode = false;
+let currentHeaders = [];
+let currentRows = [];
+let currentIdColName = null; // nombre real de la columna ID en esta página
 
 // ===== JSONP helper =====
 function jsonp(url, cbName){
@@ -65,6 +84,9 @@ function renderTabla(page){
     currentHeaders = rows.length ? Object.keys(rows[0]) : [];
     currentRows = rows.map(r => ({...r}));
 
+    // Detecta el nombre real de la columna ID por nombre normalizado
+    currentIdColName = currentHeaders.find(h => normalizeName(h) === N_ID_HEADER) || null;
+
     // Formatear fechas visibles
     rows = rows.map(formatAllIsoDatesInRow);
 
@@ -75,14 +97,15 @@ function renderTabla(page){
       ? `<tr>${Object.keys(rows[0]).map(h=>`<th>${h}</th>`).join('')}</tr>`
       : '';
 
-    // Render filas, con celdas editables si editMode
+    // Render filas, con celdas editables si el nombre NORMALIZADO hace match
     body.innerHTML = rows.map((r, ri)=>{
       return `<tr>${
         Object.entries(r).map(([k,v])=>{
-          const editableDate = editMode && EDITABLE_DATE_FIELDS.includes(k);
-          const editableInt  = editMode && EDITABLE_INT_FIELDS.includes(k);
-          const classes = editableDate || editableInt ? ' class="editable"' : '';
-          // dataset con índice de fila y columna
+          const keyNorm = normalizeName(k);
+          const editableDate = editMode && N_EDITABLE_DATE.has(keyNorm);
+          const editableInt  = editMode && N_EDITABLE_INT.has(keyNorm);
+          const classes = (editableDate || editableInt) ? ' class="editable"' : '';
+          // dataset con índice de fila y la columna real
           return `<td${classes} data-ri="${ri}" data-col="${k}">${v ?? ''}</td>`;
         }).join('')
       }</tr>`;
@@ -106,18 +129,18 @@ document.querySelector('#tabla').addEventListener('click', (ev)=>{
   const td = ev.target.closest('td.editable');
   if (!td || !editMode) return;
 
-  const ri = +td.dataset.ri;
+  const ri  = +td.dataset.ri;
   const col = td.dataset.col;
   const row = currentRows[ri];
-  const orderId = row[ID_HEADER];
+  const orderId = currentIdColName ? row[currentIdColName] : null;
   if (!orderId){
     alert(`No se encontró la columna ID (${ID_HEADER}) en la fila.`);
     return;
   }
 
-  // Decide editor: date o integer
-  const isDate = EDITABLE_DATE_FIELDS.includes(col);
-  const isInt  = EDITABLE_INT_FIELDS.includes(col);
+  const keyNorm = normalizeName(col);
+  const isDate = N_EDITABLE_DATE.has(keyNorm);
+  const isInt  = N_EDITABLE_INT.has(keyNorm);
 
   // Evitar crear varios inputs
   if (td.querySelector('input')) return;
@@ -130,9 +153,7 @@ document.querySelector('#tabla').addEventListener('click', (ev)=>{
   input.style.boxSizing = 'border-box';
 
   if (isDate){
-    input.type = 'date';
-    // Valor en YYYY-MM-DD (si el original venía de la Sheet y lo formateamos, no siempre lo tenemos;
-    // lo dejamos vacío para que el usuario seleccione)
+    input.type = 'date'; // el usuario elige fecha (YYYY-MM-DD)
   } else if (isInt){
     input.type = 'number';
     input.step = '1';
@@ -213,8 +234,8 @@ document.querySelector('#tabla').addEventListener('click', (ev)=>{
 // ===== Login con Google + Modo edición (robusto con modal) =====
 const btnLogin = document.getElementById('btnLogin');
 const btnEditMode = document.getElementById('btnEditMode');
-const loginBox = document.getElementById('loginBox');       // <-- del modal en index.html
-const loginBoxBtn = document.getElementById('loginBoxBtn'); // <-- contenedor del botón de Google
+const loginBox = document.getElementById('loginBox');       // del modal en index.html
+const loginBoxBtn = document.getElementById('loginBoxBtn'); // contenedor del botón de Google
 const loginClose = document.getElementById('loginClose');
 
 function renderGoogleButton() {
@@ -248,10 +269,11 @@ loginClose.onclick = () => {
   loginBox.style.display = 'none';
 };
 
-btnEditMode.onclick = () => {
+// Toggle de modo edición
+btnEditMode.onclick = ()=>{
   editMode = !editMode;
   btnEditMode.textContent = `Modo edición: ${editMode ? 'ON' : 'OFF'}`;
-  // re-render de la página actual para aplicar/quitar celdas editables
+  // Re-render de la página actual para aplicar/quitar celdas editables
   const disabled = document.querySelector('#paginacion button[disabled]');
   const page = disabled ? parseInt(disabled.textContent,10) : 1;
   renderTabla(page);
