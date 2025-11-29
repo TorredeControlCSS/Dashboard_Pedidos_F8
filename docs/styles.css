@@ -3,3 +3,5 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 #tabla{border-collapse:collapse;width:100%}
 #tabla th,#tabla td{border:1px solid #ddd;padding:6px}
 #paginacion button{margin:2px}
+/* celdas editables visibles al activar el modo */
+#tabla td.editable{background:#fffbe6; cursor:pointer}
