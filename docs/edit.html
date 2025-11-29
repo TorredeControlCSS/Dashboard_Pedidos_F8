@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Editar F8</title>
+  <style>
+    body{font-family:system-ui,Arial,sans-serif;margin:20px}
+    .card{border:1px solid #ddd;padding:16px;border-radius:8px;max-width:520px}
+    label{display:block;margin-top:8px}
+    input,select,button{padding:8px;margin-top:4px;width:100%}
+    .ok{color:green}.err{color:#b00}
+  </style>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <h1>Edición de Pedidos F8</h1>
+  <div id="signin"></div>
+  <div class="card" id="form" style="display:none">
+    <label>RECIBO F8 (ID)
+      <input id="f_id" placeholder="Ej: F8-12345"/>
+    </label>
+    <label>Campo a editar
+      <select id="f_field">
+        <option>ASIGNACIÓN</option>
+        <option>SALIDA</option>
+        <option>DESPACHO</option>
+        <option>FACTURACIÓN</option>
+      </select>
+    </label>
+    <label>Nuevo valor
+      <input id="f_value" placeholder="Ej: 2025-02-11"/>
+    </label>
+    <button onclick="enviar()">Guardar</button>
+    <p id="msg"></p>
+  </div>
+
+<script>
+  // Configura aquí las URLs
+  const CLIENT_ID = '63868073848-8bfis5g0f8mt14oia3flmbqksg69tejq.apps.googleusercontent.com';
+  const B_URL = 'https://script.google.com/macros/s/AKfycbysdeYW1g-l1p6ZOyk9aPaUIdx5H4GbzYFVeD1T8_SsyQoODqo-dSzjQMeu7lZzYmQ/exec';
+
+  let idToken = null;
+
+  window.onload = function(){
+    google.accounts.id.initialize({
+      client_id: CLIENT_ID,
+      callback: (resp) => {
+        idToken = resp.credential;            // JWT
+        document.getElementById('signin').style.display='none';
+        document.getElementById('form').style.display='block';
+      }
+    });
+    google.accounts.id.renderButton(document.getElementById('signin'),
+      { type:'standard', theme:'outline', size:'large' });
+  };
+
+  // JSONP helper
+  function jsonp(url, cbName){
+    return new Promise((resolve,reject)=>{
+      const s = document.createElement('script');
+      const cb = 'cb_' + Math.random().toString(36).slice(2);
+      window[cb] = (payload)=>{ delete window[cb]; s.remove(); resolve(payload); };
+      s.onerror = reject;
+      s.src = url + (url.includes('?')?'&':'?') + `callback=${cb}&_=${Date.now()}`;
+      document.body.appendChild(s);
+    });
+  }
+
+  function enviar(){
+    if(!idToken){ alert('Inicia sesión primero'); return; }
+    const id = document.getElementById('f_id').value.trim();
+    const field = document.getElementById('f_field').value;
+    const value = document.getElementById('f_value').value.trim();
+    if(!id || !field){ alert('Falta ID o campo'); return; }
+
+    document.getElementById('msg').textContent = 'Guardando...';
+
+    // Llamamos al endpoint GET de escritura (JSONP) en Apps Script B
+    const url = `${B_URL}?route=orders.update`
+      + `&idToken=${encodeURIComponent(idToken)}`
+      + `&id=${encodeURIComponent(id)}`
+      + `&field=${encodeURIComponent(field)}`
+      + `&value=${encodeURIComponent(value)}`;
+
+    jsonp(url).then(res=>{
+      if(res.status==='ok'){
+        document.getElementById('msg').innerHTML = '<span class="ok">Actualizado correctamente</span>';
+      }else{
+        document.getElementById('msg').innerHTML = '<span class="err">Error: '+(res.error||'desconocido')+'</span>';
+      }
+    }).catch(err=>{
+      document.getElementById('msg').innerHTML = '<span class="err">Error de red</span>';
+    });
+  }
+</script>
+</body>
+</html>
