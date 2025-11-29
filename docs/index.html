@@ -4,6 +4,7 @@
 <link rel="stylesheet" href="styles.css"/>
 <!-- 🔽 Google Identity Services para login -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head><body>
 <header>
   <h1>Dashboard de Pedidos</h1>
@@ -30,6 +31,20 @@
   <table id="tabla"><thead></thead><tbody></tbody></table>
   <div id="paginacion"></div>
 </section>
+<!-- KPIs compactos -->
+<section id="kpis-compact" style="display:grid;grid-template-columns:repeat(6, minmax(120px,1fr));gap:8px;margin:10px 0;">
+  <div class="kpi"><div>Total pedidos</div><strong id="kpi-total">—</strong></div>
+  <div class="kpi"><div>Asignado</div><strong id="kpi-asignado">—</strong></div>
+  <div class="kpi"><div>Solicitado</div><strong id="kpi-solicitado">—</strong></div>
+  <div class="kpi"><div>Rengl. Asig.</div><strong id="kpi-reng-asig">—</strong></div>
+  <div class="kpi"><div>Rengl. Sol.</div><strong id="kpi-reng-sol">—</strong></div>
+  <div class="kpi"><div>Urg/Mens</div><strong><span id="kpi-urg">—</span>/<span id="kpi-men">—</span></strong></div>
+</section>
+
+<!-- Estado por grupo -->
+<section style="margin:10px 0;">
+  <canvas id="chart-estado" height="120"></canvas>
+</section>
 
 <!-- 🔽 Config A/B + ClientID -->
 <script>
@@ -39,5 +54,6 @@
     CLIENT_ID: '63868073848-8bfis5g0f8mt14oia3flmbqksg69tejq.apps.googleusercontent.com'
   };
 </script>
+<script src="metrics.js"></script>
 <script src="app.js"></script>
 </body></html>
