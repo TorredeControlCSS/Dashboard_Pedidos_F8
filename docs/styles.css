@@ -5,3 +5,31 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 #paginacion button{margin:2px}
 /* celdas editables visibles al activar el modo */
 #tabla td.editable{background:#fffbe6; cursor:pointer}
+/* Header institucional */
+.app-header{position:sticky;top:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#0b3d91;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+.app-header .brand{display:flex;align-items:center;gap:10px}
+.app-header .logo{height:28px;width:auto;display:block}
+.app-header .titles{line-height:1}
+.app-header .title{margin:0;font-size:18px;font-weight:700}
+.app-header .subtitle{font-size:12px;opacity:.9}
+
+.app-header .actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.app-header .btn{appearance:none;border:1px solid rgba(255,255,255,.6);background:transparent;color:#fff;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:12px}
+.app-header .btn:hover{background:rgba(255,255,255,.12)}
+.app-header .btn:disabled{opacity:.6;cursor:not-allowed}
+.app-header .btn-link{border-color:transparent;text-decoration:none}
+.app-header .btn-link:hover{background:rgba(255,255,255,.12)}
+
+/* KPIs compactos */
+#kpis-compact{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:8px;margin:10px 0}
+.kpi{border:1px solid #e5e7eb;border-radius:10px;padding:10px;background:#fafafa}
+.kpi div{font-size:12px;color:#4b5563}
+.kpi strong{font-size:18px;color:#111827}
+
+/* Tabla / celdas editables */
+#tabla{border-collapse:collapse;width:100%}
+#tabla th,#tabla td{border:1px solid #ddd;padding:6px}
+#tabla td.editable{background:#fffbe6;cursor:pointer}
+
+/* Modal login */
+#loginBox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);align-items:center;justify-content:center;z-index:9999}
