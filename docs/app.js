@@ -67,7 +67,7 @@ function loadKpis(){
 
 // ===== Render tabla desde filtrados (añade columnas derivadas) =====
 function renderTableFromFiltered(page){
-  const pageSize = 200;
+  const pageSize = 150; // rendimiento suave con 16k filas
   const start = (page-1)*pageSize;
   const chunk = FILTERED_ROWS.slice(start, start+pageSize).map(r=>({ ...r, ...derivePerRow(r) }));
 
@@ -276,8 +276,17 @@ btnEditMode.onclick = ()=>{
   renderTableFromFiltered(currentPageNumber());
 };
 
-// Botón Actualizar
-document.getElementById('btnRefresh').onclick = ()=> loadMetricsAll().then(()=>{ computeAndRenderMetrics(ALL_ROWS, FILTERED_ROWS); renderTableFromFiltered(currentPageNumber()); });
+// Botón Actualizar con feedback
+const btnRefresh = document.getElementById('btnRefresh');
+btnRefresh.onclick = ()=>{
+  btnRefresh.textContent='Actualizando…'; btnRefresh.disabled=true;
+  loadMetricsAll().then(()=>{
+    computeAndRenderMetrics(ALL_ROWS, FILTERED_ROWS);
+    renderTableFromFiltered(currentPageNumber());
+  }).finally(()=>{
+    btnRefresh.textContent='Actualizar'; btnRefresh.disabled=false;
+  });
+};
 
 // ===== Init =====
 function init(){
