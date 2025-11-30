@@ -85,19 +85,41 @@ function renderTableFromFiltered(page){
 }
 function currentPageNumber(){ const t=document.querySelector('#paginacion span'); if(!t) return 1; const m=t.textContent.match(/Página (\d+)/); return m?+m[1]:1; }
 
+// ===== Cargar dataset completo (paginando) =====
 async function loadMetricsAll(){
-  return new Promise((resolve)=>{
-    window.onOrdersAll = (res)=>{
-      ALL_ROWS = res.data.rows || [];
-      FILTERED_ROWS = ALL_ROWS.slice();
-      computeAndRenderMetrics(ALL_ROWS, FILTERED_ROWS);
-      initFilterOptions(FILTERED_ROWS);
-      resolve();
-    };
-    const s=document.createElement('script');
-    s.src = `${A}?route=orders.list&page=1&pageSize=50000&callback=onOrdersAll&_=${Date.now()}`;
-    document.body.appendChild(s);
-  });
+  const PAGE_SIZE = 5000;       // subimos a 5000 para menos rondas
+  let page = 1;
+  let all = [];
+
+  while (true) {
+    // usamos JSONP igual que antes
+    /* global onOrdersPage */
+    await new Promise((resolve) => {
+      window.onOrdersPage = (res)=>{
+        const rows = (res && res.data && res.data.rows) ? res.data.rows : [];
+        all = all.concat(rows);
+        resolve(rows.length);
+      };
+      const s = document.createElement('script');
+      s.src = `${A}?route=orders.list&page=${page}&pageSize=${PAGE_SIZE}&callback=onOrdersPage&_=${Date.now()}`;
+      document.body.appendChild(s);
+    }).then((len)=>{
+      page += 1;
+      if (len < PAGE_SIZE) return; // última página
+    });
+
+    // si la última ronda devolvió < PAGE_SIZE salimos del while
+    const lastLen = all.length % PAGE_SIZE;
+    if (lastLen || all.length === 0) break;
+  }
+
+  ALL_ROWS = all;
+  FILTERED_ROWS = ALL_ROWS.slice();
+
+  // pinta métricas globales (sobre TODO el dataset)
+  computeAndRenderMetrics(ALL_ROWS, FILTERED_ROWS);
+  // inicializa opciones de filtros con TODO el dataset
+  initFilterOptions(FILTERED_ROWS);
 }
 
 function initFilterOptions(rows){
