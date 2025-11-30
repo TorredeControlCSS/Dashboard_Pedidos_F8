@@ -13,12 +13,12 @@ const EDITABLE_INT_FIELDS = [
   'CANT. ASIG.','CANT. SOL.','RENGLONES ASI.','RENGLONES SOL.'
 ];
 
-// Normalizador de nombres: mayúsculas, sin acentos, sin puntos, espacios colapsados
+// Normalizador de nombres
 function normalizeName(s){
   return String(s||'')
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'') // quita tildes
-    .replace(/\./g,'')                               // quita puntos
-    .replace(/\s+/g,' ')                              // colapsa espacios
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/\./g,'')
+    .replace(/\s+/g,' ')
     .trim()
     .toUpperCase();
 }
@@ -31,7 +31,17 @@ let idToken = null;
 let editMode = false;
 let currentHeaders = [];
 let currentRows = [];
-let currentIdColName = null; // nombre real de la columna ID en esta página
+let currentIdColName = null;
+
+// Dataset y filtros
+let ALL_ROWS = [];
+let FILTERED_ROWS = [];
+const FIELDS_FOR_FILTERS = {
+  categoria: 'CATEG.',
+  unidad: 'UNIDAD',
+  tipo: 'TIPO',
+  grupo: 'GRUPO'
+};
 
 // ===== JSONP helper =====
 function jsonp(url, cbName){
@@ -64,9 +74,10 @@ function formatAllIsoDatesInRow(row){
   return out;
 }
 
-// ===== KPIs =====
+// ===== KPIs (simple del backend A, opcional) =====
 function renderKpis(d){
-  document.getElementById('kpis').innerHTML = `Total pedidos: ${d.totalPedidos}`;
+  const el = document.getElementById('kpis');
+  if (el) el.innerHTML = `Total pedidos: ${d.totalPedidos}`;
 }
 function loadKpis(){
   window.onKpis = (res)=>renderKpis(res.data);
@@ -75,19 +86,13 @@ function loadKpis(){
   document.body.appendChild(s);
 }
 
-// ===== Tabla paginada + edición inline =====
+// ===== Tabla desde backend (paginada) — (se deja para compatibilidad) =====
 function renderTabla(page){
   window.onOrders = (res)=>{
     let {rows, total, page, pageSize} = res.data;
-
-    // Guarda headers/rows actuales
     currentHeaders = rows.length ? Object.keys(rows[0]) : [];
     currentRows = rows.map(r => ({...r}));
-
-    // Detecta el nombre real de la columna ID por nombre normalizado
     currentIdColName = currentHeaders.find(h => normalizeName(h) === N_ID_HEADER) || null;
-
-    // Formatear fechas visibles
     rows = rows.map(formatAllIsoDatesInRow);
 
     const head = document.querySelector('#tabla thead');
@@ -97,7 +102,6 @@ function renderTabla(page){
       ? `<tr>${Object.keys(rows[0]).map(h=>`<th>${h}</th>`).join('')}</tr>`
       : '';
 
-    // Render filas, con celdas editables si el nombre NORMALIZADO hace match
     body.innerHTML = rows.map((r, ri)=>{
       return `<tr>${
         Object.entries(r).map(([k,v])=>{
@@ -105,13 +109,11 @@ function renderTabla(page){
           const editableDate = editMode && N_EDITABLE_DATE.has(keyNorm);
           const editableInt  = editMode && N_EDITABLE_INT.has(keyNorm);
           const classes = (editableDate || editableInt) ? ' class="editable"' : '';
-          // dataset con índice de fila y la columna real
           return `<td${classes} data-ri="${ri}" data-col="${k}">${v ?? ''}</td>`;
         }).join('')
       }</tr>`;
     }).join('');
 
-    // Paginación
     const pages = Math.ceil(total / pageSize);
     document.getElementById('paginacion').innerHTML =
       Array.from({length: pages},(_,i)=>
@@ -124,7 +126,128 @@ function renderTabla(page){
   document.body.appendChild(s);
 }
 
-// Click en celdas editables -> abre editor inline
+// ===== Tabla desde filtros (dataset completo) =====
+function renderTableFromFiltered(page){
+  const pageSize = 200;
+  const start = (page-1)*pageSize;
+
+  const chunk = FILTERED_ROWS.slice(start, start+pageSize).map(r=>{
+    const extra = derivePerRow(r); // indicadores por pedido
+    return {...r, ...extra};
+  });
+
+  const headers = chunk.length ? Object.keys(chunk[0]) : [];
+  currentHeaders = headers;
+  currentRows = chunk.map(r=>({...r}));
+  currentIdColName = headers.find(h => normalizeName(h) === N_ID_HEADER) || null;
+
+  const head = document.querySelector('#tabla thead');
+  const body = document.querySelector('#tabla tbody');
+  head.innerHTML = headers.length ? `<tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr>` : '';
+
+  const rowsFmt = chunk.map(formatAllIsoDatesInRow);
+  body.innerHTML = rowsFmt.map((r, ri)=>{
+    return `<tr>${
+      headers.map((k)=>{
+        const keyNorm = normalizeName(k);
+        const editableDate = editMode && N_EDITABLE_DATE.has(keyNorm);
+        const editableInt  = editMode && N_EDITABLE_INT.has(keyNorm);
+        const classes = (editableDate || editableInt) ? ' class="editable"' : '';
+        return `<td${classes} data-ri="${ri}" data-col="${k}">${r[k]??''}</td>`;
+      }).join('')
+    }</tr>`;
+  }).join('');
+
+  const pages = Math.ceil(FILTERED_ROWS.length / pageSize);
+  document.getElementById('paginacion').innerHTML =
+    Array.from({length: pages},(_,i)=>
+      `<button ${i+1===page?'disabled':''} onclick="renderTableFromFiltered(${i+1})">${i+1}</button>`
+    ).join('');
+}
+
+function currentPageNumber(){
+  const disabled = document.querySelector('#paginacion button[disabled]');
+  return disabled ? parseInt(disabled.textContent, 10) : 1;
+}
+
+// ===== Cargar TODO el dataset para KPIs / Charts / Filtros =====
+async function loadMetricsAll(){
+  return new Promise((resolve)=>{
+    window.onOrdersAll = (res)=>{
+      ALL_ROWS = res.data.rows || [];
+      FILTERED_ROWS = ALL_ROWS.slice();
+      computeAndRenderMetricsFromRows(FILTERED_ROWS);
+      initFilterOptions(FILTERED_ROWS);
+      resolve();
+    };
+    const s = document.createElement('script');
+    s.src = `${A}?route=orders.list&page=1&pageSize=50000&callback=onOrdersAll&_=${Date.now()}`;
+    document.body.appendChild(s);
+  });
+}
+
+// ===== Filtros =====
+function initFilterOptions(rows){
+  const uniq = (arr)=> Array.from(new Set(arr.filter(Boolean))).sort();
+  const fill = (id, values)=>{
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = `<option value="">Todas</option>` + values.map(v=>`<option>${v}</option>`).join('');
+    if (cur) sel.value = cur;
+  };
+  fill('fCat',   uniq(rows.map(r=>r[FIELDS_FOR_FILTERS.categoria])));
+  fill('fUnidad',uniq(rows.map(r=>r[FIELDS_FOR_FILTERS.unidad])));
+  fill('fTipo',  uniq(rows.map(r=>r[FIELDS_FOR_FILTERS.tipo])));
+  fill('fGrupo', uniq(rows.map(r=>r[FIELDS_FOR_FILTERS.grupo])));
+  fill('fEstado', uniq(rows.map(r=>deriveStage(r))));
+}
+
+function applyFilters(){
+  const cat = document.getElementById('fCat').value;
+  const uni = document.getElementById('fUnidad').value;
+  const tip = document.getElementById('fTipo').value;
+  const gru = document.getElementById('fGrupo').value;
+  const est = document.getElementById('fEstado').value;
+  const txt = document.getElementById('fBuscar').value.trim().toLowerCase();
+  const desde = document.getElementById('fDesde').value;
+  const hasta = document.getElementById('fHasta').value;
+
+  const inRange = (row)=>{
+    if (!desde && !hasta) return true;
+    const d = (row['FECHA F8'] || row['RECIBO F8'] || '').slice(0,10);
+    if (desde && d < desde) return false;
+    if (hasta && d > hasta) return false;
+    return true;
+  };
+
+  FILTERED_ROWS = ALL_ROWS.filter(r=>{
+    if (cat && r[FIELDS_FOR_FILTERS.categoria]!==cat) return false;
+    if (uni && r[FIELDS_FOR_FILTERS.unidad]!==uni) return false;
+    if (tip && r[FIELDS_FOR_FILTERS.tipo]!==tip) return false;
+    if (gru && r[FIELDS_FOR_FILTERS.grupo]!==gru) return false;
+    if (est && deriveStage(r)!==est) return false;
+    if (txt){
+      const hay = Object.values(r).some(v=> String(v||'').toLowerCase().includes(txt));
+      if (!hay) return false;
+    }
+    if (!inRange(r)) return false;
+    return true;
+  });
+
+  computeAndRenderMetricsFromRows(FILTERED_ROWS);
+  renderTableFromFiltered(1);
+}
+
+function clearFilters(){
+  ['fCat','fUnidad','fTipo','fGrupo','fEstado','fBuscar','fDesde','fHasta']
+    .forEach(id=>{ const el=document.getElementById(id); if(!el) return; el.value=''; });
+  FILTERED_ROWS = ALL_ROWS.slice();
+  computeAndRenderMetricsFromRows(FILTERED_ROWS);
+  renderTableFromFiltered(1);
+}
+
+// ===== Click en celdas editables (inline editor) =====
 document.querySelector('#tabla').addEventListener('click', (ev)=>{
   const td = ev.target.closest('td.editable');
   if (!td || !editMode) return;
@@ -141,8 +264,6 @@ document.querySelector('#tabla').addEventListener('click', (ev)=>{
   const keyNorm = normalizeName(col);
   const isDate = N_EDITABLE_DATE.has(keyNorm);
   const isInt  = N_EDITABLE_INT.has(keyNorm);
-
-  // Evitar crear varios inputs
   if (td.querySelector('input')) return;
 
   const oldDisplay = td.textContent;
@@ -151,9 +272,8 @@ document.querySelector('#tabla').addEventListener('click', (ev)=>{
   const input = document.createElement('input');
   input.style.width = '100%';
   input.style.boxSizing = 'border-box';
-
   if (isDate){
-    input.type = 'date'; // el usuario elige fecha (YYYY-MM-DD)
+    input.type = 'date';
   } else if (isInt){
     input.type = 'number';
     input.step = '1';
@@ -212,7 +332,6 @@ document.querySelector('#tabla').addEventListener('click', (ev)=>{
     try{
       const res = await jsonp(url);
       if (res.status === 'ok'){
-        // refresca la celda en pantalla
         if (isDate){
           const [y,m,d] = value.split('-');
           const mon = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][parseInt(m,10)-1];
@@ -220,10 +339,9 @@ document.querySelector('#tabla').addEventListener('click', (ev)=>{
         } else {
           td.textContent = value;
         }
-    
-        // 🔽 recalcula KPIs y gráfico con TODO el dataset (siempre que hubo éxito)
-        loadMetricsAll();
-    
+        // Recalcular métricas + refrescar tabla filtrada (mantén página)
+        const pageNow = currentPageNumber();
+        loadMetricsAll().then(()=> renderTableFromFiltered(pageNow));
       } else {
         td.innerHTML = oldDisplay;
         alert('Error: ' + (res.error || 'desconocido'));
@@ -235,17 +353,16 @@ document.querySelector('#tabla').addEventListener('click', (ev)=>{
   };
 });
 
-// ===== Login con Google + Modo edición (robusto con modal) =====
+// ===== Login con Google + Modo edición (modal) =====
 const btnLogin = document.getElementById('btnLogin');
 const btnEditMode = document.getElementById('btnEditMode');
-const loginBox = document.getElementById('loginBox');       // del modal en index.html
-const loginBoxBtn = document.getElementById('loginBoxBtn'); // contenedor del botón de Google
+const loginBox = document.getElementById('loginBox');
+const loginBoxBtn = document.getElementById('loginBoxBtn');
 const loginClose = document.getElementById('loginClose');
 
 function renderGoogleButton() {
   loginBoxBtn.innerHTML = '';
   if (!window.google || !google.accounts || !google.accounts.id) {
-    // si el script aún no cargó, reintenta
     setTimeout(renderGoogleButton, 200);
     return;
   }
@@ -263,44 +380,29 @@ function renderGoogleButton() {
     type:'standard', theme:'outline', size:'large', text:'signin_with'
   });
 }
+btnLogin.onclick = () => { loginBox.style.display = 'flex'; renderGoogleButton(); };
+loginClose.onclick = () => { loginBox.style.display = 'none'; };
 
-btnLogin.onclick = () => {
-  loginBox.style.display = 'flex';
-  renderGoogleButton();
-};
-
-loginClose.onclick = () => {
-  loginBox.style.display = 'none';
-};
-
-// Toggle de modo edición
+// Toggle edición
 btnEditMode.onclick = ()=>{
   editMode = !editMode;
   btnEditMode.textContent = `Modo edición: ${editMode ? 'ON' : 'OFF'}`;
-  // Re-render de la página actual para aplicar/quitar celdas editables
-  const disabled = document.querySelector('#paginacion button[disabled]');
-  const page = disabled ? parseInt(disabled.textContent,10) : 1;
-  renderTabla(page);
+  renderTableFromFiltered(currentPageNumber());
 };
 
-// Cargar TODO el dataset para KPIs y gráfico (una sola llamada grande)
-async function loadMetricsAll(){
-  return new Promise((resolve)=>{
-    window.onOrdersAll = (res)=>{
-      const all = res.data.rows || [];
-      computeAndRenderMetricsFromRows(all); // viene de metrics.js
-      resolve();
-    };
-    const s = document.createElement('script');
-    s.src = `${A}?route=orders.list&page=1&pageSize=50000&callback=onOrdersAll&_=${Date.now()}`;
-    document.body.appendChild(s);
-  });
-}
+// Botón Actualizar (relee métricas + tabla filtrada)
+const btnRefresh = document.getElementById('btnRefresh');
+btnRefresh.onclick = ()=> loadMetricsAll().then(()=> renderTableFromFiltered(currentPageNumber()));
 
 // ===== Init =====
 function init(){
-  loadKpis();
-  renderTabla(1);
-  loadMetricsAll();   // 🔽 añade esta línea
+  loadKpis();                 // opcional (simple)
+  renderTabla(1);             // compat (puedes quitarlo si usas solo filtrados)
+  loadMetricsAll().then(()=>  // carga dataset completo y pinta filtros/gráficos/tabla
+    renderTableFromFiltered(1)
+  );
+  // Filtros: listeners
+  document.getElementById('btnApply').onclick = applyFilters;
+  document.getElementById('btnClear').onclick = clearFilters;
 }
 init();
