@@ -13,14 +13,11 @@ function deriveStage(row){
 // ===== Indicadores por pedido =====
 function derivePerRow(row){
   const estado = deriveStage(row);
-  // tiempo = días desde FECHA F8 hasta ENTREGADA (o hoy si no entregada)
   const parseSheetDate = (v)=>{
     if (!v) return null;
-    // Si viene como "dd-mmm-yy" o Date, intentamos parse simple
     if (v instanceof Date) return v;
     if (/^\d{4}-\d{2}-\d{2}T/.test(v)) return new Date(v);
-    // dd-mmm-yy → Date.parse no siempre entiende “may”, “ene” local; dejamos nulo
-    return null;
+    return null; // otros formatos se ignoran para el cálculo de días
   };
   const fechaF8 = parseSheetDate(row['FECHA F8']) || parseSheetDate(row['RECIBO F8']);
   const fin = parseSheetDate(row['ENTREGA REAL']) || new Date();
@@ -69,7 +66,6 @@ function buildAggregates(rows){
     tot.renglonesAsig+=parseInt(r['RENGLONES ASI.']||0,10)||0;
     tot.renglonesSol+=parseInt(r['RENGLONES SOL.']||0,10)||0;
 
-    // Evolución: por FECHA F8 (recibidos) y ENTREGADA (completados)
     const toKey = (v)=>{
       if (!v) return null;
       if (/^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0,10);
@@ -82,7 +78,6 @@ function buildAggregates(rows){
     if (kComp){ evol[kComp] = evol[kComp]||{rec:0, comp:0}; evol[kComp].comp++; }
   }
 
-  // porcentajes por grupo
   const groups = Array.from(byGroup.values()).map(x=>{
     const pct = k => x.total ? Math.round((x[k]/x.total)*100) : 0;
     return {...x, pct:{
@@ -92,9 +87,7 @@ function buildAggregates(rows){
     }};
   });
 
-  // Evolución ordenada por fecha
   const evolSorted = Object.keys(evol).sort().map(k=>({date:k, ...evol[k]}));
-
   return { tot, groups, evol: evolSorted };
 }
 
