@@ -1,4 +1,4 @@
-// Usar la misma fuente del sitio en Chart.js
+// Fuente de Chart.js = misma del sitio
 if (window.Chart && Chart.defaults && Chart.defaults.font) {
   try { Chart.defaults.font.family = getComputedStyle(document.body).fontFamily || 'inherit'; } catch(e){}
 }
@@ -46,14 +46,34 @@ function derivePerRow(row){
   };
 }
 
-// ===== Agregaciones =====
+/* ======= SERIES TIEMPO (globales) ======= */
+function buildTimeSeries(rows){
+  const add = (map, key)=>{ if(!key) return; map[key] = (map[key]||0)+1; };
+  const rec = {}, comp = {}, proj = {};
+  for (const r of rows){
+    const kRec  = (r['RECIBO F8']||'').slice(0,10);
+    const kComp = (r['ENTREGA REAL']||'').slice(0,10);
+    const kProj = (r['PROY. ENTREGA']||'').slice(0,10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(kRec))  add(rec,  kRec);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(kComp)) add(comp, kComp);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(kProj)) add(proj, kProj);
+  }
+  const allDays = Array.from(new Set([...Object.keys(rec),...Object.keys(comp),...Object.keys(proj)])).sort();
+  return {
+    labels: allDays,
+    recibidos: allDays.map(d=>rec[d]||0),
+    completados: allDays.map(d=>comp[d]||0),
+    proyectados: allDays.map(d=>proj[d]||0)
+  };
+}
+
+/* ======= AGREGADOS (globales o filtrados) ======= */
 function buildAggregates(rows){
   const byGroup = new Map();
   const tot = {
     pedidos: rows.length, urgencia: 0, mensual: 0,
     asignado: 0, solicitado: 0, renglonesAsig: 0, renglonesSol: 0
   };
-  const evol = {}; // { 'YYYY-MM-DD': {rec:n, comp:m} }
 
   for (const r of rows){
     const stage = deriveStage(r);
@@ -70,17 +90,6 @@ function buildAggregates(rows){
     tot.solicitado+=parseInt(r['CANT. SOL.']||0,10)||0;
     tot.renglonesAsig+=parseInt(r['RENGLONES ASI.']||0,10)||0;
     tot.renglonesSol+=parseInt(r['RENGLONES SOL.']||0,10)||0;
-
-    const toKey = (v)=>{
-      if (!v) return null;
-      if (/^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0,10);
-      if (v instanceof Date) return v.toISOString().slice(0,10);
-      return null;
-    };
-    const kRec = toKey(r['FECHA F8']) || toKey(r['RECIBO F8']);
-    if (kRec){ evol[kRec] = evol[kRec]||{rec:0, comp:0}; evol[kRec].rec++; }
-    const kComp = toKey(r['ENTREGA REAL']);
-    if (kComp){ evol[kComp] = evol[kComp]||{rec:0, comp:0}; evol[kComp].comp++; }
   }
 
   const groups = Array.from(byGroup.values()).map(x=>{
@@ -92,11 +101,10 @@ function buildAggregates(rows){
     }};
   });
 
-  const evolSorted = Object.keys(evol).sort().map(k=>({date:k, ...evol[k]}));
-  return { tot, groups, evol: evolSorted };
+  return { tot, groups };
 }
 
-// ===== KPIs (globales) =====
+/* ======= KPIs (globales) ======= */
 function renderKpisCompact(tot){
   const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
   set('kpi-total', (tot.pedidos||0).toLocaleString());
@@ -108,20 +116,18 @@ function renderKpisCompact(tot){
   set('kpi-men', tot.mensual||0);
 }
 
-// ===== Gráficos =====
+/* ======= Gráficos ======= */
 let chartEvol=null, chartPastel=null, chartGrupo=null;
 
-function renderEvolucion(chartData){
+function renderEvolucionSeries(series){
   const el=document.getElementById('chart-evol'); if(!el) return;
-  const labels = chartData.map(x=>x.date);
-  const rec = chartData.map(x=>x.rec);
-  const comp = chartData.map(x=>x.comp);
   if (chartEvol) chartEvol.destroy();
   chartEvol = new Chart(el.getContext('2d'), {
     type:'line',
-    data:{ labels, datasets:[
-      {label:'Pedidos recibidos', data:rec, tension:.3},
-      {label:'Pedidos completados', data:comp, tension:.3}
+    data:{ labels: series.labels, datasets:[
+      {label:'Pedidos recibidos',   data:series.recibidos,   tension:.3},
+      {label:'Pedidos completados', data:series.completados, tension:.3},
+      {label:'Proyectado entrega',  data:series.proyectados, tension:.3}
     ]},
     options:{
       responsive:true,
@@ -135,11 +141,11 @@ function renderEvolucion(chartData){
   });
 }
 
-function renderDistribucionEstados(rows){
+function renderDistribucionEstadosGlobal(rowsAll){
   const el=document.getElementById('chart-estado-pastel'); if(!el) return;
   const labels=['F8 RECIBIDA','EN ASIGNACIÓN','SALIDA DE SALMI','FACTURADO','EMPACADO','ENTREGADA'];
-  const counts = labels.map(l => rows.filter(r=>deriveStage(r)===l).length);
-  const total = rows.length || 1;
+  const counts = labels.map(l => rowsAll.filter(r=>deriveStage(r)===l).length);
+  const total = rowsAll.length || 1;
   if (chartPastel) chartPastel.destroy();
   chartPastel = new Chart(el.getContext('2d'), {
     type:'doughnut',
@@ -160,7 +166,6 @@ function renderDistribucionEstados(rows){
 function renderEstadoPorGrupo100(groups){
   const el=document.getElementById('chart-estado-grupo'); if(!el) return;
   const labels = groups.map(g=>g.group);
-  const total = (g)=>g.total||1;
   const series = [
     {k:'F8 RECIBIDA', lab:'F8 RECIBIDA'},
     {k:'EN ASIGNACIÓN', lab:'EN ASIGNACIÓN'},
@@ -171,7 +176,7 @@ function renderEstadoPorGrupo100(groups){
   ];
   const datasets = series.map(s=>({
     label:s.lab,
-    data: groups.map(g=> Math.round((g[s.k]/total(g))*100))
+    data: groups.map(g=> g.total ? Math.round((g[s.k]/g.total)*100) : 0)
   }));
   if (chartGrupo) chartGrupo.destroy();
   chartGrupo = new Chart(el.getContext('2d'), {
@@ -182,7 +187,7 @@ function renderEstadoPorGrupo100(groups){
       plugins:{ legend:{position:'bottom'},
         tooltip:{ callbacks:{ label:(ctx)=>{
           const g=groups[ctx.dataIndex];
-          const n=g[series[ctx.datasetIndex].k];
+          const n=g[series[ctx.datasetIndex].k] || 0;
           const p=ctx.parsed.y;
           return `${ctx.dataset.label}: ${p}% (${n})`;
         }}}
@@ -192,13 +197,14 @@ function renderEstadoPorGrupo100(groups){
   });
 }
 
-// ===== Entrada única: KPIs globales + gráficos sobre filtrados =====
+/* ======= Render maestro: KPIs globales + gráficos (globales) ======= */
 async function computeAndRenderMetrics(allRows, filteredRows){
-  const { tot: totAll } = buildAggregates(allRows);
-  renderKpisCompact(totAll);
+  const { tot, groups } = buildAggregates(allRows);
+  renderKpisCompact(tot);
 
-  const { groups, evol } = buildAggregates(filteredRows);
-  renderEvolucion(evol);
-  renderDistribucionEstados(filteredRows);
+  const series = buildTimeSeries(allRows);
+  renderEvolucionSeries(series);
+
+  renderDistribucionEstadosGlobal(allRows);
   renderEstadoPorGrupo100(groups);
 }
