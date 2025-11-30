@@ -1,5 +1,5 @@
-// v2025-11-30b
-console.log('app.js v2025-11-30b');
+// v2025-11-30c (loader robusto con paginación real y guardas)
+console.log('app.js v2025-11-30c');
 
 const A = window.APP.A_URL;
 const B = window.APP.B_URL;
@@ -22,69 +22,125 @@ let currentHeaders=[], currentRows=[], currentIdColName=null;
 let ALL_ROWS=[], FILTERED_ROWS=[];
 const FIELDS_FOR_FILTERS = { categoria: 'CATEG.', unidad: 'UNIDAD', tipo: 'TIPO', grupo: 'GRUPO' };
 
+/* -----------------------------------------
+   Helpers de JSONP y utilidades de carga
+----------------------------------------- */
 function jsonp(url, cbName){
   return new Promise((resolve,reject)=>{
-    const s = document.createElement('script');
     const cb = cbName || ('cb_' + Math.random().toString(36).slice(2));
     window[cb] = (payload)=>{ try{ resolve(payload); } finally{ delete window[cb]; s.remove(); } };
+    const s = document.createElement('script');
     s.onerror = reject;
     s.src = url + (url.includes('?')?'&':'?') + `callback=${cb}&_=${Date.now()}`;
     document.body.appendChild(s);
   });
 }
+
+// JSONP con callback explícito (para trazar por página)
+function jsonpWithCb(url, cbName){
+  return new Promise((resolve, reject)=>{
+    window[cbName] = (payload)=>{ try{ resolve(payload); } finally{ delete window[cbName]; s.remove(); } };
+    const s = document.createElement('script'); s.onerror = reject;
+    s.src = url + (url.includes('?')?'&':'?') + `callback=${cbName}&_=${Date.now()}`;
+    document.body.appendChild(s);
+  });
+}
+
+// pinta "Total pedidos: N" y devuelve el total desde KPIs
+async function fetchKpisAndGetTotal(){
+  const cb = 'onKpis_' + Math.random().toString(36).slice(2);
+  const res = await jsonpWithCb(`${A}?route=kpis`, cb);
+  renderKpis(res.data || {});
+  return (res.data && res.data.totalPedidos) ? res.data.totalPedidos : 0;
+}
+
+// trae una página de órdenes (el backend entrega 500 por página)
+async function fetchOrdersPage(page, pageSize){
+  const cb = 'onOrders_' + page + '_' + Math.random().toString(36).slice(2);
+  const res = await jsonpWithCb(`${A}?route=orders.list&page=${page}&pageSize=${pageSize}`, cb);
+  const rows = (res && res.data && res.data.rows) ? res.data.rows : [];
+  console.log(`[orders.list] page=${page} rows=${rows.length}`);
+  return rows;
+}
+
+/* -----------------------------------------
+   Formatos y visual
+----------------------------------------- */
 function isIsoDateTimeZ(v){ return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v) && v.endsWith('Z'); }
 function formatIsoToDDMonYY(v){ const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(v); if(!m) return v; const [_,y,mn,d]=m; const mon=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][parseInt(mn,10)-1]; return `${d}-${mon}-${y.slice(-2)}`; }
 function formatAllIsoDatesInRow(row){ const out={...row}; for(const k of Object.keys(out)) if(isIsoDateTimeZ(out[k])) out[k]=formatIsoToDDMonYY(out[k]); return out; }
 
 function renderKpis(d){ const el=document.getElementById('kpis'); if(el) el.textContent = `Total pedidos: ${d.totalPedidos}`; }
-function loadKpis(){ window.onKpis=(res)=>renderKpis(res.data); const s=document.createElement('script'); s.src = `${A}?route=kpis&callback=onKpis&_=${Date.now()}`; document.body.appendChild(s); }
 
-/* ===== dataset completo con paginación real (500 por página) ===== */
+/* -----------------------------------------
+   Loader robusto (no cuelga si no hay paginación real)
+----------------------------------------- */
 async function loadMetricsAll(){
-  const PAGE_SIZE = 500;   // <-- el backend devuelve 500 por página
-  let page = 1;
+  const PAGE_SIZE = 500; // el backend devuelve 500
+  const total = await fetchKpisAndGetTotal();
+
+  // límite de páginas por seguridad (ej. 16581 → 34 + 2 = 36; cap a 100)
+  const maxPages = Math.min(Math.ceil((total||0)/PAGE_SIZE) + 2, 100);
+
   let all = [];
+  let lastFirstId = null;
+  let repeatedFirst = 0;
 
-  while (true) {
-    const len = await new Promise((resolve) => {
-      window.onOrdersPage = (res)=>{
-        const rows = (res && res.data && res.data.rows) ? res.data.rows : [];
-        all = all.concat(rows);
-        resolve(rows.length);
-      };
-      const s = document.createElement('script');
-      // pedimos de 500 en 500; si el backend ignora pageSize, igual sirve
-      s.src = `${A}?route=orders.list&page=${page}&pageSize=${PAGE_SIZE}&callback=onOrdersPage&_=${Date.now()}`;
-      document.body.appendChild(s);
-    });
+  for (let page = 1; page <= maxPages; page++){
+    const rows = await fetchOrdersPage(page, PAGE_SIZE);
 
-    if (len < PAGE_SIZE) break; // última página
-    page += 1;
+    if (!rows.length) break;
+
+    // detección de backend sin paginado (misma primera fila)
+    const firstId = rows[0]?.[ID_HEADER] || JSON.stringify(rows[0]);
+    if (firstId && firstId === lastFirstId){
+      repeatedFirst++;
+      if (repeatedFirst >= 2){
+        console.warn('Backend no pagina (repite la misma página). Detengo la carga masiva.');
+        break;
+      }
+    } else {
+      repeatedFirst = 0;
+    }
+    lastFirstId = firstId;
+
+    all.push(...rows);
+    if (rows.length < PAGE_SIZE) break; // última página real
   }
 
-  ALL_ROWS = all;
+  // deduplicación por ID para evitar duplicados si hubo repetición
+  const uniq = new Map();
+  for (const r of all){
+    const id = r?.[ID_HEADER] || JSON.stringify(r);
+    if (!uniq.has(id)) uniq.set(id, r);
+  }
+  ALL_ROWS = Array.from(uniq.values());
   FILTERED_ROWS = ALL_ROWS.slice();
 
+  console.log(`Carga completada: ${ALL_ROWS.length} filas (total esperado: ${total}).`);
+
   computeAndRenderMetrics(ALL_ROWS, FILTERED_ROWS);
-  initFilterOptions();            // llena filtros con TODO el dataset
-  renderTableFromFiltered(1);     // pinta la tabla página 1
+  initFilterOptions();
+  renderTableFromFiltered(1);
 }
 
-/* ===== Filtros (siempre con ALL_ROWS para no perder valores como CEDIS) ===== */
+/* -----------------------------------------
+   Filtros
+----------------------------------------- */
 function initFilterOptions(){
   const rows = ALL_ROWS;
   const uniq = (arr)=> Array.from(new Set(arr.map(v=> (v==null?'':String(v)).trim()).filter(Boolean))).sort();
   const fill = (id, values)=>{
     const sel=document.getElementById(id); if(!sel) return;
     const cur=sel.value;
-    sel.innerHTML = `<option value="">${id==='fCat'?'Todas':id==='fEstado'?'Todos':'Todos'}</option>` + values.map(v=>`<option>${v}</option>`).join('');
+    sel.innerHTML = `<option value="">${id==='fCat'?'Todas':'Todos'}</option>` + values.map(v=>`<option>${v}</option>`).join('');
     if (cur) sel.value = cur;
   };
   fill('fCat',   uniq(rows.map(r=>r[FIELDS_FOR_FILTERS.categoria])));
   fill('fUnidad',uniq(rows.map(r=>r[FIELDS_FOR_FILTERS.unidad])));
   fill('fTipo',  uniq(rows.map(r=>r[FIELDS_FOR_FILTERS.tipo])));
   fill('fGrupo', uniq(rows.map(r=>r[FIELDS_FOR_FILTERS.grupo])));
-  fill('fEstado',uniq(rows.map(r=>deriveStage(r))));
+  // Estado se genera en metrics.js -> deriveStage; lo poblamos desde computeAndRender si lo necesitas.
 }
 
 function applyFilters(){
@@ -121,7 +177,9 @@ function clearFilters(){
   renderTableFromFiltered(1);
 }
 
-/* ===== tabla ===== */
+/* -----------------------------------------
+   Tabla (segmentada 150 por página)
+----------------------------------------- */
 function headerWidthMap(){ return {
   'CATEG.':180,'UNIDAD':220,'TIPO':110,'F8 SALMI':120,'F8 SISCONI':120,'GRUPO':100,'SUSTANCIAS':150,
   'CANT. ASIG.':100,'CANT. SOL.':100,'RENGLONES ASI.':120,'RENGLONES SOL.':120,
@@ -168,7 +226,9 @@ function renderTableFromFiltered(page){
 }
 function currentPageNumber(){ const t=document.querySelector('#paginacion span'); if(!t) return 1; const m=t.textContent.match(/Página (\d+)/); return m?+m[1]:1; }
 
-/* ===== editor inline ===== */
+/* -----------------------------------------
+   Edición inline (fechas, enteros, texto)
+----------------------------------------- */
 document.querySelector('#tabla').addEventListener('click', (ev)=>{
   const td = ev.target.closest('td.editable'); if (!td || !editMode) return;
   const ri=+td.dataset.ri, col=td.dataset.col, row=currentRows[ri];
@@ -216,9 +276,10 @@ document.querySelector('#tabla').addEventListener('click', (ev)=>{
   };
 });
 
-/* ===== Login + edición ===== */
+/* -----------------------------------------
+   Login + modo edición
+----------------------------------------- */
 const btnLogin=document.getElementById('btnLogin'); const btnEditMode=document.getElementById('btnEditMode');
-const loginBox=document.getElementById('loginBox'); const loginBoxBtn=document.getElementById('loginBoxBtn'); const loginClose=document.getElementById('loginClose');
 function renderGoogleButton(){
   if(!window.google||!google.accounts||!google.accounts.id){ setTimeout(renderGoogleButton,200); return; }
   google.accounts.id.initialize({client_id:CLIENT_ID, callback:(resp)=>{ idToken=resp.credential; btnEditMode.disabled=false; btnLogin.textContent='Sesión iniciada'; alert('Sesión iniciada. Activa “Modo edición”.'); }});
@@ -226,13 +287,17 @@ function renderGoogleButton(){
 btnLogin.onclick=()=>{ renderGoogleButton(); };
 btnEditMode.onclick=()=>{ editMode=!editMode; btnEditMode.textContent=`Modo edición: ${editMode?'ON':'OFF'}`; renderTableFromFiltered(currentPageNumber()); };
 
+/* -----------------------------------------
+   Botón Actualizar
+----------------------------------------- */
 const btnRefresh=document.getElementById('btnRefresh');
 btnRefresh.onclick=()=>{ btnRefresh.textContent='Actualizando…'; btnRefresh.disabled=true;
-  loadMetricsAll().then(()=>{ computeAndRenderMetrics(ALL_ROWS, FILTERED_ROWS); renderTableFromFiltered(currentPageNumber()); })
-  .finally(()=>{ btnRefresh.textContent='Actualizar'; btnRefresh.disabled=false; });
+  loadMetricsAll().finally(()=>{ btnRefresh.textContent='Actualizar'; btnRefresh.disabled=false; });
 };
 
-/* ===== sticky top dinámico + scroll sincronizado ===== */
+/* -----------------------------------------
+   Sticky top dinámico + scroll sincronizado
+----------------------------------------- */
 function updateStickyTop(){
   const hdr = document.querySelector('.app-header');
   const kpis = document.getElementById('kpis-compact');
@@ -242,7 +307,7 @@ function updateStickyTop(){
 }
 window.addEventListener('resize', updateStickyTop);
 
-// scroll sincronizado
+// scroll horizontal arriba/abajo
 (function syncHScroll(){
   const topBar = document.getElementById('top-scroll');
   const tw = document.querySelector('.table-wrap');
@@ -252,13 +317,14 @@ window.addEventListener('resize', updateStickyTop);
   tw.addEventListener('scroll', ()=>{ if(locking) return; locking=true; topBar.scrollLeft = tw.scrollLeft; locking=false; });
 })();
 
-/* ===== Init ===== */
+/* -----------------------------------------
+   Init
+----------------------------------------- */
 function init(){
   updateStickyTop();
-  loadKpis();
-  loadMetricsAll().then(()=> renderTableFromFiltered(1));
+  // No llamamos loadKpis() aquí: fetchKpisAndGetTotal() ya lo pinta dentro de loadMetricsAll()
+  loadMetricsAll();
   document.getElementById('btnApply').onclick=applyFilters;
   document.getElementById('btnClear').onclick=clearFilters;
 }
 init();
-
