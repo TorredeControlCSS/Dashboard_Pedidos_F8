@@ -5,18 +5,21 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Dashboard de Pedidos</title>
 
-  <!-- Chart.js -->
+  <!-- (Cámbialo si tu favicon tiene otro nombre/ruta) -->
+  <link rel="icon" href="icons/favicon.ico"/>
+
+  <!-- Librerías -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Google Identity (para “Acceder”) -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-  <link rel="stylesheet" href="styles.css?v=2025-11-30d"/>
+  <link rel="stylesheet" href="styles.css?v=2025-12-01a"/>
   <link rel="manifest" href="manifest.json"/>
 </head>
 <body>
   <header class="app-header">
     <div class="brand">
-      <img src="icons/logo-64.png" alt="logo" width="40" height="40"/>
+      <!-- (Cámbialo si tu logo tiene otro nombre/ruta) -->
+      <img src="assets/logo.png" alt="logo" width="40" height="40"/>
       <div>
         <h1>Dashboard de Pedidos</h1>
         <small>Seguimiento F8</small>
@@ -102,19 +105,19 @@
   </section>
   <div id="paginacion" class="pager"></div>
 
-  <!-- Config de endpoints -->
+  <!-- Endpoints / credenciales -->
   <script>
     window.APP = {
-      // A: lectura/estadísticos (stats + orders.list) — la que probaste con echo y stats
-      A_URL: 'https://script.google.com/macros/s/AKfycbx_GtUxuRG9Ikjcfg5ujNylmqI9uXF6_82V1fK27KHnxrtsfkAwCiE-1G2VU-ql4vj1PQ/exec',
-      // B: escritura (orders.update) — tu script B que ya funcionaba
+      // Script A (lectura / stats). Probado con echo y stats.
+      A_URL: 'https://script.google.com/macros/s/AKfycbw3e58_okZH3XKeDfc-pHY3prP1fjSgM5a8dWNibuKtGS7qJ8Y2k5uecMsevxiuhqht_w/exec',
+      // Script B (escritura / update). Tu script B operativo.
       B_URL: 'https://script.google.com/macros/s/AKfycbysdeYW1g-l1p6ZOyk9aPaUIdx5H4GbzYFVeD1T8_SsyQoODqo-dSzjQMeu7lZzYmQ/exec',
       CLIENT_ID: '63868073848-8bfis5g0f8mt14oia3flmbqksg69tejq.apps.googleusercontent.com'
     };
   </script>
 
-  <!-- Render de gráficos y app principal -->
-  <script src="metrics.js?v=2025-11-30c"></script>
-  <script src="app.js?v=2025-11-30h"></script>
+  <!-- App -->
+  <script src="metrics.js?v=2025-12-01a"></script>
+  <script src="app.js?v=2025-12-01a"></script>
 </body>
 </html>
