@@ -12,9 +12,10 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-  <link rel="stylesheet" href="styles.css?v=2025-11-30a"/>
+  <link rel="stylesheet" href="styles.css?v=2025-11-30b"/>
 </head>
 <body>
+
 <header class="app-header">
   <div class="brand">
     <img src="assets/logo.png" alt="Logo" class="logo">
@@ -31,7 +32,7 @@
   </div>
 </header>
 
-<!-- KPIs -->
+<!-- KPIs globales -->
 <section id="kpis-compact" class="kpis">
   <div class="kpi"><div>Total</div><strong id="kpi-total">—</strong></div>
   <div class="kpi"><div>Asignado</div><strong id="kpi-asignado">—</strong></div>
@@ -41,16 +42,32 @@
   <div class="kpi"><div>Urg/Mens</div><strong><span id="kpi-urg">—</span>/<span id="kpi-men">—</span></strong></div>
 </section>
 
-<!-- Filtros -->
-<section class="filters">
-  <select id="fCat"><option value="">Todas las categorías</option></select>
-  <select id="fUnidad"><option value="">Todas las unidades</option></select>
-  <select id="fTipo"><option value="">Todos los tipos</option></select>
-  <select id="fGrupo"><option value="">Todos los grupos</option></select>
-  <select id="fEstado"><option value="">Todos los estados</option></select>
-  <input id="fBuscar" placeholder="Buscar F8 SALMI / texto…">
-  <input id="fDesde" type="date" title="Desde">
-  <input id="fHasta" type="date" title="Hasta">
+<!-- Filtros con etiquetas -->
+<section class="filters" id="filters">
+  <label class="f"><span>Categoría</span>
+    <select id="fCat"><option value="">Todas</option></select>
+  </label>
+  <label class="f"><span>Unidad</span>
+    <select id="fUnidad"><option value="">Todas</option></select>
+  </label>
+  <label class="f"><span>Tipo</span>
+    <select id="fTipo"><option value="">Todos</option></select>
+  </label>
+  <label class="f"><span>Grupo</span>
+    <select id="fGrupo"><option value="">Todos</option></select>
+  </label>
+  <label class="f"><span>Estado</span>
+    <select id="fEstado"><option value="">Todos</option></select>
+  </label>
+  <label class="f f2"><span>Buscar</span>
+    <input id="fBuscar" placeholder="F8 SALMI / texto…">
+  </label>
+  <label class="f"><span>Desde</span>
+    <input id="fDesde" type="date" title="Desde">
+  </label>
+  <label class="f"><span>Hasta</span>
+    <input id="fHasta" type="date" title="Hasta">
+  </label>
   <button id="btnApply">Aplicar</button>
   <button id="btnClear">Limpiar</button>
 </section>
@@ -65,6 +82,10 @@
 <!-- Tabla -->
 <section class="table-wrap">
   <div id="kpis"></div>
+
+  <!-- Scroll superior sincronizado -->
+  <div id="top-scroll" class="hscroll"></div>
+
   <table id="tabla"><thead></thead><tbody></tbody></table>
   <div id="paginacion"></div>
 </section>
@@ -77,13 +98,13 @@
   };
 </script>
 
-<script src="metrics.js?v=2025-11-30a"></script>
-<script src="app.js?v=2025-11-30a"></script>
+<script src="metrics.js?v=2025-11-30b"></script>
+<script src="app.js?v=2025-11-30b"></script>
 
-<!-- ⚠️ mientras depuramos, desactiva el SW registrando esta versión que se auto-desregistra -->
+<!-- SW de limpieza de caché -->
 <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js?v=2025-11-30a', { scope: '/Dashboard_Pedidos_F8/' }).catch(console.error);
+    navigator.serviceWorker.register('sw.js?v=2025-11-30b', { scope: '/Dashboard_Pedidos_F8/' }).catch(console.error);
   }
 </script>
 </body>
