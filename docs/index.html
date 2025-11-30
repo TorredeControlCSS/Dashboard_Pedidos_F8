@@ -3,122 +3,118 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Dashboard Pedidos F8</title>
+  <title>Dashboard de Pedidos</title>
 
-  <link rel="icon" href="icons/favicon.ico">
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0b3d91">
-
-  <!-- 🔧 Kill SW + caches de versiones viejas (forzado) -->
-  <script>
-    (function(){
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations()
-          .then(rs => rs.forEach(r => r.unregister()))
-          .catch(()=>{});
-      }
-      if (window.caches) {
-        caches.keys().then(keys => keys.forEach(k => caches.delete(k))).catch(()=>{});
-      }
-    })();
-  </script>
-
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Google Identity (para “Acceder”) -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-  <!-- 🔧 cache-bust -->
-  <link rel="stylesheet" href="styles.css?v=2025-11-30c"/>
+  <link rel="stylesheet" href="styles.css?v=2025-11-30d"/>
+  <link rel="manifest" href="manifest.json"/>
 </head>
 <body>
-
-<header class="app-header">
-  <div class="brand">
-    <img src="assets/logo.png" alt="Logo" class="logo">
-    <div class="titles">
-      <h1 class="title">Dashboard de Pedidos</h1>
-      <span class="subtitle">Seguimiento F8</span>
+  <header class="app-header">
+    <div class="brand">
+      <img src="icons/logo-64.png" alt="logo" width="40" height="40"/>
+      <div>
+        <h1>Dashboard de Pedidos</h1>
+        <small>Seguimiento F8</small>
+      </div>
     </div>
-  </div>
-  <div class="actions">
-    <button id="btnLogin" class="btn">Acceder</button>
-    <button id="btnEditMode" class="btn" disabled>Modo edición: OFF</button>
-    <button id="btnRefresh" class="btn">Actualizar</button>
-    <a id="btnEditar" class="btn btn-link" target="_blank" rel="noopener" href="edit.html">Editor clásico</a>
-  </div>
-</header>
+    <div class="header-actions">
+      <button id="btnLogin">Acceder</button>
+      <button id="btnEditMode" disabled>Modo edición: OFF</button>
+      <button id="btnRefresh">Actualizar</button>
+      <a id="btnClassic" href="edit.html" target="_blank" rel="noopener">Editor clásico</a>
+    </div>
+  </header>
 
-<section id="kpis-compact" class="kpis">
-  <div class="kpi"><div>Total</div><strong id="kpi-total">—</strong></div>
-  <div class="kpi"><div>Asignado</div><strong id="kpi-asignado">—</strong></div>
-  <div class="kpi"><div>Solicitado</div><strong id="kpi-solicitado">—</strong></div>
-  <div class="kpi"><div>Reng. Asig.</div><strong id="kpi-reng-asig">—</strong></div>
-  <div class="kpi"><div>Reng. Sol.</div><strong id="kpi-reng-sol">—</strong></div>
-  <div class="kpi"><div>Urg/Mens</div><strong><span id="kpi-urg">—</span>/<span id="kpi-men">—</span></strong></div>
-</section>
+  <!-- KPIs -->
+  <section id="kpis">
+    <div class="kpi"><div>Total</div><strong id="kpi-total">—</strong></div>
+    <div class="kpi"><div>Asignado</div><strong id="kpi-asignado">—</strong></div>
+    <div class="kpi"><div>Solicitado</div><strong id="kpi-solicitado">—</strong></div>
+    <div class="kpi"><div>Reng. Asig.</div><strong id="kpi-reng-asig">—</strong></div>
+    <div class="kpi"><div>Reng. Sol.</div><strong id="kpi-reng-sol">—</strong></div>
+    <div class="kpi"><div>Urg/Mens</div><strong><span id="kpi-urg">0</span>/<span id="kpi-men">—</span></strong></div>
+  </section>
 
-<section class="filters" id="filters">
-  <label class="f"><span>Categoría</span>
-    <select id="fCat"><option value="">Todas</option></select>
-  </label>
-  <label class="f"><span>Unidad</span>
-    <select id="fUnidad"><option value="">Todas</option></select>
-  </label>
-  <label class="f"><span>Tipo</span>
-    <select id="fTipo"><option value="">Todos</option></select>
-  </label>
-  <label class="f"><span>Grupo</span>
-    <select id="fGrupo"><option value="">Todos</option></select>
-  </label>
-  <label class="f"><span>Estado</span>
-    <select id="fEstado"><option value="">Todos</option></select>
-  </label>
-  <label class="f f2"><span>Buscar</span>
-    <input id="fBuscar" placeholder="F8 SALMI / texto…">
-  </label>
-  <label class="f"><span>Desde</span>
-    <input id="fDesde" type="date" title="Desde">
-  </label>
-  <label class="f"><span>Hasta</span>
-    <input id="fHasta" type="date" title="Hasta">
-  </label>
-  <button id="btnApply">Aplicar</button>
-  <button id="btnClear">Limpiar</button>
-</section>
+  <!-- Filtros -->
+  <section id="filters">
+    <div class="row">
+      <label>Categoría</label>
+      <select id="fCat"><option value="">Todas</option></select>
 
-<section class="charts">
-  <div class="chart chart-line"><canvas id="chart-evol"></canvas></div>
-  <div class="chart chart-donut"><canvas id="chart-estado-pastel"></canvas></div>
-  <div class="chart chart-bars"><canvas id="chart-estado-grupo"></canvas></div>
-</section>
+      <label>Unidad</label>
+      <select id="fUnidad"><option value="">Todas</option></select>
 
-<section class="table-wrap">
-  <div id="kpis"></div>
-  <div id="top-scroll" class="hscroll"></div>
-  <table id="tabla"><thead></thead><tbody></tbody></table>
-  <div id="paginacion"></div>
-</section>
+      <label>Tipo</label>
+      <select id="fTipo"><option value="">Todos</option></select>
 
-<script>
-  window.APP = {
-    A_URL: 'https://script.google.com/macros/s/AKfycbx_GtUxuRG9Ikjcfg5ujNylmqI9uXF6_82V1fK27KHnxrtsfkAwCiE-1G2VU-ql4vj1PQ/exec',
-    B_URL: 'https://script.google.com/macros/s/AKfycbysdeYW1g-l1p6ZOyk9aPaUIdx5H4GbzYFVeD1T8_SsyQoODqo-dSzjQMeu7lZzYmQ/exec',
-    CLIENT_ID: '63868073848-8bfis5g0f8mt14oia3flmbqksg69tejq.apps.googleusercontent.com'
-  };
-</script>
+      <label>Grupo</label>
+      <select id="fGrupo"><option value="">Todos</option></select>
 
-<!-- 🔧 cache-bust -->
-<script src="metrics.js?v=2025-11-30c"></script>
-<script src="app.js?v=2025-11-30h"></script>
+      <label>Estado</label>
+      <select id="fEstado"><option value="">Todos</option></select>
+    </div>
 
-<!-- SW: limpieza + unregister (igual que antes, con nueva versión para bustear) -->
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js?v=2025-11-30c', { scope: '/Dashboard_Pedidos_F8/' }).catch(console.error);
-  }
-</script>
+    <div class="row">
+      <label>Buscar</label>
+      <input id="fBuscar" placeholder="F8 SALMI / texto…"/>
+
+      <label>Desde</label>
+      <input id="fDesde" type="date"/>
+
+      <label>Hasta</label>
+      <input id="fHasta" type="date"/>
+
+      <button id="btnApply">Aplicar</button>
+      <button id="btnClear">Limpiar</button>
+    </div>
+  </section>
+
+  <!-- Gráficos -->
+  <section id="charts">
+    <div class="card">
+      <h3>Evolución de Pedidos</h3>
+      <canvas id="ch-evol"></canvas>
+    </div>
+    <div class="card">
+      <h3>Distribución por Estados</h3>
+      <canvas id="ch-donut"></canvas>
+    </div>
+    <div class="card">
+      <h3>Estado de Avance por Grupo (% de pedidos)</h3>
+      <canvas id="ch-grupos"></canvas>
+    </div>
+  </section>
+
+  <!-- Scroll superior sincronizado -->
+  <div id="top-scroll"></div>
+
+  <!-- Tabla -->
+  <section class="table-wrap">
+    <table id="tabla">
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+  <div id="paginacion" class="pager"></div>
+
+  <!-- Config de endpoints -->
+  <script>
+    window.APP = {
+      // A: lectura/estadísticos (stats + orders.list) — la que probaste con echo y stats
+      A_URL: 'https://script.google.com/macros/s/AKfycbx_GtUxuRG9Ikjcfg5ujNylmqI9uXF6_82V1fK27KHnxrtsfkAwCiE-1G2VU-ql4vj1PQ/exec',
+      // B: escritura (orders.update) — tu script B que ya funcionaba
+      B_URL: 'https://script.google.com/macros/s/AKfycbysdeYW1g-l1p6ZOyk9aPaUIdx5H4GbzYFVeD1T8_SsyQoODqo-dSzjQMeu7lZzYmQ/exec',
+      CLIENT_ID: '63868073848-8bfis5g0f8mt14oia3flmbqksg69tejq.apps.googleusercontent.com'
+    };
+  </script>
+
+  <!-- Render de gráficos y app principal -->
+  <script src="metrics.js?v=2025-11-30c"></script>
+  <script src="app.js?v=2025-11-30h"></script>
 </body>
 </html>
-
-
-
-

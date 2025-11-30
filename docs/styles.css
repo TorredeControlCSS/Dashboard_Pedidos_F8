@@ -1,44 +1,37 @@
-/* v2025-11-30b */
-html,body{
-  font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans","Liberation Sans",sans-serif;
+/* Layout básico */
+:root { --stickyTop: 112px; }
+body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:#0f172a; }
+h1,h3 { margin: 0; }
+
+.app-header{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:10px 16px; background:#0b4a99; color:#fff; position:sticky; top:0; z-index:1000;
+  box-shadow:0 2px 4px rgba(0,0,0,.08);
 }
-body{padding:0 8px}
+.app-header .brand{display:flex; gap:10px; align-items:center;}
+.app-header .brand img{border-radius:6px; background:#fff;}
+.app-header .header-actions button,
+.app-header .header-actions a{margin-left:8px}
 
-/* Header */
-.app-header{position:sticky;top:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#0b3d91;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.1)}
-.app-header .brand{display:flex;align-items:center;gap:10px}
-.app-header .logo{height:40px;width:auto}
-.app-header .title{margin:0;font-size:18px;font-weight:700}
-.app-header .subtitle{font-size:12px;opacity:.9}
-.app-header .actions{display:flex;gap:8px;flex-wrap:wrap}
-.app-header .btn{border:1px solid rgba(255,255,255,.6);background:transparent;color:#fff;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:12px}
-.app-header .btn:hover{background:rgba(255,255,255,.12)}
-.app-header .btn:disabled{opacity:.6;cursor:not-allowed}
-.app-header .btn-link{border-color:transparent;text-decoration:none}
+#kpis{display:grid; grid-template-columns: repeat(6, minmax(120px,1fr)); gap:10px; padding:10px 16px;}
+.kpi{background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:8px 12px;}
+.kpi div{font-size:12px; color:#6b7280;}
+.kpi strong{font-size:18px;}
 
-/* KPIs */
-.kpis{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:8px;margin:10px 0}
-.kpi{border:1px solid #e5e7eb;border-radius:10px;padding:10px;background:#fafafa}
-.kpi div{font-size:12px;color:#4b5563}
-.kpi strong{font-size:18px;color:#111827}
+#filters{padding:8px 16px;}
+#filters .row{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:6px;}
+#filters label{font-size:12px; color:#475569}
 
-/* Filtros con etiquetas */
-.filters{position:sticky;top:56px;z-index:900;background:#fff;padding:6px 8px;display:grid;grid-template-columns: repeat(10, minmax(120px, 1fr));gap:8px;margin:8px 0;align-items:center;border-bottom:1px solid #e5e7eb}
-.filters input,.filters select,.filters button{padding:8px}
-.filters .f{ display:flex; flex-direction:column; gap:4px; }
-.filters .f > span{ font-size:11px; color:#6b7280; }
-.filters .f2{ grid-column: span 2; }
+#charts{display:grid; grid-template-columns: 2fr 1fr 1fr; gap:12px; padding:8px 16px;}
+.card{border:1px solid #e5e7eb; border-radius:8px; padding:10px; background:#fff;}
+.card h3{font-size:14px; margin-bottom:8px; color:#334155}
 
-/* Gráficos proporcionados */
-.charts{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin:8px 0}
-.charts .chart{border:1px solid #e5e7eb;border-radius:10px;padding:8px;background:#fff}
-.chart-line  canvas{height:200px !important}
-.chart-donut canvas{height:180px !important}
-.chart-bars  canvas{height:180px !important}
+/* Scroll superior sincronizado */
+#top-scroll{height:12px; overflow:auto; margin:0 16px;}
 
 /* Tabla */
 .table-wrap{
-  margin-top: 8px;
+  margin: 8px 16px;
   overflow: auto;              /* scroll horizontal y vertical si hace falta */
 }
 .table-wrap table{
@@ -49,7 +42,7 @@ body{padding:0 8px}
 /* encabezado fijo */
 .table-wrap thead th{
   position: sticky;
-  top: var(--stickyTop, 112px); /* respeta el top dinámico que calculamos en JS */
+  top: var(--stickyTop, 112px);
   z-index: 2;
   background: #fff;
   border-bottom: 2px solid #e5e5e5;
@@ -57,50 +50,12 @@ body{padding:0 8px}
 /* celdas */
 .table-wrap th,
 .table-wrap td{
+  border:1px solid #e5e7eb;
   padding: 8px 10px;
-  line-height: 1.15;           /* filas un poco más altas para legibilidad */
+  line-height: 1.15;
   vertical-align: top;
-  white-space: nowrap;         /* evita saltos raros de línea */
-  /* si quieres cortar con “…” descomenta estas dos líneas: */
-  /* overflow: hidden; */
-  /* text-overflow: ellipsis; */
+  white-space: nowrap;
 }
 
-/* Scroll horizontal superior sincronizado */
-.hscroll{overflow-x:auto; height:12px; margin-bottom:4px}
-.hscroll::before{content:''; display:block; height:1px; width:200%}
-
-/* Paginación */
-#paginacion{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;align-items:center}
-#paginacion button{padding:6px 10px;border:1px solid #ddd;background:#fff;border-radius:6px}
-#paginacion button[disabled]{background:#0b3d91;color:#fff;border-color:#0b3d91}
-
-/* Anchos fijos por columna */
-th[data-col="CATEG."], td[data-col="CATEG."]{width:180px}
-th[data-col="UNIDAD"], td[data-col="UNIDAD"]{width:220px}
-th[data-col="TIPO"], td[data-col="TIPO"]{width:110px}
-th[data-col="F8 SALMI"], td[data-col="F8 SALMI"],
-th[data-col="F8 SISCONI"], td[data-col="F8 SISCONI"]{width:120px}
-th[data-col="GRUPO"], td[data-col="GRUPO"]{width:100px}
-th[data-col="SUSTANCIAS"], td[data-col="SUSTANCIAS"]{width:150px}
-th[data-col="CANT. ASIG."], td[data-col="CANT. ASIG."],
-th[data-col="CANT. SOL."], td[data-col="CANT. SOL."]{width:100px}
-th[data-col="RENGLONES ASI."], td[data-col="RENGLONES ASI."],
-th[data-col="RENGLONES SOL."], td[data-col="RENGLONES SOL."]{width:120px}
-th[data-col="FECHA F8"], td[data-col="FECHA F8"],
-th[data-col="RECIBO F8"], td[data-col="RECIBO F8"],
-th[data-col="ASIGNACIÓN"], td[data-col="ASIGNACIÓN"],
-th[data-col="SALIDA"], td[data-col="SALIDA"],
-th[data-col="DESPACHO"], td[data-col="DESPACHO"],
-th[data-col="FACTURACIÓN"], td[data-col="FACTURACIÓN"],
-th[data-col="EMPACADO"], td[data-col="EMPACADO"]{width:110px}
-th[data-col="PROY. ENTREGA"], td[data-col="PROY. ENTREGA"],
-th[data-col="ENTREGA REAL"], td[data-col="ENTREGA REAL"]{width:120px}
-th[data-col="INCOTERM"], td[data-col="INCOTERM"]{width:110px}
-th[data-col="ESTADO"], td[data-col="ESTADO"]{width:120px}
-th[data-col="COMENT."], td[data-col="COMENT."]{width:220px}
-th[data-col="TIEMPO"], td[data-col="TIEMPO"]{width:90px}
-th[data-col="COMPLET"], td[data-col="COMPLET"]{width:100px}
-th[data-col="FILL CANT."], td[data-col="FILL CANT."]{width:100px}
-th[data-col="FILL RENGL."], td[data-col="FILL RENGL."]{width:110px}
-
+.pager{padding:8px 16px; display:flex; gap:8px; align-items:center;}
+.pager button{padding:6px 10px}
