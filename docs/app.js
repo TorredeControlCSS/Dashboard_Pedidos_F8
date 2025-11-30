@@ -299,4 +299,6 @@ async function renderCharts(st){ console.warn('renderCharts no definida; stats:'
 // --- parche runtime ---
 window.renderTable = (typeof renderTable === 'function') ? renderTable : function(){ console.warn('renderTable no disponible'); };
 window.renderCharts = window.renderCharts || (async function(){ /* noop: evita error si no hay charts */ });
+renderCharts = async function(){}; // no-op: elimina el warning y sigue funcionando
+
 
