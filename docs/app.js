@@ -265,7 +265,13 @@ document.getElementById('btnRefresh')?.addEventListener('click', async ()=>{
   tw.addEventListener('scroll',     ()=>{ if(lock) return; lock=true; topBar.scrollLeft=tw.scrollLeft; lock=false; });
 })();
 
-/* ------------ Init ------------ */
+/* ------------ Exportar funciones globales usadas por onclick inline ------------ */
+// Exponer renderTable y refreshKpisAndCharts para que los atributos onclick del HTML funcionen.
+window.renderTable = renderTable;
+window.refreshKpisAndCharts = refreshKpisAndCharts;
+window.fetchTable = fetchTable;
+
+ /* ------------ Init ------------ */
 async function init(){
   // stickyTop: SOLO header azul
   const headerEl = document.querySelector('.app-header');
