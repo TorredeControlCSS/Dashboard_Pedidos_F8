@@ -104,3 +104,18 @@ h1,h3 { margin: 0; }
 
 /* Evitar scroll lateral cuando sea posible (sin romper datos) */
 .table-wrap td{ word-break: break-word; }
+
+:root{ --stickyTop:64px; }
+
+/* Encabezado fijo arriba (sin filas fantasma) */
+.table-wrap table{ border-collapse: collapse; width:100%; border-spacing:0; }
+.table-wrap thead th{ position: sticky; top: var(--stickyTop); background:#fff; z-index: 5; }
+.table-wrap thead tr::before{ content:none !important; }
+.table-wrap th, .table-wrap td{ padding:8px 10px; }
+
+/* Filtros en una sola línea en desktop */
+@media (min-width: 1100px){
+  #filters .row{ display:flex; flex-wrap:nowrap; gap:8px; align-items:center; overflow:auto; }
+  #filters select, #filters input[type="text"], #filters input[type="date"]{ max-width: 180px; }
+}
+
