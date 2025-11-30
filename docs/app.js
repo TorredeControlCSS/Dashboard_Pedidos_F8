@@ -443,3 +443,6 @@ window.renderCharts = window.renderCharts || (async function(){});
     }
   }catch(e){}
 })();
+// parches runtime (no alteran tu lógica)
+window.renderTable = (typeof renderTable === 'function') ? renderTable : function(){};
+window.renderCharts = (typeof renderCharts === 'function') ? renderCharts : (async function(){});
