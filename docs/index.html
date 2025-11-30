@@ -9,6 +9,8 @@
 <meta name="theme-color" content="#0b3d91"> <!-- color institucional -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b3d91">
 </head><body>
 
   <header class="app-header">
@@ -67,4 +69,10 @@
 </script>
 <script src="metrics.js"></script>
 <script src="app.js"></script>
+  <script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js', { scope: '/Dashboard_Pedidos_F8/' })
+      .catch(console.error);
+  }
+</script>
 </body></html>
