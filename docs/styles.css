@@ -70,3 +70,31 @@ h1,h3 { margin: 0; }
 
 .pager{padding:8px 16px; display:flex; gap:8px; align-items:center;}
 .pager button{padding:6px 10px}
+
+
+/* --- Hotfixes 2025-12-01 --- */
+/* Force table layout to prevent header jumping and misalignment */
+.table-wrap table{
+  table-layout: auto;
+  border-collapse: separate; /* works better with sticky header in some browsers */
+  border-spacing: 0;
+}
+.table-wrap thead{ display: table-header-group; }
+.table-wrap tbody{ display: table-row-group; }
+
+/* Ensure sticky header z-index and background */
+.table-wrap thead th{
+  background: #ffffff;
+  z-index: 5;
+  box-shadow: 0 1px 0 rgba(0,0,0,.05);
+}
+
+/* Better logo alignment when non-square */
+.app-header .brand img{
+  object-fit: contain;
+  width: 40px; height: 40px;
+  display: block;
+}
+
+/* Make pager buttons consistent */
+.pager button[disabled]{ opacity:.5; cursor:not-allowed; }

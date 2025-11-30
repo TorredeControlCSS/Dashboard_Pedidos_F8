@@ -42,7 +42,8 @@ const parseIsoDate  = v => { const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(v||''); ret
 
 /* ------------ KPIs/Charts (stats) ------------ */
 async function fetchStats(filters){
-  const p=new URLSearchParams({route:'stats'});
+  const p=new URLSearchParams({route:'stats'}); // backend debe implementar 'stats'
+  // fallback: si tu backend no tiene 'stats', cambia a 'kpis' y computa charts en cliente
   Object.entries(filters).forEach(([k,v])=>{ if(v) p.set(k,v); });
   const res=await jsonp(`${A}?${p.toString()}`);
   if(res.status!=='ok') throw new Error(res.error||'stats_error');
@@ -109,6 +110,23 @@ async function fetchTable(page, pageSize, filters){
   return res.data;
 }
 
+
+/* ------------ Poblar selects desde datos ------------ */
+function populateSelect(id, values){
+  const sel=document.getElementById(id); if(!sel) return;
+  const cur=sel.value;
+  const opts=['', ...Array.from(new Set(values.filter(v=>v!=null && v!=='')))].sort((a,b)=>String(a).localeCompare(String(b),'es'));
+  sel.innerHTML = '<option value="">' + (id==='fTipo'?'Todos':'Todas') + '</option>' + opts.map(v=>'<option>'+v+'</option>').join('');
+  if (cur && opts.includes(cur)) sel.value=cur;
+}
+function populateFiltersFromRows(rows){
+  populateSelect('fCat', rows.map(r=>r['CATEG.']));
+  populateSelect('fUnidad', rows.map(r=>r['UNIDAD']));
+  populateSelect('fTipo', rows.map(r=>r['TIPO']));
+  populateSelect('fGrupo', rows.map(r=>r['GRUPO']));
+  populateSelect('fEstado', rows.map(r=>r['ESTADO']));
+}
+
 async function renderTable(page=1){
   const pageSize=150, filters=getFilters();
   const data=await fetchTable(page, pageSize, filters);
@@ -146,6 +164,9 @@ async function renderTable(page=1){
       }).join('')
     }</tr>`).join('');
   }
+
+  // Poblar selects (si están vacíos)
+  if(document.getElementById('fCat')?.options.length<=1){ populateFiltersFromRows(currentRows); }
 
   const totalPages=Math.ceil((data.total||0)/pageSize);
   const prev=Math.max(1,page-1), next=Math.min(totalPages,page+1);
@@ -264,5 +285,6 @@ async function init(){
   await renderTable(1);
 }
 init();
+window.renderTable = renderTable;
 
 } // guard
