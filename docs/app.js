@@ -1,9 +1,9 @@
-// app.js v2025-11-30h — KPIs/Charts desde stats, tabla paginada, login y edición
+// app.js v2025-12-01a — KPIs/Charts desde stats, tabla paginada, login y edición
 if (window.__APP_LOADED__) {
   console.log('app.js ya cargado, skip');
 } else {
 window.__APP_LOADED__ = true;
-console.log('app.js v2025-11-30h');
+console.log('app.js v2025-12-01a');
 
 const A = window.APP.A_URL;
 const B = window.APP.B_URL;
@@ -133,9 +133,7 @@ async function renderTable(page=1){
 
   if (thead) {
     thead.innerHTML = `<tr>${
-      currentHeaders.map(h =>
-        `<th data-col="${h}" style="width:${W[h]||120}px">${h}</th>`
-      ).join('')
+      currentHeaders.map(h => `<th data-col="${h}">${h}</th>`).join('')
     }</tr>`;
   }
   if (tbody) {
@@ -144,16 +142,16 @@ async function renderTable(page=1){
         const kN=N(k);
         const editable = editMode && (S_DATE.has(kN) || S_INT.has(kN) || S_TXT.has(kN));
         const cls = editable ? ' class="editable"' : '';
-        return `<td${cls} data-ri="${ri}" data-col="${k}" style="width:${W[k]||120}px">${r[k]??''}</td>`;
+        return `<td${cls} data-ri="${ri}" data-col="${k}">${r[k]??''}</td>`;
       }).join('')
     }</tr>`).join('');
   }
 
   const totalPages=Math.ceil((data.total||0)/pageSize);
   const prev=Math.max(1,page-1), next=Math.min(totalPages,page+1);
-  const jump=100/pageSize|0 || 1;
-  const minus100=Math.max(1, page - (jump*1));
-  const plus100 =Math.min(totalPages, page + (jump*1));
+  const step=Math.max(1, Math.floor(100/pageSize)); // -/+100
+  const minus100=Math.max(1, page - step);
+  const plus100 =Math.min(totalPages, page + step);
   document.getElementById('paginacion').innerHTML =
     `<button onclick="renderTable(${prev})"${page===1?' disabled':''}>« Anterior</button>`+
     `<button onclick="renderTable(${minus100})">-100</button>`+
@@ -196,7 +194,9 @@ document.querySelector('#tabla').addEventListener('click', async (ev)=>{
     try{
       const res=await jsonp(`${B}?route=orders.update&idToken=${encodeURIComponent(idToken)}&id=${encodeURIComponent(orderId)}&field=${encodeURIComponent(col)}&value=${encodeURIComponent(value)}`);
       if(res.status==='ok'){
-        td.textContent = isDate ? (()=>{ const [y,m,d]=value.split('-'); return `${d}-${monES[+m-1]}-${y.slice(2)}`; })() : value;
+        td.textContent = (isDate && /^\d{4}-\d{2}-\d{2}$/.test(value))
+          ? (()=>{ const [y,m,d]=value.split('-'); const mon=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][+m-1]; return `${d}-${mon}-${y.slice(2)}`; })()
+          : value;
         await refreshKpisAndCharts(getFilters());
         const m=document.querySelector('#paginacion span')?.textContent.match(/Página (\d+)/); const cur=m?+m[1]:1;
         await renderTable(cur);
@@ -242,12 +242,11 @@ document.getElementById('btnRefresh')?.addEventListener('click', async ()=>{
   await renderTable(cur);
 });
 
-/* ------------ Scroll superior sincronizado y stickyTop ------------ */
+/* ------------ Scroll superior sincronizado ------------ */
 (function syncHScroll(){
   const topBar=document.getElementById('top-scroll');
   const tw=document.querySelector('.table-wrap');
   if(!topBar||!tw) return;
-  // barra superior igual de ancha que el contenido
   topBar.innerHTML = `<div style="width:${Math.max(tw.scrollWidth, tw.clientWidth)}px;height:1px"></div>`;
   let lock=false;
   topBar.addEventListener('scroll', ()=>{ if(lock) return; lock=true; tw.scrollLeft=topBar.scrollLeft; lock=false; });
@@ -256,10 +255,9 @@ document.getElementById('btnRefresh')?.addEventListener('click', async ()=>{
 
 /* ------------ Init ------------ */
 async function init(){
-  // calcula offset del sticky header
+  // stickyTop: SOLO header azul
   const headerEl = document.querySelector('.app-header');
-  const filtersEl = document.getElementById('filters');
-  const stickyTopPx = (headerEl?.offsetHeight || 0) + (filtersEl?.offsetHeight || 0) + 8;
+  const stickyTopPx = (headerEl?.offsetHeight || 64);
   document.documentElement.style.setProperty('--stickyTop', stickyTopPx + 'px');
 
   await refreshKpisAndCharts(getFilters());
