@@ -1,185 +1,64 @@
-// v2025-11-30b
-console.log('metrics.js v2025-11-30b');
+// v2025-11-30c metrics — recibe un objeto "stats" desde el backend
+console.log('metrics.js v2025-11-30c');
 
-if (window.Chart && Chart.defaults && Chart.defaults.font) {
-  try { Chart.defaults.font.family = getComputedStyle(document.body).fontFamily || 'inherit'; } catch(e){}
-}
+let CHART_LINE, CHART_DONUT, CHART_GROUPS;
 
-function deriveStage(row){
-  const has = k => row[k] && String(row[k]).trim().length > 0;
-  if (has('ENTREGA REAL'))     return 'ENTREGADA';
-  if (has('EMPACADO'))         return 'EMPACADO';
-  if (has('FACTURACIÓN'))      return 'FACTURADO';
-  if (has('DESPACHO'))         return 'SALIDA DE SALMI';
-  if (has('ASIGNACIÓN'))       return 'EN ASIGNACIÓN';
-  if (has('F8 SALMI'))         return 'F8 RECIBIDA';
-  return 'PENDIENTE';
-}
-
-function derivePerRow(row){
-  const estado = deriveStage(row);
-  const parseSheetDate = (v)=>{
-    if (!v) return null;
-    if (v instanceof Date) return v;
-    if (/^\d{4}-\d{2}-\d{2}T/.test(v)) return new Date(v);
-    return null;
+function makeLine(ctx, stats){
+  const data = {
+    labels: stats.series.labels,
+    datasets: [
+      { label: 'Pedidos recibidos', data: stats.series.recibidos, borderWidth: 2, fill:false, tension:0.2 },
+      { label: 'Pedidos completados', data: stats.series.completados, borderWidth: 2, fill:false, tension:0.2 },
+      { label: 'Proyectado entrega', data: stats.series.proyectados, borderWidth: 2, fill:false, tension:0.2 }
+    ]
   };
-  const fechaF8 = parseSheetDate(row['FECHA F8']) || parseSheetDate(row['RECIBO F8']);
-  const fin = parseSheetDate(row['ENTREGA REAL']) || new Date();
-  const dias = (fechaF8 && fin) ? Math.max(0, Math.round((fin - fechaF8)/(1000*60*60*24))) : null;
-
-  const asig = parseInt(row['CANT. ASIG.']||0,10)||0;
-  const sol  = parseInt(row['CANT. SOL.']||0,10)||0;
-  const rAsi = parseInt(row['RENGLONES ASI.']||0,10)||0;
-  const rSol = parseInt(row['RENGLONES SOL.']||0,10)||0;
-
-  const fillCant = sol ? Math.round((asig/sol)*100) : 0;
-  const fillReng = rSol ? Math.round((rAsi/rSol)*100) : 0;
-  const completado = estado==='ENTREGADA' ? 'SI' : 'NO';
-
-  return { ESTADO: estado, TIEMPO: dias!=null? `${dias}d` : '', COMPLET: completado, 'FILL CANT.': `${fillCant}%`, 'FILL RENGL.': `${fillReng}%` };
+  return new Chart(ctx, { type:'line', data, options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ position:'bottom' }, title:{ display:true, text:'Evolución de Pedidos' } },
+    scales:{ x:{ ticks:{ autoSkip:true, maxTicksLimit:12 } } }
+  }});
 }
 
-/* Series tiempo con normalización dd-mmm-yy */
-function buildTimeSeries(rows){
-  const add = (map, key)=>{ if(!key) return; map[key] = (map[key]||0)+1; };
-  const rec = {}, comp = {}, proj = {};
-  const monMap = {ene:'01',feb:'02',mar:'03',abr:'04',may:'05',jun:'06',jul:'07',ago:'08',sep:'09',oct:'10',nov:'11',dic:'12'};
-  const norm = (v)=>{
-    if (!v) return '';
-    if (/^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0,10); // ISO
-    const m = /^(\d{2})-([a-z]{3})-(\d{2})$/i.exec(v);
-    if (m){ const dd=m[1], mon=(monMap[m[2].toLowerCase()]||'01'), yy=m[3]; return `20${yy}-${mon}-${dd}`; }
-    return '';
-  };
-  for (const r of rows){
-    const kRec  = norm(r['RECIBO F8']);
-    const kComp = norm(r['ENTREGA REAL']);
-    const kProj = norm(r['PROY. ENTREGA']);
-    if (kRec)  add(rec,  kRec);
-    if (kComp) add(comp, kComp);
-    if (kProj) add(proj, kProj);
-  }
-  const allDays = Array.from(new Set([...Object.keys(rec),...Object.keys(comp),...Object.keys(proj)])).sort();
-  return { labels: allDays, recibidos: allDays.map(d=>rec[d]||0), completados: allDays.map(d=>comp[d]||0), proyectados: allDays.map(d=>proj[d]||0) };
+function makeDonut(ctx, stats){
+  const labels = Object.keys(stats.distEstados);
+  const data = labels.map(k=> stats.distEstados[k]);
+  return new Chart(ctx, { type:'doughnut', data:{ labels, datasets:[{ data }] }, options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ position:'bottom' }, title:{ display:true, text:'Distribución por Estados' } }
+  }});
 }
 
-function buildAggregates(rows){
-  const byGroup = new Map();
-  const tot = { pedidos: rows.length, urgencia: 0, mensual: 0, asignado: 0, solicitado: 0, renglonesAsig: 0, renglonesSol: 0 };
-  for (const r of rows){
-    const stage = deriveStage(r);
-    const g = r['GRUPO'] || 'SIN GRUPO';
-    if (!byGroup.has(g)) byGroup.set(g, {group:g, total:0,'F8 RECIBIDA':0,'EN ASIGNACIÓN':0,'SALIDA DE SALMI':0,'FACTURADO':0,'EMPACADO':0,'ENTREGADA':0,'PENDIENTE':0});
-    const b = byGroup.get(g); b.total++; b[stage]++;
-    const tipo = String(r['TIPO']||'').toUpperCase();
-    if (tipo==='URGENCIA') tot.urgencia++; if (tipo==='MENSUAL') tot.mensual++;
-    tot.asignado+=parseInt(r['CANT. ASIG.']||0,10)||0;
-    tot.solicitado+=parseInt(r['CANT. SOL.']||0,10)||0;
-    tot.renglonesAsig+=parseInt(r['RENGLONES ASI.']||0,10)||0;
-    tot.renglonesSol+=parseInt(r['RENGLONES SOL.']||0,10)||0;
-  }
-  const groups = Array.from(byGroup.values()).map(x=>{
-    const pct = k => x.total ? Math.round((x[k]/x.total)*100) : 0;
-    return {...x, pct:{ recibida:pct('F8 RECIBIDA'), asignacion:pct('EN ASIGNACIÓN'), salida:pct('SALIDA DE SALMI'), fact:pct('FACTURADO'), emp:pct('EMPACADO'), ent:pct('ENTREGADA') }};
-  });
-  return { tot, groups };
-}
-
-function renderKpisCompact(tot){
-  const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
-  set('kpi-total', (tot.pedidos||0).toLocaleString());
-  set('kpi-asignado', (tot.asignado||0).toLocaleString());
-  set('kpi-solicitado', (tot.solicitado||0).toLocaleString());
-  set('kpi-reng-asig', (tot.renglonesAsig||0).toLocaleString());
-  set('kpi-reng-sol', (tot.renglonesSol||0).toLocaleString());
-  set('kpi-urg', tot.urgencia||0);
-  set('kpi-men', tot.mensual||0);
-}
-
-let chartEvol=null, chartPastel=null, chartGrupo=null;
-
-function renderEvolucionSeries(series){
-  const el=document.getElementById('chart-evol'); if(!el) return;
-  if (chartEvol) chartEvol.destroy();
-  chartEvol = new Chart(el.getContext('2d'), {
-    type:'line',
-    data:{ labels: series.labels, datasets:[
-      {label:'Pedidos recibidos',   data:series.recibidos,   tension:.3},
-      {label:'Pedidos completados', data:series.completados, tension:.3},
-      {label:'Proyectado entrega',  data:series.proyectados, tension:.3}
-    ]},
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{
-        title:{ display:true, text:'Evolución de Pedidos' },
-        legend:{position:'bottom'},
-        tooltip:{ callbacks:{ label:(ctx)=>`${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()}` } }
-      },
-      interaction:{ mode:'index', intersect:false },
-      scales:{ x:{ ticks:{ maxRotation:0, autoSkip:true } }, y:{ beginAtZero:true, grace:'10%' } }
-    }
-  });
-}
-
-function renderDistribucionEstadosGlobal(rowsAll){
-  const el=document.getElementById('chart-estado-pastel'); if(!el) return;
-  const labels=['F8 RECIBIDA','EN ASIGNACIÓN','SALIDA DE SALMI','FACTURADO','EMPACADO','ENTREGADA'];
-  const counts = labels.map(l => rowsAll.filter(r=>deriveStage(r)===l).length);
-  const total = rowsAll.length || 1;
-  if (chartPastel) chartPastel.destroy();
-  chartPastel = new Chart(el.getContext('2d'), {
-    type:'doughnut',
-    data:{ labels, datasets:[{ data:counts }] },
-    options:{
-      responsive:true, maintainAspectRatio:false, cutout:'68%', layout:{padding:6},
-      plugins:{
-        title:{ display:true, text:'Distribución por Estados' },
-        legend:{ position:'bottom' },
-        tooltip:{ callbacks:{ label:(ctx)=>`${ctx.label}: ${Math.round(ctx.parsed/total*100)}% (${ctx.parsed})` } }
-      }
-    }
-  });
-}
-
-function renderEstadoPorGrupo100(groups){
-  const el=document.getElementById('chart-estado-grupo'); if(!el) return;
-  const labels = groups.map(g=>g.group);
-  const series = [
-    {k:'F8 RECIBIDA', lab:'F8 RECIBIDA'},
-    {k:'EN ASIGNACIÓN', lab:'EN ASIGNACIÓN'},
-    {k:'SALIDA DE SALMI', lab:'SALIDA DE SALMI'},
-    {k:'FACTURADO', lab:'FACTURADO'},
-    {k:'EMPACADO', lab:'EMPACADO'},
-    {k:'ENTREGADA', lab:'ENTREGADA'}
-  ];
-  const datasets = series.map(s=>({
-    label:s.lab,
-    data: groups.map(g=> g.total ? Math.round((g[s.k]/g.total)*100) : 0)
+function makeGroups(ctx, stats){
+  const grupos = Object.keys(stats.grupos);
+  const estados = ['F8 RECIBIDA','EN ASIGNACIÓN','SALIDA DE SALMI','FACTURADO','EMPACADO','ENTREGADA'];
+  const datasets = estados.map((st)=>({
+    label: st,
+    data: grupos.map(g=>{
+      const gg = stats.grupos[g];
+      const n = gg[st]||0;
+      return gg.total ? Math.round((n*100)/gg.total) : 0;
+    })
   }));
-  if (chartGrupo) chartGrupo.destroy();
-  chartGrupo = new Chart(el.getContext('2d'), {
-    type:'bar',
-    data:{ labels, datasets },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{
-        title:{ display:true, text:'Estado de Avance por Grupo' },
-        legend:{position:'bottom'},
-        tooltip:{ callbacks:{ label:(ctx)=>{
-          const g=groups[ctx.dataIndex]; const n=g[series[ctx.datasetIndex].k]||0; const p=ctx.parsed.y;
-          return `${ctx.dataset.label}: ${p}% (${n})`;
-        }}}
-      },
-      scales:{ x:{ stacked:true, ticks:{ maxRotation:45, minRotation:45 } }, y:{ stacked:true, beginAtZero:true, max:100 } }
-    }
-  });
+  return new Chart(ctx, { type:'bar', data:{ labels:grupos, datasets }, options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ position:'bottom' }, title:{ display:true, text:'Estado de Avance por Grupo (% de pedidos)' } },
+    scales:{ x:{ ticks:{ maxRotation:45, minRotation:45 } }, y:{ beginAtZero:true, max:100 } }
+  }});
 }
 
-async function computeAndRenderMetrics(allRows, filteredRows){
-  const { tot, groups } = buildAggregates(allRows);
-  renderKpisCompact(tot);
-  renderEvolucionSeries(buildTimeSeries(allRows));
-  renderDistribucionEstadosGlobal(allRows);
-  renderEstadoPorGrupo100(groups);
+function renderChartsFromStats(stats){
+  const lineCtx  = document.getElementById('chart-evol').getContext('2d');
+  const donutCtx = document.getElementById('chart-estado-pastel').getContext('2d');
+  const grpCtx   = document.getElementById('chart-estado-grupo').getContext('2d');
+
+  if (CHART_LINE) CHART_LINE.destroy();
+  if (CHART_DONUT) CHART_DONUT.destroy();
+  if (CHART_GROUPS) CHART_GROUPS.destroy();
+
+  CHART_LINE  = makeLine(lineCtx, stats);
+  CHART_DONUT = makeDonut(donutCtx, stats);
+  CHART_GROUPS= makeGroups(grpCtx, stats);
 }
+
+// Expuesto a app.js
+window.renderChartsFromStats = renderChartsFromStats;

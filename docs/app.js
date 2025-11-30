@@ -1,5 +1,5 @@
-// v2025-11-30d — carga progresiva (streaming), no se cuelga, UI visible desde la primera página
-console.log('app.js v2025-11-30d');
+// v2025-11-30e — KPIs+gráficos SIEMPRE desde stats (todo el dataset). Tabla paginada/filtrada desde orders.list
+console.log('app.js v2025-11-30e');
 
 const A = window.APP.A_URL;
 const B = window.APP.B_URL;
@@ -19,39 +19,84 @@ const N_EDITABLE_TEXT = new Set(EDITABLE_TEXT_FIELDS.map(normalizeName));
 let idToken = null, editMode = false;
 let currentHeaders=[], currentRows=[], currentIdColName=null;
 
-let ALL_ROWS=[], FILTERED_ROWS=[];
-const FIELDS_FOR_FILTERS = { categoria: 'CATEG.', unidad: 'UNIDAD', tipo: 'TIPO', grupo: 'GRUPO' };
+let ALL_ROWS=[], FILTERED_ROWS=[]; // solo para la tabla de la vista actual
 
-/* ---------------- JSONP helpers ---------------- */
-function jsonpWithCb(url, cbName){
-  return new Promise((resolve, reject)=>{
-    window[cbName] = (payload)=>{ try{ resolve(payload); } finally{ delete window[cbName]; s.remove(); } };
+// ------- JSONP -------
+function jsonp(url){
+  return new Promise((resolve,reject)=>{
+    const cb = 'cb_' + Math.random().toString(36).slice(2);
+    window[cb] = (payload)=>{ try{ resolve(payload); } finally{ delete window[cb]; s.remove(); } };
     const s = document.createElement('script'); s.onerror = reject;
-    s.src = url + (url.includes('?')?'&':'?') + `callback=${cbName}&_=${Date.now()}`;
+    s.src = url + (url.includes('?')?'&':'?') + `callback=${cb}&_=${Date.now()}`;
     document.body.appendChild(s);
   });
 }
-async function fetchKpis(){ // devuelve objeto kpis y pinta “Total pedidos:”
-  const cb = 'onKpis_' + Math.random().toString(36).slice(2);
-  const res = await jsonpWithCb(`${A}?route=kpis`, cb);
-  renderKpis(res.data || {});
-  return res.data || {};
-}
-async function fetchOrdersPage(page, pageSize){
-  const cb = 'onOrders_' + page + '_' + Math.random().toString(36).slice(2);
-  const res = await jsonpWithCb(`${A}?route=orders.list&page=${page}&pageSize=${pageSize}`, cb);
-  const rows = (res && res.data && res.data.rows) ? res.data.rows : [];
-  console.log(`[orders.list] page=${page} rows=${rows.length}`);
-  return rows;
+
+// ------- KPIs y Charts (TODO el dataset) -------
+async function fetchStats(filters){
+  const params = new URLSearchParams();
+  params.set('route','stats');
+  if (filters.cat)   params.set('cat',filters.cat);
+  if (filters.unidad)params.set('unidad',filters.unidad);
+  if (filters.tipo)  params.set('tipo',filters.tipo);
+  if (filters.grupo) params.set('grupo',filters.grupo);
+  if (filters.estado)params.set('estado',filters.estado);
+  if (filters.text)  params.set('text',filters.text);
+  if (filters.desde) params.set('desde',filters.desde);
+  if (filters.hasta) params.set('hasta',filters.hasta);
+
+  const res = await jsonp(`${A}?${params.toString()}`);
+  if (res.status!=='ok') throw new Error(res.error||'stats error');
+  return res.data;
 }
 
-/* ---------------- Formato fechas y KPIs “texto” ---------------- */
+function setKpis(k){
+  const set = (id, v)=>{ const el=document.getElementById(id); if(el) el.textContent = (v==null?'—':v.toLocaleString()); };
+  set('kpi-total', k.total);
+  set('kpi-asignado', k.asignado);
+  set('kpi-solicitado', k.solicitado);
+  set('kpi-reng-asig', k.rengAsig);
+  set('kpi-reng-sol', k.rengSol);
+  const urg = document.getElementById('kpi-urg'), men = document.getElementById('kpi-men');
+  if (urg) urg.textContent = (k.urg==null?'—':k.urg.toLocaleString());
+  if (men) men.textContent = (k.mens==null?'—':k.mens.toLocaleString());
+}
+
+async function refreshKpisAndCharts(filters){
+  const stats = await fetchStats(filters);
+  setKpis(stats.kpis);
+  window.renderChartsFromStats(stats); // metrics.js
+}
+
+// ------- Tabla (paginada y filtrada en el servidor) -------
+function getCurrentFilters(){
+  return {
+    cat:   document.getElementById('fCat')?.value || '',
+    unidad:document.getElementById('fUnidad')?.value || '',
+    tipo:  document.getElementById('fTipo')?.value || '',
+    grupo: document.getElementById('fGrupo')?.value || '',
+    estado:document.getElementById('fEstado')?.value || '',
+    text:  document.getElementById('fBuscar')?.value || '',
+    desde: document.getElementById('fDesde')?.value || '',
+    hasta: document.getElementById('fHasta')?.value || ''
+  };
+}
+
+async function fetchTablePage(page, pageSize, filters){
+  const params = new URLSearchParams();
+  params.set('route','orders.list');
+  params.set('page',page);
+  params.set('pageSize',pageSize);
+  Object.entries(filters).forEach(([k,v])=>{ if(v) params.set(k,v); });
+  const res = await jsonp(`${A}?${params.toString()}`);
+  if (res.status!=='ok') throw new Error(res.error||'orders.list error');
+  return res.data;
+}
+
 function isIsoDateTimeZ(v){ return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v) && v.endsWith('Z'); }
 function formatIsoToDDMonYY(v){ const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(v); if(!m) return v; const [_,y,mn,d]=m; const mon=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][parseInt(mn,10)-1]; return `${d}-${mon}-${y.slice(-2)}`; }
 function formatAllIsoDatesInRow(row){ const out={...row}; for(const k of Object.keys(out)) if(isIsoDateTimeZ(out[k])) out[k]=formatIsoToDDMonYY(out[k]); return out; }
-function renderKpis(d){ const el=document.getElementById('kpis'); if(el) el.textContent = `Total pedidos: ${d.totalPedidos}`; }
 
-/* ---------------- UI helpers ---------------- */
 function headerWidthMap(){ return {
   'CATEG.':180,'UNIDAD':220,'TIPO':110,'F8 SALMI':120,'F8 SISCONI':120,'GRUPO':100,'SUSTANCIAS':150,
   'CANT. ASIG.':100,'CANT. SOL.':100,'RENGLONES ASI.':120,'RENGLONES SOL.':120,
@@ -59,71 +104,23 @@ function headerWidthMap(){ return {
   'PROY. ENTREGA':120,'ENTREGA REAL':120,'INCOTERM':110,'ESTADO':120,'COMENT.':220,'TIEMPO':90,
   'COMPLET':100,'FILL CANT.':100,'FILL RENGL.':110
 };}
-function currentPageNumber(){ const t=document.querySelector('#paginacion span'); if(!t) return 1; const m=t.textContent.match(/Página (\d+)/); return m?+m[1]:1; }
 
-/* ---------------- Filtros ---------------- */
-function initFilterOptions(){
-  const rows = ALL_ROWS;
-  const uniq = (arr)=> Array.from(new Set(arr.map(v=> (v==null?'':String(v)).trim()).filter(Boolean))).sort();
-  const fill = (id, values)=>{
-    const sel=document.getElementById(id); if(!sel) return;
-    const cur=sel.value;
-    sel.innerHTML = `<option value="">${id==='fCat'?'Todas':'Todos'}</option>` + values.map(v=>`<option>${v}</option>`).join('');
-    if (cur) sel.value = cur;
-  };
-  fill('fCat',   uniq(rows.map(r=>r[FIELDS_FOR_FILTERS.categoria])));
-  fill('fUnidad',uniq(rows.map(r=>r[FIELDS_FOR_FILTERS.unidad])));
-  fill('fTipo',  uniq(rows.map(r=>r[FIELDS_FOR_FILTERS.tipo])));
-  fill('fGrupo', uniq(rows.map(r=>r[FIELDS_FOR_FILTERS.grupo])));
-}
-function applyFilters(){
-  const cat=fCat.value, uni=fUnidad.value, tip=fTipo.value, gru=fGrupo.value, est=fEstado.value;
-  const txt=(fBuscar.value||'').trim().toLowerCase();
-  const desde=fDesde.value, hasta=fHasta.value;
-
-  const inRange = (row)=>{
-    if (!desde && !hasta) return true;
-    const d=(row['FECHA F8']||row['RECIBO F8']||'').slice(0,10);
-    if (desde && d < desde) return false;
-    if (hasta && d > hasta) return false;
-    return true;
-  };
-
-  FILTERED_ROWS = ALL_ROWS.filter(r=>{
-    if (cat && r[FIELDS_FOR_FILTERS.categoria]!==cat) return false;
-    if (uni && r[FIELDS_FOR_FILTERS.unidad]!==uni)   return false;
-    if (tip && r[FIELDS_FOR_FILTERS.tipo]!==tip)     return false;
-    if (gru && r[FIELDS_FOR_FILTERS.grupo]!==gru)    return false;
-    if (est && deriveStage(r)!==est)                 return false;
-    if (txt && !Object.values(r).some(v=> String(v||'').toLowerCase().includes(txt))) return false;
-    if (!inRange(r)) return false;
-    return true;
-  });
-
-  computeAndRenderMetrics(ALL_ROWS, FILTERED_ROWS);
-  renderTableFromFiltered(1);
-}
-function clearFilters(){
-  ['fCat','fUnidad','fTipo','fGrupo','fEstado','fBuscar','fDesde','fHasta'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-  FILTERED_ROWS = ALL_ROWS.slice();
-  computeAndRenderMetrics(ALL_ROWS, FILTERED_ROWS);
-  renderTableFromFiltered(1);
-}
-
-/* ---------------- Tabla paginada ---------------- */
-function renderTableFromFiltered(page){
+async function renderTable(page=1){
   const pageSize = 150;
-  const start = (page-1)*pageSize;
-  const chunk = FILTERED_ROWS.slice(start, start+pageSize).map(r=>({ ...r, ...derivePerRow(r) }));
-  const headers = chunk.length ? Object.keys(chunk[0]) : [];
-  currentHeaders=headers; currentRows=chunk.map(r=>({...r})); currentIdColName = headers.find(h=>normalizeName(h)===N_ID_HEADER)||null;
+  const filters = getCurrentFilters();
+  const data = await fetchTablePage(page, pageSize, filters);
+
+  const rows = data.rows || [];
+  const headers = data.header || (rows[0]? Object.keys(rows[0]) : []);
+  currentHeaders=headers; currentRows=rows.map(r=>({...r})); 
+  currentIdColName = headers.find(h=>normalizeName(h)===N_ID_HEADER)||null;
 
   const widths = headerWidthMap();
   const head = document.querySelector('#tabla thead');
   const body = document.querySelector('#tabla tbody');
 
   head.innerHTML = headers.length ? `<tr>${headers.map(h=>`<th data-col="${h}" style="width:${widths[h]||120}px">${h}</th>`).join('')}</tr>` : '';
-  const rowsFmt = chunk.map(formatAllIsoDatesInRow);
+  const rowsFmt = rows.map(formatAllIsoDatesInRow);
   body.innerHTML = rowsFmt.map((r, ri)=>`<tr>${
     headers.map(k=>{
       const keyNorm=normalizeName(k);
@@ -136,20 +133,21 @@ function renderTableFromFiltered(page){
     }).join('')
   }</tr>`).join('');
 
-  const totalPages=Math.ceil(FILTERED_ROWS.length/pageSize);
-  const jump=Math.max(1, Math.round(100/pageSize)); const prev=Math.max(1,page-1); const next=Math.min(totalPages,page+1);
-  const minus100=Math.max(1,page-jump); const plus100=Math.min(totalPages,page+jump);
+  const totalPages=Math.ceil((data.total||0)/pageSize);
+  const prev=Math.max(1,page-1), next=Math.min(totalPages,page+1);
+  const jump=Math.max(1, Math.round(100/pageSize));
+  const minus100=Math.max(1,page-jump), plus100=Math.min(totalPages,page+jump);
 
   document.getElementById('paginacion').innerHTML =
-    `<button onclick="renderTableFromFiltered(${prev})"${page===1?' disabled':''}>« Anterior</button>`+
-    `<button onclick="renderTableFromFiltered(${minus100})">-100</button>`+
+    `<button onclick="renderTable(${prev})"${page===1?' disabled':''}>« Anterior</button>`+
+    `<button onclick="renderTable(${minus100})">-100</button>`+
     `<span style="padding:4px 8px">Página ${page} / ${totalPages}</span>`+
-    `<button onclick="renderTableFromFiltered(${plus100})">+100</button>`+
-    `<button onclick="renderTableFromFiltered(${next})"${page===totalPages?' disabled':''}>Siguiente »</button>`;
+    `<button onclick="renderTable(${plus100})">+100</button>`+
+    `<button onclick="renderTable(${next})"${page===totalPages?' disabled':''}>Siguiente »</button>`;
 }
 
-/* ---------------- Edición inline ---------------- */
-document.querySelector('#tabla').addEventListener('click', (ev)=>{
+/* ---- Edición inline (igual que antes, llama B_URL) ---- */
+document.querySelector('#tabla').addEventListener('click', async (ev)=>{
   const td = ev.target.closest('td.editable'); if (!td || !editMode) return;
   const ri=+td.dataset.ri, col=td.dataset.col, row=currentRows[ri];
   const orderId=currentIdColName?row[currentIdColName]:null;
@@ -164,14 +162,12 @@ document.querySelector('#tabla').addEventListener('click', (ev)=>{
   if (isDate){ input.type='date'; }
   else if (isInt){ input.type='number'; input.step='1'; input.min='0'; const n=parseInt(oldDisplay,10); if(!isNaN(n)) input.value=String(n); }
   else if (isText){ input.type='text'; input.value=oldDisplay||''; }
-
   const saveBtn=document.createElement('button'); saveBtn.textContent='Guardar'; saveBtn.style.marginTop='4px';
   const cancelBtn=document.createElement('button'); cancelBtn.textContent='Cancelar'; cancelBtn.style.margin='4px 0 0 6px';
 
   const wrap=document.createElement('div'); wrap.appendChild(input);
   const btns=document.createElement('div'); btns.appendChild(saveBtn); btns.appendChild(cancelBtn);
   td.appendChild(wrap); td.appendChild(btns); input.focus();
-
   cancelBtn.onclick=()=>{ td.innerHTML=oldDisplay; };
 
   saveBtn.onclick=async ()=>{
@@ -183,35 +179,49 @@ document.querySelector('#tabla').addEventListener('click', (ev)=>{
 
     td.innerHTML='Guardando…';
     const url = `${B}?route=orders.update&idToken=${encodeURIComponent(idToken)}&id=${encodeURIComponent(orderId)}&field=${encodeURIComponent(col)}&value=${encodeURIComponent(value)}`;
-
     try{
-      const res=await jsonpWithCb(url, 'cb_upd_'+Math.random().toString(36).slice(2));
+      const res=await jsonp(url);
       if(res.status==='ok'){
         if(isDate){ const [y,m,d]=value.split('-'); const mon=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][parseInt(m,10)-1]; td.textContent=`${d}-${mon}-${y.slice(2)}`; }
-        else{ td.textContent=value; }
-        const pageNow=currentPageNumber();
-        loadMetricsAll().then(()=>{ computeAndRenderMetrics(ALL_ROWS, FILTERED_ROWS); renderTableFromFiltered(pageNow); });
+        else { td.textContent=value; }
+        // refrescamos stats y la página actual de tabla (no traemos todo)
+        await refreshKpisAndCharts(getCurrentFilters());
+        const pagText=document.querySelector('#paginacion span')?.textContent||'Página 1 / 1';
+        const m=pagText.match(/Página (\d+)/); const cur=m?+m[1]:1;
+        await renderTable(cur);
       } else { td.innerHTML=oldDisplay; alert('Error: '+(res.error||'desconocido')); }
     }catch(e){ td.innerHTML=oldDisplay; alert('Error de red'); }
   };
 });
 
-/* ---------------- Login + edición ---------------- */
+/* ---- Login y modo edición ---- */
 const btnLogin=document.getElementById('btnLogin'); const btnEditMode=document.getElementById('btnEditMode');
 function renderGoogleButton(){
   if(!window.google||!google.accounts||!google.accounts.id){ setTimeout(renderGoogleButton,200); return; }
   google.accounts.id.initialize({client_id:CLIENT_ID, callback:(resp)=>{ idToken=resp.credential; btnEditMode.disabled=false; btnLogin.textContent='Sesión iniciada'; alert('Sesión iniciada. Activa “Modo edición”.'); }});
 }
 btnLogin.onclick=()=>{ renderGoogleButton(); };
-btnEditMode.onclick=()=>{ editMode=!editMode; btnEditMode.textContent=`Modo edición: ${editMode?'ON':'OFF'}`; renderTableFromFiltered(currentPageNumber()); };
+btnEditMode.onclick=()=>{ editMode=!editMode; btnEditMode.textContent=`Modo edición: ${editMode?'ON':'OFF'}`; };
 
-/* ---------------- Actualizar ---------------- */
-const btnRefresh=document.getElementById('btnRefresh');
-btnRefresh.onclick=()=>{ btnRefresh.textContent='Actualizando…'; btnRefresh.disabled=true;
-  loadMetricsAll().finally(()=>{ btnRefresh.textContent='Actualizar'; btnRefresh.disabled=false; });
+/* ---- Botones filtros/actualizar ---- */
+document.getElementById('btnApply').onclick = async ()=>{
+  const f = getCurrentFilters();
+  await refreshKpisAndCharts(f);
+  await renderTable(1);
+};
+document.getElementById('btnClear').onclick = async ()=>{
+  ['fCat','fUnidad','fTipo','fGrupo','fEstado','fBuscar','fDesde','fHasta'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  await refreshKpisAndCharts(getCurrentFilters());
+  await renderTable(1);
+};
+document.getElementById('btnRefresh').onclick = async ()=>{
+  await refreshKpisAndCharts(getCurrentFilters());
+  const pagText=document.querySelector('#paginacion span')?.textContent||'Página 1 / 1';
+  const m=pagText.match(/Página (\d+)/); const cur=m?+m[1]:1;
+  await renderTable(cur);
 };
 
-/* ---------------- Sticky + scroll sync ---------------- */
+/* ---- Sticky y scroll sync (igual que antes) ---- */
 function updateStickyTop(){
   const hdr = document.querySelector('.app-header');
   const kpis = document.getElementById('kpis-compact');
@@ -229,86 +239,10 @@ window.addEventListener('resize', updateStickyTop);
   tw.addEventListener('scroll', ()=>{ if(locking) return; locking=true; topBar.scrollLeft = tw.scrollLeft; locking=false; });
 })();
 
-/* =============== CARGA PROGRESIVA (streaming) =============== */
-async function loadMetricsAll(){
-  const kpis = await fetchKpis();                // pinta "Total pedidos: ####"
-  const total = kpis.totalPedidos || 0;
-
-  // pinta inmediatamente las tarjetas si tenemos al menos el total
-  const set = (id, v)=>{ const el=document.getElementById(id); if(el) el.textContent = (v==null?'—':v.toLocaleString()); };
-  set('kpi-total', total); // los demás los iremos completando con las páginas
-
-  // Banner de progreso
-  const banner = document.createElement('div');
-  banner.style = 'position:fixed;right:12px;bottom:12px;background:#0b3d91;color:#fff;padding:6px 10px;border-radius:8px;z-index:2000;opacity:.95';
-  document.body.appendChild(banner);
-  const tickBanner = (page, got, final=false)=>{
-    const pct = total ? Math.min(99, Math.round((ALL_ROWS.length/total)*100)) : (page*100/Math.max(1,page));
-    banner.textContent = final ? `Cargado ${ALL_ROWS.length.toLocaleString()} de ${total.toLocaleString()}` :
-                                 `Cargando… pág ${page} · acumulado ${ALL_ROWS.length.toLocaleString()} (${pct}%)`;
-  };
-
-  const PAGE_SIZE = 500;
-  const maxPages = Math.min(Math.ceil((total||0)/PAGE_SIZE) + 2, 100);
-
-  // Estructuras para deduplicar y refrescar de forma incremental
-  const uniq = new Map();
-  const pushDedup = (arr)=>{
-    let pushed=0;
-    for (const r of arr){
-      const id = r?.[ID_HEADER] || JSON.stringify(r);
-      if (!uniq.has(id)){ uniq.set(id, r); pushed++; }
-    }
-    ALL_ROWS = Array.from(uniq.values());
-    FILTERED_ROWS = ALL_ROWS.slice();
-    return pushed;
-  };
-
-  let lastFirstId = null, repeatedFirst = 0;
-  let firstPaintDone = false;
-
-  for (let page=1; page<=maxPages; page++){
-    const rows = await fetchOrdersPage(page, PAGE_SIZE);
-    if (!rows.length) break;
-
-    // detectar backend sin paginación real
-    const firstId = rows[0]?.[ID_HEADER] || JSON.stringify(rows[0]);
-    if (firstId && firstId===lastFirstId){ repeatedFirst++; if (repeatedFirst>=2) break; } else { repeatedFirst=0; }
-    lastFirstId = firstId;
-
-    pushDedup(rows);
-    tickBanner(page, rows.length, false);
-
-    // PRIMER PINTADO: con la primera página ya muestro gráficos + tabla
-    if (!firstPaintDone){
-      computeAndRenderMetrics(ALL_ROWS, FILTERED_ROWS);
-      initFilterOptions();
-      renderTableFromFiltered(1);
-      firstPaintDone = true;
-    } else {
-      // REPINTADO CADA 3 PÁGINAS (no toco la tabla para no perder la página en la que está el usuario)
-      if (page % 3 === 0){
-        computeAndRenderMetrics(ALL_ROWS, FILTERED_ROWS);
-      }
-    }
-
-    // si la página vino incompleta, era la última
-    if (rows.length < PAGE_SIZE) break;
-
-    // cede el hilo para no bloquear
-    await new Promise(r => setTimeout(r, 0));
-  }
-
-  // repintado final
-  computeAndRenderMetrics(ALL_ROWS, FILTERED_ROWS);
-  banner.remove();
-}
-
-/* ---------------- Init ---------------- */
-function init(){
+/* ---- Init: KPIs+charts globales y luego tabla paginada ---- */
+async function init(){
   updateStickyTop();
-  loadMetricsAll(); // carga progresiva
-  document.getElementById('btnApply').onclick=applyFilters;
-  document.getElementById('btnClear').onclick=clearFilters;
+  await refreshKpisAndCharts(getCurrentFilters()); // SIEMPRE todo el dataset (o filtrado)
+  await renderTable(1);                             // solo 150 filas
 }
 init();
