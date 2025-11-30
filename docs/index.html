@@ -2,17 +2,28 @@
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Dashboard Pedidos</title>
 <link rel="stylesheet" href="styles.css"/>
-<!-- 🔽 Google Identity Services para login -->
+<!-- en <head> -->
+<link rel="icon" href="icons/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<meta name="theme-color" content="#0b3d91"> <!-- color institucional -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head><body>
-<header>
-  <h1>Dashboard de Pedidos</h1>
-  <!-- 🔽 Botones -->
-  <div>
-    <button id="btnLogin" style="margin-right:8px">Acceder</button>
-    <button id="btnEditMode" disabled>Modo edición: OFF</button>
-    <a id="btnEditar" target="_blank" rel="noopener" href="edit.html" style="margin-left:8px">Editor clásico</a>
+
+  <header class="app-header">
+  <div class="brand">
+    <img src="assets/logo.png" alt="Logo" class="logo">
+    <div class="titles">
+      <h1 class="title">Dashboard de Pedidos</h1>
+      <span class="subtitle">Seguimiento F8</span>
+    </div>
+  </div>
+  <div class="actions">
+    <button id="btnLogin" class="btn">Acceder</button>
+    <button id="btnEditMode" class="btn" disabled>Modo edición: OFF</button>
+    <button id="btnRefresh" class="btn">Actualizar</button>
+    <a id="btnEditar" class="btn btn-link" target="_blank" rel="noopener" href="edit.html">Editor clásico</a>
   </div>
 </header>
 
