@@ -1,3 +1,36 @@
+
+// ---- Column metadata & compact toggle ----
+function labelize(s){ return String(s||'').replace(/\s+/g,' ').trim(); }
+function tagHeaderCells(){
+  const table=document.getElementById('ordersTable'); if(!table) return;
+  const hs=Array.from(table.tHead?.rows?.[0]?.cells||[]);
+  hs.forEach(h=>{ const t=labelize(h.textContent); h.setAttribute('data-col', t); });
+  // Map index->label
+  return hs.map(h=>h.getAttribute('data-col'));
+}
+function tagBodyCells(labels){
+  const table=document.getElementById('ordersTable'); if(!table) return;
+  Array.from(table.tBodies[0]?.rows||[]).forEach(tr=>{
+    Array.from(tr.cells).forEach((td,i)=>{ if(labels[i]) td.setAttribute('data-col', labels[i]); });
+  });
+}
+function applyCompactDefault(){
+  const table=document.getElementById('ordersTable'); if(!table) return;
+  const shouldCompact = window.innerWidth <= 1100 || localStorage.getItem('compactMode')==='1';
+  table.classList.toggle('compact', shouldCompact);
+}
+function setupCompactToggle(){
+  const btn=document.getElementById('btnCompact'); if(!btn) return;
+  btn.addEventListener('click', ()=>{
+    const table=document.getElementById('ordersTable'); if(!table) return;
+    const isCompact = table.classList.toggle('compact');
+    localStorage.setItem('compactMode', isCompact?'1':'0');
+    btn.textContent = isCompact? 'Mostrar todas las columnas' : 'Modo compacto';
+  });
+  // initial label
+  const table=document.getElementById('ordersTable'); if(!table) return;
+  btn.textContent = table.classList.contains('compact')? 'Mostrar todas las columnas' : 'Modo compacto';
+}
 // app.js v2025-12-01a — KPIs/Charts desde stats, tabla paginada, login y edición
 if (window.__APP_LOADED__) {
   console.log('app.js ya cargado, skip');

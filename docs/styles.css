@@ -70,3 +70,24 @@ h1,h3 { margin: 0; }
 
 .pager{padding:8px 16px; display:flex; gap:8px; align-items:center;}
 .pager button{padding:6px 10px}
+
+/* ---- Responsive columns (v3) ---- */
+:root{ --stickyTop:64px; }
+table.compact thead th[data-col="F8 SISCONI"],
+table.compact tbody td[data-col="F8 SISCONI"],
+table.compact thead th[data-col="SUSTANCIAS"],
+table.compact tbody td[data-col="SUSTANCIAS"],
+table.compact thead th[data-col="CANT. ASIG."],
+table.compact tbody td[data-col="CANT. ASIG."],
+table.compact thead th[data-col="CANT. SOL."],
+table.compact tbody td[data-col="CANT. SOL."],
+table.compact thead th[data-col="RENGLONES ASIG."],
+table.compact tbody td[data-col="RENGLONES ASIG."],
+table.compact thead th[data-col="RENGLONES SOL."],
+table.compact tbody td[data-col="RENGLONES SOL."]{ display:none; }
+
+/* Auto-compact for narrow screens */
+@media (max-width: 1100px){
+  #ordersTable{ width:100%; }
+  #ordersTable.compact{ table-layout: fixed; }
+}
