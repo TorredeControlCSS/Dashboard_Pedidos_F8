@@ -69,7 +69,7 @@
   <button id="btnClear">Limpiar</button>
 </section>
 
-<!-- Gráficos: línea (grande) + dona + barras (compactas a la derecha) -->
+<!-- Gráficos: línea (grande) + dona + barras -->
 <section class="charts">
   <div class="chart chart-line"><canvas id="chart-evol"></canvas></div>
   <div class="chart chart-donut"><canvas id="chart-estado-pastel"></canvas></div>
@@ -77,13 +77,13 @@
 </section>
 
 <!-- Tabla -->
-<section>
+<section class="table-wrap">
   <div id="kpis"></div>
   <table id="tabla"><thead></thead><tbody></tbody></table>
   <div id="paginacion"></div>
 </section>
 
-<!-- Config (ajusta si cambian tus URLs o Client ID) -->
+<!-- Config -->
 <script>
   window.APP = {
     A_URL: 'https://script.google.com/macros/s/AKfycbx7-NfduLrSsQhcLkXcx4h_IEaxcOj8cLHdPqzJm8bQEWTTfkKcYCfU-imapmHVxtqysg/exec',  // lectura
@@ -95,7 +95,7 @@
 <script src="metrics.js"></script>
 <script src="app.js"></script>
 
-<!-- Service Worker (opcional PWA) -->
+<!-- Service Worker (opcional) -->
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js', { scope: '/Dashboard_Pedidos_F8/' }).catch(console.error);
