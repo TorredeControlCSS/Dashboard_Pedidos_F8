@@ -1,20 +1,27 @@
-<!doctype html><html lang="es"><head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Dashboard Pedidos</title>
-<link rel="stylesheet" href="styles.css"/>
-<!-- en <head> -->
-<link rel="icon" href="icons/favicon.ico">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png"> <!-- ← aquí -->
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0b3d91"> <!-- color institucional -->
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head><body>
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Dashboard Pedidos F8</title>
 
-  <header class="app-header">
+  <!-- Favicon / PWA (si aún no tienes estos archivos, súbelos a /docs/icons/) -->
+  <link rel="icon" href="icons/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b3d91">
+
+  <!-- Libs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+
+<header class="app-header">
   <div class="brand">
     <img src="assets/logo.png" alt="Logo" class="logo">
     <div class="titles">
@@ -30,21 +37,14 @@
   </div>
 </header>
 
-  <!-- 🔽 Modal de login (va justo debajo del header) -->
+<!-- Modal login (necesario para el botón Acceder) -->
 <div id="loginBox" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); align-items:center; justify-content:center; z-index:9999;">
   <div style="background:#fff; padding:16px; border-radius:8px; min-width:260px; text-align:center">
     <div id="loginBoxBtn"></div>
-    <div style="margin-top:8px">
-      <button id="loginClose" style="padding:6px 10px">Cancelar</button>
-    </div>
+    <div style="margin-top:8px"><button id="loginClose" style="padding:6px 10px">Cancelar</button></div>
   </div>
 </div>
 
-<section id="kpis"></section>
-<section>
-  <table id="tabla"><thead></thead><tbody></tbody></table>
-  <div id="paginacion"></div>
-</section>
 <!-- KPIs -->
 <section id="kpis-compact" class="kpis">
   <div class="kpi"><div>Total</div><strong id="kpi-total">—</strong></div>
@@ -63,38 +63,44 @@
   <select id="fGrupo"><option value="">Todos los grupos</option></select>
   <select id="fEstado"><option value="">Todos los estados</option></select>
   <input id="fBuscar" placeholder="Buscar F8 SALMI / texto…">
-  <input id="fDesde" type="date">
-  <input id="fHasta" type="date">
+  <input id="fDesde" type="date" title="Desde">
+  <input id="fHasta" type="date" title="Hasta">
   <button id="btnApply">Aplicar</button>
   <button id="btnClear">Limpiar</button>
 </section>
 
-<!-- Gráficos (compactos) -->
+<!-- Gráficos compactos -->
 <section class="charts">
   <div class="chart"><canvas id="chart-evol" height="80"></canvas></div>
   <div class="chart"><canvas id="chart-estado-pastel" height="80"></canvas></div>
   <div class="chart"><canvas id="chart-estado-grupo" height="80"></canvas></div>
 </section>
 
-<!-- Estado por grupo -->
-<section style="margin:10px 0;">
-  <canvas id="chart-estado" height="120"></canvas>
+<!-- Tabla -->
+<section>
+  <div id="kpis"></div>
+  <table id="tabla"><thead></thead><tbody></tbody></table>
+  <div id="paginacion"></div>
 </section>
 
-<!-- 🔽 Config A/B + ClientID -->
+<!-- Config de URLs/ClientID -->
 <script>
   window.APP = {
-    A_URL: 'https://script.google.com/macros/s/AKfycbx7-NfduLrSsQhcLkXcx4h_IEaxcOj8cLHdPqzJm8bQEWTTfkKcYCfU-imapmHVxtqysg/exec',
-    B_URL: 'https://script.google.com/macros/s/AKfycbysdeYW1g-l1p6ZOyk9aPaUIdx5H4GbzYFVeD1T8_SsyQoODqo-dSzjQMeu7lZzYmQ/exec',
+    A_URL: 'https://script.google.com/macros/s/AKfycbx7-NfduLrSsQhcLkXcx4h_IEaxcOj8cLHdPqzJm8bQEWTTfkKcYCfU-imapmHVxtqysg/exec',  // lectura
+    B_URL: 'https://script.google.com/macros/s/AKfycbysdeYW1g-l1p6ZOyk9aPaUIdx5H4GbzYFVeD1T8_SsyQoODqo-dSzjQMeu7lZzYmQ/exec',  // escritura
     CLIENT_ID: '63868073848-8bfis5g0f8mt14oia3flmbqksg69tejq.apps.googleusercontent.com'
   };
 </script>
+
 <script src="metrics.js"></script>
 <script src="app.js"></script>
-  <script>
+
+<!-- Registro del Service Worker (opcional PWA) -->
+<script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js', { scope: '/Dashboard_Pedidos_F8/' })
       .catch(console.error);
   }
 </script>
-</body></html>
+</body>
+</html>
