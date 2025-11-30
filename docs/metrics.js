@@ -1,4 +1,4 @@
-// Usa la misma fuente del sitio en Chart.js
+// Usar la misma fuente del sitio en Chart.js
 if (window.Chart && Chart.defaults && Chart.defaults.font) {
   try { Chart.defaults.font.family = getComputedStyle(document.body).fontFamily || 'inherit'; } catch(e){}
 }
@@ -123,10 +123,15 @@ function renderEvolucion(chartData){
       {label:'Pedidos recibidos', data:rec, tension:.3},
       {label:'Pedidos completados', data:comp, tension:.3}
     ]},
-    options:{ responsive:true, plugins:{
-      legend:{position:'bottom'},
-      tooltip:{ callbacks:{ label:(ctx)=>`${ctx.dataset.label}: ${ctx.parsed.y}` } }
-    }, scales:{ y:{ beginAtZero:true } } }
+    options:{
+      responsive:true,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{
+        legend:{position:'bottom'},
+        tooltip:{ callbacks:{ label:(ctx)=>`${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()}` } }
+      },
+      scales:{ x:{ ticks:{ maxRotation:0, autoSkip:true } }, y:{ beginAtZero:true, grace:'10%' } }
+    }
   });
 }
 
@@ -140,7 +145,7 @@ function renderDistribucionEstados(rows){
     type:'doughnut',
     data:{ labels, datasets:[{ data:counts }] },
     options:{
-      responsive:true, maintainAspectRatio:true, cutout:'65%', layout:{padding:6},
+      responsive:true, maintainAspectRatio:true, cutout:'72%', layout:{padding:6},
       plugins:{
         legend:{ position:'bottom' },
         tooltip:{ callbacks:{ label:(ctx)=>{
@@ -182,7 +187,7 @@ function renderEstadoPorGrupo100(groups){
           return `${ctx.dataset.label}: ${p}% (${n})`;
         }}}
       },
-      scales:{ x:{ stacked:true }, y:{ stacked:true, beginAtZero:true, max:100 } }
+      scales:{ x:{ stacked:true, ticks:{ maxRotation:45, minRotation:45 } }, y:{ stacked:true, beginAtZero:true, max:100 } }
     }
   });
 }
