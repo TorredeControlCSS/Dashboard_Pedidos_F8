@@ -10,7 +10,7 @@ const EDITABLE_DATE_FIELDS = [
   'EMPACADO','PROY. ENTREGA','ENTREGA REAL'
 ];
 const EDITABLE_INT_FIELDS  = ['CANT. ASIG.','CANT. SOL.','RENGLONES ASI.','RENGLONES SOL.'];
-const EDITABLE_TEXT_FIELDS = ['COMENT.']; // nuevo
+const EDITABLE_TEXT_FIELDS = ['COMENT.']; // texto libre
 
 // Normalizador
 function normalizeName(s){
@@ -42,7 +42,7 @@ function jsonp(url, cbName){
   });
 }
 
-// ===== Formato fechas =====
+// ===== Fechas =====
 function isIsoDateTimeZ(v){ return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v) && v.endsWith('Z'); }
 function formatIsoToDDMonYY(v){
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v); if (!m) return v;
@@ -66,8 +66,17 @@ function loadKpis(){
 }
 
 // ===== Render tabla desde filtrados (añade columnas derivadas) =====
+function headerWidthMap(){
+  return {
+    'CATEG.':180,'UNIDAD':220,'TIPO':100,'F8 SALMI':110,'F8 SISCONI':110,'GRUPO':90,'SUSTANCIAS':140,
+    'CANT. ASIG.':90,'CANT. SOL.':90,'RENGLONES ASI.':110,'RENGLONES SOL.':110,
+    'FECHA F8':100,'RECIBO F8':100,'ASIGNACIÓN':100,'SALIDA':100,'DESPACHO':100,'FACTURACIÓN':110,'EMPACADO':100,
+    'PROY. ENTREGA':110,'ENTREGA REAL':110,'INCOTERM':100,'ESTADO':110,'COMENT.':180,'TIEMPO':80,
+    'COMPLET':90,'FILL CANT.':90,'FILL RENGL.':100
+  };
+}
 function renderTableFromFiltered(page){
-  const pageSize = 150; // rendimiento suave con 16k filas
+  const pageSize = 150; // rendimiento con dataset grande
   const start = (page-1)*pageSize;
   const chunk = FILTERED_ROWS.slice(start, start+pageSize).map(r=>({ ...r, ...derivePerRow(r) }));
 
@@ -76,10 +85,13 @@ function renderTableFromFiltered(page){
   currentRows      = chunk.map(r=>({...r}));
   currentIdColName = headers.find(h => normalizeName(h) === N_ID_HEADER) || null;
 
+  const widths = headerWidthMap();
   const head = document.querySelector('#tabla thead');
   const body = document.querySelector('#tabla tbody');
 
-  head.innerHTML = headers.length ? `<tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr>` : '';
+  head.innerHTML = headers.length
+    ? `<tr>${headers.map(h=>`<th data-col="${h}" style="width:${widths[h]||120}px">${h}</th>`).join('')}</tr>`
+    : '';
 
   const rowsFmt = chunk.map(formatAllIsoDatesInRow);
   body.innerHTML = rowsFmt.map((r, ri)=>{
@@ -90,18 +102,28 @@ function renderTableFromFiltered(page){
         const editableInt  = editMode && N_EDITABLE_INT.has(keyNorm);
         const editableText = editMode && N_EDITABLE_TEXT.has(keyNorm);
         const classes = (editableDate || editableInt || editableText) ? ' class="editable"' : '';
-        return `<td${classes} data-ri="${ri}" data-col="${k}">${r[k]??''}</td>`;
+        const w = widths[k] || 120;
+        return `<td${classes} data-ri="${ri}" data-col="${k}" style="width:${w}px">${r[k]??''}</td>`;
       }).join('')
     }</tr>`;
   }).join('');
 
-  const pages = Math.ceil(FILTERED_ROWS.length / pageSize);
+  // Paginación: anterior, -100, +100, siguiente
+  const totalPages = Math.ceil(FILTERED_ROWS.length / pageSize);
+  const jump = Math.max(1, Math.round(100 / pageSize)); // salto aproximado de 100 filas
+  const prev = Math.max(1, page-1);
+  const next = Math.min(totalPages, page+1);
+  const minus100 = Math.max(1, page - jump);
+  const plus100  = Math.min(totalPages, page + jump);
+
   document.getElementById('paginacion').innerHTML =
-    Array.from({length: pages},(_,i)=>
-      `<button ${i+1===page?'disabled':''} onclick="renderTableFromFiltered(${i+1})">${i+1}</button>`
-    ).join('');
+    `<button onclick="renderTableFromFiltered(${prev})"${page===1?' disabled':''}>« Anterior</button>` +
+    `<button onclick="renderTableFromFiltered(${minus100})">-100</button>` +
+    `<span style="padding:4px 8px">Página ${page} / ${totalPages}</span>` +
+    `<button onclick="renderTableFromFiltered(${plus100})">+100</button>` +
+    `<button onclick="renderTableFromFiltered(${next})"${page===totalPages?' disabled':''}>Siguiente »</button>`;
 }
-function currentPageNumber(){ const d=document.querySelector('#paginacion button[disabled]'); return d?parseInt(d.textContent,10):1; }
+function currentPageNumber(){ const t=document.querySelector('#paginacion span'); if(!t) return 1; const m=t.textContent.match(/Página (\d+)/); return m?+m[1]:1; }
 
 // ===== Cargar dataset completo y pintar métricas + filtros =====
 async function loadMetricsAll(){
