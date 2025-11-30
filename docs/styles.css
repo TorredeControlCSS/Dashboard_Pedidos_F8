@@ -119,3 +119,13 @@ h1,h3 { margin: 0; }
   #filters select, #filters input[type="text"], #filters input[type="date"]{ max-width: 180px; }
 }
 
+/* Patch: evitar solapamiento del header de la tabla y asegurar fondo */
+.table-wrap thead th {
+  position: sticky !important;
+  top: var(--stickyTop, 64px) !important;
+  z-index: 9999 !important;
+  background: #fff !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.table-wrap { padding-top: 8px; }
+.table-wrap table { border-collapse: collapse; width:100%; border-spacing:0; }
