@@ -294,3 +294,5 @@ init();
 
 async function refreshKpis(filters){ const st=await fetchStats(filters); setKpis(st.kpis); }
 async function refreshCharts(filters){ const st=await fetchStats(filters); await renderCharts(st); }
+
+async function renderCharts(st){ console.warn('renderCharts no definida; stats:', st); }
