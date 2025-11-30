@@ -39,9 +39,9 @@ function formatAllIsoDatesInRow(row){ const out={...row}; for(const k of Object.
 function renderKpis(d){ const el=document.getElementById('kpis'); if(el) el.textContent = `Total pedidos: ${d.totalPedidos}`; }
 function loadKpis(){ window.onKpis=(res)=>renderKpis(res.data); const s=document.createElement('script'); s.src = `${A}?route=kpis&callback=onKpis&_=${Date.now()}`; document.body.appendChild(s); }
 
-/* ===== dataset completo con paginación ===== */
+/* ===== dataset completo con paginación real (500 por página) ===== */
 async function loadMetricsAll(){
-  const PAGE_SIZE = 5000;
+  const PAGE_SIZE = 500;   // <-- el backend devuelve 500 por página
   let page = 1;
   let all = [];
 
@@ -53,17 +53,21 @@ async function loadMetricsAll(){
         resolve(rows.length);
       };
       const s = document.createElement('script');
+      // pedimos de 500 en 500; si el backend ignora pageSize, igual sirve
       s.src = `${A}?route=orders.list&page=${page}&pageSize=${PAGE_SIZE}&callback=onOrdersPage&_=${Date.now()}`;
       document.body.appendChild(s);
     });
+
+    if (len < PAGE_SIZE) break; // última página
     page += 1;
-    if (len < PAGE_SIZE) break;
   }
 
   ALL_ROWS = all;
   FILTERED_ROWS = ALL_ROWS.slice();
+
   computeAndRenderMetrics(ALL_ROWS, FILTERED_ROWS);
-  initFilterOptions(); // usa ALL_ROWS siempre
+  initFilterOptions();            // llena filtros con TODO el dataset
+  renderTableFromFiltered(1);     // pinta la tabla página 1
 }
 
 /* ===== Filtros (siempre con ALL_ROWS para no perder valores como CEDIS) ===== */
@@ -257,3 +261,4 @@ function init(){
   document.getElementById('btnClear').onclick=clearFilters;
 }
 init();
+
