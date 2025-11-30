@@ -1,16 +1,16 @@
-// metrics.js v2025-11-30c
-console.log('metrics.js v2025-11-30c');
+// metrics.js v2025-12-01a
+console.log('metrics.js v2025-12-01a');
 
 let _chEvol, _chDonut, _chGrupos;
 
-function _ensureCtx(id){ const el=document.getElementById(id); return el ? el.getContext('2d') : null; }
+function _ctx(id){ const el=document.getElementById(id); return el ? el.getContext('2d') : null; }
 
 function renderChartsFromStats(stats){
   if(!stats) return;
 
-  // ---- Evolución: recibidos / completados / proyectado
-  (()=> {
-    const ctx=_ensureCtx('ch-evol'); if(!ctx) return;
+  // EVOLUCIÓN
+  (()=>{
+    const ctx=_ctx('ch-evol'); if(!ctx) return;
     const L=stats.series?.labels||[];
     const R=stats.series?.recibidos||[];
     const C=stats.series?.completados||[];
@@ -30,9 +30,9 @@ function renderChartsFromStats(stats){
     });
   })();
 
-  // ---- Donut por estados
-  (()=> {
-    const ctx=_ensureCtx('ch-donut'); if(!ctx) return;
+  // DONUT
+  (()=>{
+    const ctx=_ctx('ch-donut'); if(!ctx) return;
     const obj=stats.distEstados||{};
     const labels=Object.keys(obj);
     const values=labels.map(k=>obj[k]);
@@ -41,9 +41,9 @@ function renderChartsFromStats(stats){
       options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}}});
   })();
 
-  // ---- Barras por grupo (% pedidos por estado)
-  (()=> {
-    const ctx=_ensureCtx('ch-grupos'); if(!ctx) return;
+  // BARRAS POR GRUPO
+  (()=>{
+    const ctx=_ctx('ch-grupos'); if(!ctx) return;
     const G=stats.grupos||{};
     const grupos=Object.keys(G);
     const estados=['F8 RECIBIDA','EN ASIGNACIÓN','SALIDA DE SALMI','FACTURADO','EMPACADO','ENTREGADA'];
