@@ -1,3 +1,86 @@
+
+/* === FINAL PATCH PRELUDE === */
+(function(){
+  const A = (window.APP && window.APP.A_URL) || window.A || '';
+
+  // fetchStats compatible con 'stats' y fallback 'kpis'
+  if (!window.fetchStats){
+    window.fetchStats = async function fetchStats(filters){
+      try{
+        const p = new URLSearchParams({route:'stats'});
+        if (filters && typeof filters==='object'){
+          Object.entries(filters).forEach(([k,v])=>{ if(v!=null && v!=='') p.append(k, v); });
+        }
+        const r = await jsonp(`${A}?${p.toString()}`);
+        if(r && r.status==='ok') return r.data||{};
+        throw new Error('stats failed');
+      }catch(e){
+        const p2 = new URLSearchParams({route:'kpis'});
+        if (filters && typeof filters==='object'){
+          Object.entries(filters).forEach(([k,v])=>{ if(v!=null && v!=='') p2.append(k, v); });
+        }
+        const r2 = await jsonp(`${A}?${p2.toString()}`);
+        return (r2 && r2.data) || {};
+      }
+    };
+  }
+
+  // Wrappers por si el código original llama a estas
+  if (!window.refreshKpis){
+    window.refreshKpis = async function refreshKpis(filters){
+      const st = await window.fetchStats(filters);
+      if (typeof setKpis==='function') setKpis(st.kpis || st);
+    };
+  }
+  if (!window.refreshCharts){
+    window.refreshCharts = async function refreshCharts(filters){
+      const st = await window.fetchStats(filters);
+      if (typeof renderCharts==='function') await renderCharts(st);
+    };
+  }
+})();
+
+
+/* === FINAL PATCH: filtros robustos (incluye CEDIS) === */
+async function populateFilters(){
+  try{
+    const norm = v => String(v==null?'':v).replace(/\s+/g,' ').trim();
+    const distinct = (arr) => Array.from(new Set(arr.map(norm))).filter(Boolean).sort((a,b)=>a.localeCompare(b,'es'));
+    const cols = {cat:[], unidad:[], tipo:[], grupo:[], estado:[]};
+    const pageSize = 500;
+
+    const first = await jsonp(`${(window.APP&&APP.A_URL)||window.A||''}?` + new URLSearchParams({route:'orders.list', page:1, pageSize}).toString());
+    if(first.status!=='ok') return;
+    const total = Number(first.data?.total||0);
+    const totalPages = Math.min(Math.ceil(total/pageSize), 5);
+    const collect = (rows)=>rows.forEach(r=>{
+      cols.cat.push(r['CATEG.']);
+      cols.unidad.push(r['UNIDAD']);
+      cols.tipo.push(r['TIPO']);
+      cols.grupo.push(r['GRUPO']);
+      cols.estado.push(r['ESTADO']||'');
+    });
+    collect(first.data?.rows||[]);
+    for(let p=2;p<=totalPages;p++){
+      const res = await jsonp(`${(window.APP&&APP.A_URL)||window.A||''}?` + new URLSearchParams({route:'orders.list', page:p, pageSize}).toString());
+      if(res.status==='ok') collect(res.data?.rows||[]);
+    }
+
+    const setSel = (id, vals, labelTodos='Todas') => {
+      const el=document.getElementById(id); if(!el) return;
+      const cur=el.value;
+      const opts=distinct(vals);
+      el.innerHTML = `<option value="">${labelTodos}</option>` + opts.map(v=>`<option>${v}</option>`).join('');
+      if(cur && opts.includes(cur)) el.value=cur;
+    };
+    setSel('fCat', cols.cat);
+    setSel('fUnidad', cols.unidad);
+    setSel('fTipo', cols.tipo, 'Todos');
+    setSel('fGrupo', cols.grupo);
+    setSel('fEstado', cols.estado);
+  }catch(e){ console.warn('populateFilters fallo:', e); }
+}
+
 // app.js v2025-12-01a — KPIs/Charts desde stats, tabla paginada, login y edición
 if (window.__APP_LOADED__) {
   console.log('app.js ya cargado, skip');
@@ -114,8 +197,44 @@ async function fetchTable(page, pageSize, filters){
 
 
 /* ------------ Poblado de filtros (sample 500) ------------ */
+
 async function populateFilters(){
-  const params=new URLSearchParams({route:'orders.list', page:1, pageSize:500});
+  const norm = v => String(v==null?'':v).replace(/\s+/g,' ').trim();
+  const distinct = (arr) => Array.from(new Set(arr.map(norm))).filter(Boolean).sort((a,b)=>a.localeCompare(b,'es'));
+  const cols = {cat:[], unidad:[], tipo:[], grupo:[], estado:[]};
+  const pageSize = 500;
+  const first = await jsonp(`${A}?` + new URLSearchParams({route:'orders.list', page:1, pageSize}).toString());
+  if(first.status!=='ok') return;
+  const total = Number(first.data?.total||0);
+  const totalPages = Math.min(Math.ceil(total/pageSize), 5);
+  function collect(rows){
+    rows.forEach(r=>{
+      cols.cat.push(r['CATEG.']);
+      cols.unidad.push(r['UNIDAD']);
+      cols.tipo.push(r['TIPO']);
+      cols.grupo.push(r['GRUPO']);
+      cols.estado.push(r['ESTADO']||'');
+    });
+  }
+  collect(first.data?.rows||[]);
+  for (let p=2; p<=totalPages; p++){
+    const res = await jsonp(`${A}?` + new URLSearchParams({route:'orders.list', page:p, pageSize}).toString());
+    if(res.status==='ok') collect(res.data?.rows||[]);
+  }
+  const setSel = (id, vals, labelTodos='Todas') => {
+    const el=document.getElementById(id); if(!el) return;
+    const cur=el.value;
+    const opts=distinct(vals);
+    el.innerHTML = `<option value="">${labelTodos}</option>` + opts.map(v=>`<option>${v}</option>`).join('');
+    if(cur && opts.includes(cur)) el.value = cur;
+  };
+  setSel('fCat', cols.cat);
+  setSel('fUnidad', cols.unidad);
+  setSel('fTipo', cols.tipo, 'Todos');
+  setSel('fGrupo', cols.grupo);
+  setSel('fEstado', cols.estado);
+}
+);
   const res=await jsonp(`${A}?${params.toString()}`);
   if(res.status!=='ok') return;
   const rows=(res.data&&res.data.rows)||[];
@@ -255,11 +374,13 @@ btnEditMode?.addEventListener('click', ()=>{
 
 /* ------------ Botones ------------ */
 document.getElementById('btnApply')?.addEventListener('click', async ()=>{
-  await refreshKpis(getFilters()); requestAnimationFrame(()=>{ refreshCharts(getFilters()); }); await renderTable(1);
+  await refreshKpis(getFilters()); requestAnimationFrame(()=>{ refreshCharts(getFilters()); }); await populateFilters();
+  await renderTable(1);
 });
 document.getElementById('btnClear')?.addEventListener('click', async ()=>{
   ['fCat','fUnidad','fTipo','fGrupo','fEstado','fBuscar','fDesde','fHasta'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-  await refreshKpis(getFilters()); requestAnimationFrame(()=>{ refreshCharts(getFilters()); }); await renderTable(1);
+  await refreshKpis(getFilters()); requestAnimationFrame(()=>{ refreshCharts(getFilters()); }); await populateFilters();
+  await renderTable(1);
 });
 document.getElementById('btnRefresh')?.addEventListener('click', async ()=>{
   await refreshKpis(getFilters()); requestAnimationFrame(()=>{ refreshCharts(getFilters()); });
@@ -286,6 +407,7 @@ async function init(){
   document.documentElement.style.setProperty('--stickyTop', stickyTopPx + 'px');
 
   await refreshKpis(getFilters()); requestAnimationFrame(()=>{ refreshCharts(getFilters()); });
+  await populateFilters();
   await renderTable(1);
 }
 init();
@@ -296,9 +418,28 @@ async function refreshKpis(filters){ const st=await fetchStats(filters); setKpis
 async function refreshCharts(filters){ const st=await fetchStats(filters); await renderCharts(st); }
 
 async function renderCharts(st){ console.warn('renderCharts no definida; stats:', st); }
-// --- parche runtime ---
+
+
+/* === FINAL PATCH POSTLUDE === */
+// Exponer renderTable para que los botones funcionen, y evitar error si aún no fue definida.
 window.renderTable = (typeof renderTable === 'function') ? renderTable : function(){ console.warn('renderTable no disponible'); };
-window.renderCharts = window.renderCharts || (async function(){ /* noop: evita error si no hay charts */ });
-renderCharts = async function(){}; // no-op: elimina el warning y sigue funcionando
+// Evitar warning si no hay gráficos en esta vista.
+window.renderCharts = window.renderCharts || (async function(){});
 
-
+// Llamar a populateFilters una vez al inicio si existe init() que luego hace renderTable(1)
+(function(){
+  try{
+    const _init = (typeof init==='function') ? init : null;
+    if (_init && !window.__PF_DONE__){
+      const orig_init = _init;
+      window.__PF_DONE__ = true;
+      window.init = async function(){
+        await populateFilters();
+        return orig_init.apply(this, arguments);
+      }
+    } else {
+      // Si no hay init, al menos poblar filtros ahora (no rompe nada)
+      populateFilters().catch(()=>{});
+    }
+  }catch(e){}
+})();

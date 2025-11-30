@@ -80,3 +80,27 @@ h1,h3 { margin: 0; }
 .table-wrap thead tr::before{ content:none !important; } /* evita filas fantasma por estilos de usuario */
 #filters .row{ display:flex; flex-wrap:nowrap; gap:8px; align-items:center; overflow:auto; }
 #filters select, #filters input{ max-width:170px; }
+
+
+@media (min-width: 1100px){
+  #filters .row{ display:flex; flex-wrap:nowrap; gap:8px; align-items:center; }
+  #filters select, #filters input[type="text"], #filters input[type="date"]{ max-width: 180px; }
+}
+
+/* === FINAL PATCH (no-risk) === */
+:root{ --stickyTop:64px; }
+
+/* Encabezado fijo sin filas encima */
+.table-wrap table{ border-collapse: collapse; width:100%; border-spacing:0; }
+.table-wrap thead th{ position: sticky; top: var(--stickyTop); background:#fff; z-index: 5; }
+.table-wrap thead tr::before{ content:none !important; } /* evita filas fantasma */
+.table-wrap th, .table-wrap td{ padding:8px 10px; }
+
+/* Filtros en una sola línea en desktop */
+@media (min-width: 1100px){
+  #filters .row{ display:flex; flex-wrap:nowrap; gap:8px; align-items:center; overflow:auto; }
+  #filters select, #filters input[type="text"], #filters input[type="date"]{ max-width: 180px; }
+}
+
+/* Evitar scroll lateral cuando sea posible (sin romper datos) */
+.table-wrap td{ word-break: break-word; }
