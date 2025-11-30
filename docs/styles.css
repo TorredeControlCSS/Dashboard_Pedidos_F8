@@ -1,22 +1,21 @@
-/* Fuente profesional */
-html,body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans","Liberation Sans",sans-serif;}
-
-/* Padding general para alinear secciones */
+/* v2025-11-30a */
+html,body{
+  font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans","Liberation Sans",sans-serif;
+}
 body{padding:0 8px}
 
-/* Header (pegajoso) */
+/* Header */
 .app-header{position:sticky;top:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#0b3d91;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.1)}
 .app-header .brand{display:flex;align-items:center;gap:10px}
-.app-header .logo{height:36px;width:auto;display:block} /* ← un poco más grande */
+.app-header .logo{height:36px;width:auto}
 .app-header .titles{line-height:1}
 .app-header .title{margin:0;font-size:18px;font-weight:700}
 .app-header .subtitle{font-size:12px;opacity:.9}
-.app-header .actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.app-header .btn{appearance:none;border:1px solid rgba(255,255,255,.6);background:transparent;color:#fff;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:12px}
+.app-header .actions{display:flex;gap:8px;flex-wrap:wrap}
+.app-header .btn{border:1px solid rgba(255,255,255,.6);background:transparent;color:#fff;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:12px}
 .app-header .btn:hover{background:rgba(255,255,255,.12)}
 .app-header .btn:disabled{opacity:.6;cursor:not-allowed}
 .app-header .btn-link{border-color:transparent;text-decoration:none}
-.app-header .btn-link:hover{background:rgba(255,255,255,.12)}
 
 /* KPIs */
 .kpis{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:8px;margin:10px 0}
@@ -24,7 +23,7 @@ body{padding:0 8px}
 .kpi div{font-size:12px;color:#4b5563}
 .kpi strong{font-size:18px;color:#111827}
 
-/* Filtros (pegajosos) */
+/* Filtros */
 .filters{position:sticky;top:56px;z-index:900;background:#fff;padding:6px 8px;display:grid;grid-template-columns:repeat(10,minmax(120px,1fr));gap:8px;margin:8px 0;align-items:center;border-bottom:1px solid #e5e7eb}
 .filters input,.filters select,.filters button{padding:8px}
 
@@ -48,7 +47,7 @@ body{padding:0 8px}
 #paginacion button{padding:6px 10px;border:1px solid #ddd;background:#fff;border-radius:6px}
 #paginacion button[disabled]{background:#0b3d91;color:#fff;border-color:#0b3d91}
 
-/* Anchos fijos por columna (si existe ese header) */
+/* Anchos fijos por columna */
 th[data-col="CATEG."], td[data-col="CATEG."]{width:180px}
 th[data-col="UNIDAD"], td[data-col="UNIDAD"]{width:220px}
 th[data-col="TIPO"], td[data-col="TIPO"]{width:100px}
