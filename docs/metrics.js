@@ -1,9 +1,12 @@
-// Fuente de Chart.js = misma del sitio
+// v2025-11-30a
+console.log('metrics.js v2025-11-30a');
+
+// Fuente Chart.js
 if (window.Chart && Chart.defaults && Chart.defaults.font) {
   try { Chart.defaults.font.family = getComputedStyle(document.body).fontFamily || 'inherit'; } catch(e){}
 }
 
-// ===== Estado por fila =====
+// Estado por fila
 function deriveStage(row){
   const has = k => row[k] && String(row[k]).trim().length > 0;
   if (has('ENTREGA REAL'))     return 'ENTREGADA';
@@ -15,7 +18,7 @@ function deriveStage(row){
   return 'PENDIENTE';
 }
 
-// ===== Indicadores por pedido (por fila) =====
+// Indicadores por fila
 function derivePerRow(row){
   const estado = deriveStage(row);
   const parseSheetDate = (v)=>{
@@ -38,15 +41,12 @@ function derivePerRow(row){
   const completado = estado==='ENTREGADA' ? 'SI' : 'NO';
 
   return {
-    ESTADO: estado,
-    TIEMPO: dias!=null? `${dias}d` : '',
-    COMPLET: completado,
-    'FILL CANT.': `${fillCant}%`,
-    'FILL RENGL.': `${fillReng}%`
+    ESTADO: estado, TIEMPO: dias!=null? `${dias}d` : '',
+    COMPLET: completado, 'FILL CANT.': `${fillCant}%`, 'FILL RENGL.': `${fillReng}%`
   };
 }
 
-/* ======= SERIES TIEMPO (globales) ======= */
+// Series tiempo globales (RECIBO F8 / ENTREGA REAL / PROY. ENTREGA)
 function buildTimeSeries(rows){
   const add = (map, key)=>{ if(!key) return; map[key] = (map[key]||0)+1; };
   const rec = {}, comp = {}, proj = {};
@@ -61,19 +61,16 @@ function buildTimeSeries(rows){
   const allDays = Array.from(new Set([...Object.keys(rec),...Object.keys(comp),...Object.keys(proj)])).sort();
   return {
     labels: allDays,
-    recibidos: allDays.map(d=>rec[d]||0),
+    recibidos:   allDays.map(d=>rec[d]||0),
     completados: allDays.map(d=>comp[d]||0),
     proyectados: allDays.map(d=>proj[d]||0)
   };
 }
 
-/* ======= AGREGADOS (globales o filtrados) ======= */
+// Agregados (globales)
 function buildAggregates(rows){
   const byGroup = new Map();
-  const tot = {
-    pedidos: rows.length, urgencia: 0, mensual: 0,
-    asignado: 0, solicitado: 0, renglonesAsig: 0, renglonesSol: 0
-  };
+  const tot = { pedidos: rows.length, urgencia: 0, mensual: 0, asignado: 0, solicitado: 0, renglonesAsig: 0, renglonesSol: 0 };
 
   for (const r of rows){
     const stage = deriveStage(r);
@@ -81,8 +78,7 @@ function buildAggregates(rows){
     if (!byGroup.has(g)) byGroup.set(g, {group:g, total:0,
       'F8 RECIBIDA':0,'EN ASIGNACIÓN':0,'SALIDA DE SALMI':0,'FACTURADO':0,'EMPACADO':0,'ENTREGADA':0,'PENDIENTE':0
     });
-    const b = byGroup.get(g);
-    b.total++; b[stage]++;
+    const b = byGroup.get(g); b.total++; b[stage]++;
 
     const tipo = String(r['TIPO']||'').toUpperCase();
     if (tipo==='URGENCIA') tot.urgencia++; if (tipo==='MENSUAL') tot.mensual++;
@@ -104,7 +100,7 @@ function buildAggregates(rows){
   return { tot, groups };
 }
 
-/* ======= KPIs (globales) ======= */
+// KPIs globales
 function renderKpisCompact(tot){
   const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
   set('kpi-total', (tot.pedidos||0).toLocaleString());
@@ -116,7 +112,7 @@ function renderKpisCompact(tot){
   set('kpi-men', tot.mensual||0);
 }
 
-/* ======= Gráficos ======= */
+// Gráficos
 let chartEvol=null, chartPastel=null, chartGrupo=null;
 
 function renderEvolucionSeries(series){
@@ -132,8 +128,7 @@ function renderEvolucionSeries(series){
     options:{
       responsive:true,
       interaction:{ mode:'index', intersect:false },
-      plugins:{
-        legend:{position:'bottom'},
+      plugins:{ legend:{position:'bottom'},
         tooltip:{ callbacks:{ label:(ctx)=>`${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()}` } }
       },
       scales:{ x:{ ticks:{ maxRotation:0, autoSkip:true } }, y:{ beginAtZero:true, grace:'10%' } }
@@ -152,12 +147,8 @@ function renderDistribucionEstadosGlobal(rowsAll){
     data:{ labels, datasets:[{ data:counts }] },
     options:{
       responsive:true, maintainAspectRatio:true, cutout:'72%', layout:{padding:6},
-      plugins:{
-        legend:{ position:'bottom' },
-        tooltip:{ callbacks:{ label:(ctx)=>{
-          const n=ctx.parsed; const p=Math.round((n/total)*100);
-          return `${ctx.label}: ${p}% (${n})`;
-        }}}
+      plugins:{ legend:{ position:'bottom' },
+        tooltip:{ callbacks:{ label:(ctx)=>`${ctx.label}: ${Math.round(ctx.parsed/total*100)}% (${ctx.parsed})` } }
       }
     }
   });
@@ -186,9 +177,7 @@ function renderEstadoPorGrupo100(groups){
       responsive:true,
       plugins:{ legend:{position:'bottom'},
         tooltip:{ callbacks:{ label:(ctx)=>{
-          const g=groups[ctx.dataIndex];
-          const n=g[series[ctx.datasetIndex].k] || 0;
-          const p=ctx.parsed.y;
+          const g=groups[ctx.dataIndex]; const n=g[series[ctx.datasetIndex].k]||0; const p=ctx.parsed.y;
           return `${ctx.dataset.label}: ${p}% (${n})`;
         }}}
       },
@@ -197,14 +186,11 @@ function renderEstadoPorGrupo100(groups){
   });
 }
 
-/* ======= Render maestro: KPIs globales + gráficos (globales) ======= */
+// Maestro
 async function computeAndRenderMetrics(allRows, filteredRows){
   const { tot, groups } = buildAggregates(allRows);
   renderKpisCompact(tot);
-
-  const series = buildTimeSeries(allRows);
-  renderEvolucionSeries(series);
-
+  renderEvolucionSeries(buildTimeSeries(allRows));
   renderDistribucionEstadosGlobal(allRows);
   renderEstadoPorGrupo100(groups);
 }
