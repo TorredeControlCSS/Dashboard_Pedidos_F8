@@ -127,6 +127,7 @@ function renderEvolucionSeries(series){
     ]},
     options:{
       responsive:true,
+      maintainAspectRatio:false,     // << añade esto
       interaction:{ mode:'index', intersect:false },
       plugins:{ legend:{position:'bottom'},
         tooltip:{ callbacks:{ label:(ctx)=>`${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()}` } }
@@ -146,7 +147,10 @@ function renderDistribucionEstadosGlobal(rowsAll){
     type:'doughnut',
     data:{ labels, datasets:[{ data:counts }] },
     options:{
-      responsive:true, maintainAspectRatio:true, cutout:'72%', layout:{padding:6},
+      responsive:true, 
+      maintainAspectRatio:false, 
+      cutout:'68%', 
+      layout:{padding:6},
       plugins:{ legend:{ position:'bottom' },
         tooltip:{ callbacks:{ label:(ctx)=>`${ctx.label}: ${Math.round(ctx.parsed/total*100)}% (${ctx.parsed})` } }
       }
@@ -175,6 +179,7 @@ function renderEstadoPorGrupo100(groups){
     data:{ labels, datasets },
     options:{
       responsive:true,
+      maintainAspectRatio:false,     // << añade esto
       plugins:{ legend:{position:'bottom'},
         tooltip:{ callbacks:{ label:(ctx)=>{
           const g=groups[ctx.dataIndex]; const n=g[series[ctx.datasetIndex].k]||0; const p=ctx.parsed.y;
