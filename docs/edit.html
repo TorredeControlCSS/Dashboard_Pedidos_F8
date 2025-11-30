@@ -1,52 +1,52 @@
 <!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Edición de Pedidos F8</title>
-  <style>
-    body{font-family:system-ui,Arial,sans-serif;margin:20px}
-    .card{border:1px solid #ddd;padding:16px;border-radius:8px;max-width:520px}
-    label{display:block;margin-top:8px}
-    input,select,button{padding:8px;margin-top:4px;width:100%}
-    .ok{color:green}.err{color:#b00}
-    .row{display:flex;gap:8px}
-    .row > *{flex:1}
-  </style>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-</head>
-<body>
-  <h1>Edición de Pedidos F8</h1>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>Edición de Pedidos F8</title>
+    <style>
+      body{font-family:system-ui,Arial,sans-serif;margin:20px}
+      .card{border:1px solid #ddd;padding:16px;border-radius:8px;max-width:520px}
+      label{display:block;margin-top:8px}
+      input,select,button{padding:8px;margin-top:4px;width:100%}
+      .ok{color:green}.err{color:#b00}
+      .row{display:flex;gap:8px}
+      .row > *{flex:1}
+    </style>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+  </head>
+  <body>
+    <h1>Edición de Pedidos F8</h1>
 
-  <div id="signin"></div>
+    <div id="signin"></div>
 
-  <div class="card" id="form" style="display:none">
-    <label>F8 SALMI (ID)
-      <input id="f_id" list="ids" placeholder="Escribe para buscar…"/>
-      <datalist id="ids"></datalist>
-    </label>
-
-    <div class="row">
-      <label>Campo a editar
-        <select id="f_field">
-          <option>ASIGNACIÓN</option>
-          <option>SALIDA</option>
-          <option>DESPACHO</option>
-          <option>FACTURACIÓN</option>
-          <option>EMPACADO</option>
-          <option>PROY. ENTREGA</option>
-          <option>ENTREGA REAL</option>
-        </select>
+    <div class="card" id="form" style="display:none">
+      <label>F8 SALMI (ID)
+        <input id="f_id" list="ids" placeholder="Escribe para buscar…"/>
+        <datalist id="ids"></datalist>
       </label>
 
-      <label>Nuevo valor (fecha)
-        <input id="f_value" type="date" />
-      </label>
+      <div class="row">
+        <label>Campo a editar
+          <select id="f_field">
+            <option>ASIGNACIÓN</option>
+            <option>SALIDA</option>
+            <option>DESPACHO</option>
+            <option>FACTURACIÓN</option>
+            <option>EMPACADO</option>
+            <option>PROY. ENTREGA</option>
+            <option>ENTREGA REAL</option>
+          </select>
+        </label>
+
+        <label>Nuevo valor (fecha)
+          <input id="f_value" type="date" />
+        </label>
+      </div>
+
+      <button id="btnSave">Guardar</button>
+      <p id="msg"></p>
     </div>
-
-    <button id="btnSave">Guardar</button>
-    <p id="msg"></p>
-  </div>
 
 <script>
   // ====== CONFIGURA TUS VALORES ======
@@ -78,13 +78,13 @@
       const s = document.createElement('script');
       const cb = 'cb_' + Math.random().toString(36).slice(2);
       window[cb] = (payload)=>{ delete window[cb]; s.remove(); resolve(payload); };
-      s.onerror = reject;
+      s.onerror = ()=>{ delete window[cb]; s.remove(); reject(new Error('network')); };
       s.src = url + (url.includes('?')?'&':'?') + `callback=${cb}&_=${Date.now()}`;
       document.body.appendChild(s);
     });
   }
 
-  // --- Autocompletar IDs (F8 SALMI) ---
+  // --- Autocompletar IDs (F8 SALMI) con debounce y min-length 2 ---
   let lastQ = '';
   const inputId = document.getElementById('f_id');
   const dataList = document.getElementById('ids');
@@ -92,16 +92,38 @@
   async function fetchIds(q){
     const url = `${B_URL}?route=orders.ids&q=${encodeURIComponent(q||'')}`;
     const res = await jsonp(url);
-    if(res.status!=='ok') return;
+    if(!res || res.status!=='ok') return;
     dataList.innerHTML = res.data.ids.map(v=>`<option value="${v}">`).join('');
   }
 
-  inputId.addEventListener('input', async (e)=>{
-    const q = e.target.value.trim();
+  function debounce(fn, wait){
+    let t;
+    return function(){
+      const args = arguments;
+      clearTimeout(t);
+      t = setTimeout(function(){ fn.apply(null, args); }, wait);
+    };
+  }
+
+  async function fetchIdsIfNeeded(q){
+    q = (q||'').trim();
+    if (!q || q.length < 2) { // mínimo 2 caracteres para buscar
+      dataList.innerHTML = '';
+      lastQ = '';
+      return;
+    }
     if (q === lastQ) return;
     lastQ = q;
-    await fetchIds(q);
-  });
+    try {
+      await fetchIds(q);
+    } catch(e) {
+      console.error('fetchIds error', e);
+    }
+  }
+
+  inputId.addEventListener('input', debounce(function(e){
+    fetchIdsIfNeeded(e.target.value);
+  }, 250)); // 250ms debounce
 
   // --- Guardar ---
   document.getElementById('btnSave').addEventListener('click', async ()=>{
@@ -124,10 +146,10 @@
 
     try{
       const res = await jsonp(url);
-      if(res.status==='ok'){
+      if(res && res.status==='ok'){
         msg.innerHTML = '<span class="ok">Actualizado correctamente</span>';
       }else{
-        msg.innerHTML = '<span class="err">Error: '+(res.error||'desconocido')+'</span>';
+        msg.innerHTML = '<span class="err">Error: '+(res && res.error ? res.error : (res && res.status ? 'status:' + res.status : 'desconocido'))+'</span>';
       }
     }catch(e){
       msg.innerHTML = '<span class="err">Error de red</span>';
