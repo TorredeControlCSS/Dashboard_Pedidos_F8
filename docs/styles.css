@@ -37,11 +37,34 @@ body{padding:0 8px}
 .chart-bars  canvas{height:180px !important}
 
 /* Tabla */
-.table-wrap{margin-top:8px; overflow-x:auto;}
-#tabla{border-collapse:collapse;width:100%; table-layout: fixed;}
-#tabla th,#tabla td{border:1px solid #ddd; padding:8px 6px; line-height:1.25; white-space:normal; overflow:hidden; text-overflow:ellipsis;}
-/* sticky: top dinámico */
-#tabla th{background:#f8fafc;position:sticky;top: var(--stickyTop, 112px); z-index:800}
+.table-wrap{
+  margin-top: 8px;
+  overflow: auto;              /* scroll horizontal y vertical si hace falta */
+}
+.table-wrap table{
+  border-collapse: collapse;
+  width: max-content;          /* ancho real según columnas */
+  min-width: 100%;             /* pero no menos que el contenedor */
+}
+/* encabezado fijo */
+.table-wrap thead th{
+  position: sticky;
+  top: var(--stickyTop, 112px); /* respeta el top dinámico que calculamos en JS */
+  z-index: 2;
+  background: #fff;
+  border-bottom: 2px solid #e5e5e5;
+}
+/* celdas */
+.table-wrap th,
+.table-wrap td{
+  padding: 8px 10px;
+  line-height: 1.15;           /* filas un poco más altas para legibilidad */
+  vertical-align: top;
+  white-space: nowrap;         /* evita saltos raros de línea */
+  /* si quieres cortar con “…” descomenta estas dos líneas: */
+  /* overflow: hidden; */
+  /* text-overflow: ellipsis; */
+}
 
 /* Scroll horizontal superior sincronizado */
 .hscroll{overflow-x:auto; height:12px; margin-bottom:4px}
@@ -80,3 +103,4 @@ th[data-col="TIEMPO"], td[data-col="TIEMPO"]{width:90px}
 th[data-col="COMPLET"], td[data-col="COMPLET"]{width:100px}
 th[data-col="FILL CANT."], td[data-col="FILL CANT."]{width:100px}
 th[data-col="FILL RENGL."], td[data-col="FILL RENGL."]{width:110px}
+
