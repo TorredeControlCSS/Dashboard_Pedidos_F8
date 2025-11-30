@@ -119,7 +119,7 @@ h1,h3 { margin: 0; }
   #filters select, #filters input[type="text"], #filters input[type="date"]{ max-width: 180px; }
 }
 
-/* Patch: evitar solapamiento del header de la tabla y asegurar fondo */
+/* === CSS PATCH: evitar solapamiento del header === */
 .table-wrap thead th {
   position: sticky !important;
   top: var(--stickyTop, 64px) !important;
