@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Dashboard Pedidos F8</title>
 
-  <!-- Favicon / PWA (si aún no tienes estos archivos, súbelos a /docs/icons/) -->
+  <!-- Favicon / PWA (opcional; si no los tienes, puedes dejar solo el .ico) -->
   <link rel="icon" href="icons/favicon.ico">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0b3d91">
 
-  <!-- Libs -->
+  <!-- Librerías -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
@@ -37,7 +37,7 @@
   </div>
 </header>
 
-<!-- Modal login (necesario para el botón Acceder) -->
+<!-- Modal de login -->
 <div id="loginBox" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); align-items:center; justify-content:center; z-index:9999;">
   <div style="background:#fff; padding:16px; border-radius:8px; min-width:260px; text-align:center">
     <div id="loginBoxBtn"></div>
@@ -45,7 +45,7 @@
   </div>
 </div>
 
-<!-- KPIs -->
+<!-- KPIs (globales) -->
 <section id="kpis-compact" class="kpis">
   <div class="kpi"><div>Total</div><strong id="kpi-total">—</strong></div>
   <div class="kpi"><div>Asignado</div><strong id="kpi-asignado">—</strong></div>
@@ -69,11 +69,11 @@
   <button id="btnClear">Limpiar</button>
 </section>
 
-<!-- Gráficos compactos -->
+<!-- Gráficos: línea (grande) + dona + barras (compactas a la derecha) -->
 <section class="charts">
-  <div class="chart"><canvas id="chart-evol" height="80"></canvas></div>
-  <div class="chart"><canvas id="chart-estado-pastel" height="80"></canvas></div>
-  <div class="chart"><canvas id="chart-estado-grupo" height="80"></canvas></div>
+  <div class="chart chart-line"><canvas id="chart-evol"></canvas></div>
+  <div class="chart chart-donut"><canvas id="chart-estado-pastel"></canvas></div>
+  <div class="chart chart-bars"><canvas id="chart-estado-grupo"></canvas></div>
 </section>
 
 <!-- Tabla -->
@@ -83,7 +83,7 @@
   <div id="paginacion"></div>
 </section>
 
-<!-- Config de URLs/ClientID -->
+<!-- Config (ajusta si cambian tus URLs o Client ID) -->
 <script>
   window.APP = {
     A_URL: 'https://script.google.com/macros/s/AKfycbx7-NfduLrSsQhcLkXcx4h_IEaxcOj8cLHdPqzJm8bQEWTTfkKcYCfU-imapmHVxtqysg/exec',  // lectura
@@ -95,11 +95,10 @@
 <script src="metrics.js"></script>
 <script src="app.js"></script>
 
-<!-- Registro del Service Worker (opcional PWA) -->
+<!-- Service Worker (opcional PWA) -->
 <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js', { scope: '/Dashboard_Pedidos_F8/' })
-      .catch(console.error);
+    navigator.serviceWorker.register('sw.js', { scope: '/Dashboard_Pedidos_F8/' }).catch(console.error);
   }
 </script>
 </body>
