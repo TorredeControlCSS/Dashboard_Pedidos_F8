@@ -45,14 +45,35 @@
   <table id="tabla"><thead></thead><tbody></tbody></table>
   <div id="paginacion"></div>
 </section>
-<!-- KPIs compactos -->
-<section id="kpis-compact" style="display:grid;grid-template-columns:repeat(6, minmax(120px,1fr));gap:8px;margin:10px 0;">
-  <div class="kpi"><div>Total pedidos</div><strong id="kpi-total">—</strong></div>
+<!-- KPIs -->
+<section id="kpis-compact" class="kpis">
+  <div class="kpi"><div>Total</div><strong id="kpi-total">—</strong></div>
   <div class="kpi"><div>Asignado</div><strong id="kpi-asignado">—</strong></div>
   <div class="kpi"><div>Solicitado</div><strong id="kpi-solicitado">—</strong></div>
-  <div class="kpi"><div>Rengl. Asig.</div><strong id="kpi-reng-asig">—</strong></div>
-  <div class="kpi"><div>Rengl. Sol.</div><strong id="kpi-reng-sol">—</strong></div>
+  <div class="kpi"><div>Reng. Asig.</div><strong id="kpi-reng-asig">—</strong></div>
+  <div class="kpi"><div>Reng. Sol.</div><strong id="kpi-reng-sol">—</strong></div>
   <div class="kpi"><div>Urg/Mens</div><strong><span id="kpi-urg">—</span>/<span id="kpi-men">—</span></strong></div>
+</section>
+
+<!-- Filtros -->
+<section class="filters">
+  <select id="fCat"><option value="">Todas las categorías</option></select>
+  <select id="fUnidad"><option value="">Todas las unidades</option></select>
+  <select id="fTipo"><option value="">Todos los tipos</option></select>
+  <select id="fGrupo"><option value="">Todos los grupos</option></select>
+  <select id="fEstado"><option value="">Todos los estados</option></select>
+  <input id="fBuscar" placeholder="Buscar F8 SALMI / texto…">
+  <input id="fDesde" type="date">
+  <input id="fHasta" type="date">
+  <button id="btnApply">Aplicar</button>
+  <button id="btnClear">Limpiar</button>
+</section>
+
+<!-- Gráficos (compactos) -->
+<section class="charts">
+  <div class="chart"><canvas id="chart-evol" height="80"></canvas></div>
+  <div class="chart"><canvas id="chart-estado-pastel" height="80"></canvas></div>
+  <div class="chart"><canvas id="chart-estado-grupo" height="80"></canvas></div>
 </section>
 
 <!-- Estado por grupo -->
