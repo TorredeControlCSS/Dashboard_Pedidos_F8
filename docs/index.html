@@ -9,10 +9,25 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0b3d91">
 
+  <!-- 🔧 Kill SW + caches de versiones viejas (forzado) -->
+  <script>
+    (function(){
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations()
+          .then(rs => rs.forEach(r => r.unregister()))
+          .catch(()=>{});
+      }
+      if (window.caches) {
+        caches.keys().then(keys => keys.forEach(k => caches.delete(k))).catch(()=>{});
+      }
+    })();
+  </script>
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-  <link rel="stylesheet" href="styles.css?v=2025-11-30b"/>
+  <!-- 🔧 cache-bust -->
+  <link rel="stylesheet" href="styles.css?v=2025-11-30c"/>
 </head>
 <body>
 
@@ -32,7 +47,6 @@
   </div>
 </header>
 
-<!-- KPIs globales -->
 <section id="kpis-compact" class="kpis">
   <div class="kpi"><div>Total</div><strong id="kpi-total">—</strong></div>
   <div class="kpi"><div>Asignado</div><strong id="kpi-asignado">—</strong></div>
@@ -42,7 +56,6 @@
   <div class="kpi"><div>Urg/Mens</div><strong><span id="kpi-urg">—</span>/<span id="kpi-men">—</span></strong></div>
 </section>
 
-<!-- Filtros con etiquetas -->
 <section class="filters" id="filters">
   <label class="f"><span>Categoría</span>
     <select id="fCat"><option value="">Todas</option></select>
@@ -72,20 +85,15 @@
   <button id="btnClear">Limpiar</button>
 </section>
 
-<!-- Gráficos -->
 <section class="charts">
   <div class="chart chart-line"><canvas id="chart-evol"></canvas></div>
   <div class="chart chart-donut"><canvas id="chart-estado-pastel"></canvas></div>
   <div class="chart chart-bars"><canvas id="chart-estado-grupo"></canvas></div>
 </section>
 
-<!-- Tabla -->
 <section class="table-wrap">
   <div id="kpis"></div>
-
-  <!-- Scroll superior sincronizado -->
   <div id="top-scroll" class="hscroll"></div>
-
   <table id="tabla"><thead></thead><tbody></tbody></table>
   <div id="paginacion"></div>
 </section>
@@ -98,13 +106,14 @@
   };
 </script>
 
-<script src="metrics.js?v=2025-11-30b"></script>
-<script src="app.js?v=2025-11-30b"></script>
+<!-- 🔧 cache-bust -->
+<script src="metrics.js?v=2025-11-30c"></script>
+<script src="app.js?v=2025-11-30c"></script>
 
-<!-- SW de limpieza de caché -->
+<!-- SW: limpieza + unregister (igual que antes, con nueva versión para bustear) -->
 <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js?v=2025-11-30b', { scope: '/Dashboard_Pedidos_F8/' }).catch(console.error);
+    navigator.serviceWorker.register('sw.js?v=2025-11-30c', { scope: '/Dashboard_Pedidos_F8/' }).catch(console.error);
   }
 </script>
 </body>
