@@ -1,36 +1,3 @@
-
-// ---- Column metadata & compact toggle ----
-function labelize(s){ return String(s||'').replace(/\s+/g,' ').trim(); }
-function tagHeaderCells(){
-  const table=document.getElementById('ordersTable'); if(!table) return;
-  const hs=Array.from(table.tHead?.rows?.[0]?.cells||[]);
-  hs.forEach(h=>{ const t=labelize(h.textContent); h.setAttribute('data-col', t); });
-  // Map index->label
-  return hs.map(h=>h.getAttribute('data-col'));
-}
-function tagBodyCells(labels){
-  const table=document.getElementById('ordersTable'); if(!table) return;
-  Array.from(table.tBodies[0]?.rows||[]).forEach(tr=>{
-    Array.from(tr.cells).forEach((td,i)=>{ if(labels[i]) td.setAttribute('data-col', labels[i]); });
-  });
-}
-function applyCompactDefault(){
-  const table=document.getElementById('ordersTable'); if(!table) return;
-  const shouldCompact = window.innerWidth <= 1100 || localStorage.getItem('compactMode')==='1';
-  table.classList.toggle('compact', shouldCompact);
-}
-function setupCompactToggle(){
-  const btn=document.getElementById('btnCompact'); if(!btn) return;
-  btn.addEventListener('click', ()=>{
-    const table=document.getElementById('ordersTable'); if(!table) return;
-    const isCompact = table.classList.toggle('compact');
-    localStorage.setItem('compactMode', isCompact?'1':'0');
-    btn.textContent = isCompact? 'Mostrar todas las columnas' : 'Modo compacto';
-  });
-  // initial label
-  const table=document.getElementById('ordersTable'); if(!table) return;
-  btn.textContent = table.classList.contains('compact')? 'Mostrar todas las columnas' : 'Modo compacto';
-}
 // app.js v2025-12-01a — KPIs/Charts desde stats, tabla paginada, login y edición
 if (window.__APP_LOADED__) {
   console.log('app.js ya cargado, skip');
@@ -77,9 +44,10 @@ const parseIsoDate  = v => { const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(v||''); ret
 async function fetchStats(filters){
   const p=new URLSearchParams({route:'stats'});
   Object.entries(filters).forEach(([k,v])=>{ if(v) p.set(k,v); });
+  const key=p.toString(); if(cacheOrders.has(key)) return cacheOrders.get(key);
   const res=await jsonp(`${A}?${p.toString()}`);
   if(res.status!=='ok') throw new Error(res.error||'stats_error');
-  return res.data;
+  cacheOrders.set(key,res.data); return res.data;
 }
 function setKpis(k){
   const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=(v==null?'—':(+v).toLocaleString()); };
@@ -134,14 +102,37 @@ function perRowMetrics(row){
   return { TIEMPO: days ? `${days}d` : '', COMPLET: complet ? 'SI':'NO', 'FILL CANT.': `${fillCant}%`, 'FILL RENGL.': `${fillReng}%` };
 }
 
+const cacheOrders=new Map();
 async function fetchTable(page, pageSize, filters){
   const p=new URLSearchParams({route:'orders.list', page, pageSize});
   Object.entries(filters).forEach(([k,v])=>{ if(v) p.set(k,v); });
+  const key=p.toString(); if(cacheOrders.has(key)) return cacheOrders.get(key);
   const res=await jsonp(`${A}?${p.toString()}`);
   if(res.status!=='ok') throw new Error(res.error||'orders_error');
-  return res.data;
+  cacheOrders.set(key,res.data); return res.data;
 }
 
+
+/* ------------ Poblado de filtros (sample 500) ------------ */
+async function populateFilters(){
+  const params=new URLSearchParams({route:'orders.list', page:1, pageSize:500});
+  const res=await jsonp(`${A}?${params.toString()}`);
+  if(res.status!=='ok') return;
+  const rows=(res.data&&res.data.rows)||[];
+  const norm = v => String(v==null?'':v).replace(/\s+/g,' ').trim();
+  function setSel(id, vals, labelTodos){ 
+    const el=document.getElementById(id); if(!el) return;
+    const opts=Array.from(new Set(vals.map(norm).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'es'));
+    const first=el.value;
+    el.innerHTML = `<option value="">${labelTodos||'Todas'}</option>` + opts.map(v=>`<option>${v}</option>`).join('');
+    if(first && opts.includes(first)) el.value=first;
+  }
+  setSel('fCat',    rows.map(r=>r['CATEG.']));
+  setSel('fUnidad', rows.map(r=>r['UNIDAD']));
+  setSel('fTipo',   rows.map(r=>r['TIPO']), 'Todos');
+  setSel('fGrupo',  rows.map(r=>r['GRUPO']));
+  setSel('fEstado', rows.map(r=>r['ESTADO']||''));
+}
 async function renderTable(page=1){
   const pageSize=150, filters=getFilters();
   const data=await fetchTable(page, pageSize, filters);
@@ -191,6 +182,7 @@ async function renderTable(page=1){
     `<span style="padding:4px 8px">Página ${page} / ${totalPages}</span>`+
     `<button onclick="renderTable(${plus100})">+100</button>`+
     `<button onclick="renderTable(${next})"${page===totalPages?' disabled':''}>Siguiente »</button>`;
+  /* prefetch next */ if(page<totalPages){ fetchTable(page+1, pageSize, filters).catch(()=>{}); }
 }
 
 /* ------------ Edición inline ------------ */
@@ -230,7 +222,7 @@ document.querySelector('#tabla').addEventListener('click', async (ev)=>{
         td.textContent = (isDate && /^\d{4}-\d{2}-\d{2}$/.test(value))
           ? (()=>{ const [y,m,d]=value.split('-'); const mon=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][+m-1]; return `${d}-${mon}-${y.slice(2)}`; })()
           : value;
-        await refreshKpisAndCharts(getFilters());
+        await refreshKpis(getFilters()); requestAnimationFrame(()=>{ refreshCharts(getFilters()); });
         const m=document.querySelector('#paginacion span')?.textContent.match(/Página (\d+)/); const cur=m?+m[1]:1;
         await renderTable(cur);
       } else { td.innerHTML=old; alert('Error: '+(res.error||'desconocido')); }
@@ -263,14 +255,14 @@ btnEditMode?.addEventListener('click', ()=>{
 
 /* ------------ Botones ------------ */
 document.getElementById('btnApply')?.addEventListener('click', async ()=>{
-  await refreshKpisAndCharts(getFilters()); await renderTable(1);
+  await refreshKpis(getFilters()); requestAnimationFrame(()=>{ refreshCharts(getFilters()); }); await renderTable(1);
 });
 document.getElementById('btnClear')?.addEventListener('click', async ()=>{
   ['fCat','fUnidad','fTipo','fGrupo','fEstado','fBuscar','fDesde','fHasta'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-  await refreshKpisAndCharts(getFilters()); await renderTable(1);
+  await refreshKpis(getFilters()); requestAnimationFrame(()=>{ refreshCharts(getFilters()); }); await renderTable(1);
 });
 document.getElementById('btnRefresh')?.addEventListener('click', async ()=>{
-  await refreshKpisAndCharts(getFilters());
+  await refreshKpis(getFilters()); requestAnimationFrame(()=>{ refreshCharts(getFilters()); });
   const m=document.querySelector('#paginacion span')?.textContent.match(/Página (\d+)/); const cur=m?+m[1]:1;
   await renderTable(cur);
 });
@@ -293,9 +285,12 @@ async function init(){
   const stickyTopPx = (headerEl?.offsetHeight || 64);
   document.documentElement.style.setProperty('--stickyTop', stickyTopPx + 'px');
 
-  await refreshKpisAndCharts(getFilters());
+  await refreshKpis(getFilters()); requestAnimationFrame(()=>{ refreshCharts(getFilters()); });
   await renderTable(1);
 }
 init();
 
 } // guard
+
+async function refreshKpis(filters){ const st=await fetchStats(filters); setKpis(st.kpis); }
+async function refreshCharts(filters){ const st=await fetchStats(filters); await renderCharts(st); }

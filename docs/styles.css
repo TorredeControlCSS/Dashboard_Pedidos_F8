@@ -71,23 +71,12 @@ h1,h3 { margin: 0; }
 .pager{padding:8px 16px; display:flex; gap:8px; align-items:center;}
 .pager button{padding:6px 10px}
 
-/* ---- Responsive columns (v3) ---- */
-:root{ --stickyTop:64px; }
-table.compact thead th[data-col="F8 SISCONI"],
-table.compact tbody td[data-col="F8 SISCONI"],
-table.compact thead th[data-col="SUSTANCIAS"],
-table.compact tbody td[data-col="SUSTANCIAS"],
-table.compact thead th[data-col="CANT. ASIG."],
-table.compact tbody td[data-col="CANT. ASIG."],
-table.compact thead th[data-col="CANT. SOL."],
-table.compact tbody td[data-col="CANT. SOL."],
-table.compact thead th[data-col="RENGLONES ASIG."],
-table.compact tbody td[data-col="RENGLONES ASIG."],
-table.compact thead th[data-col="RENGLONES SOL."],
-table.compact tbody td[data-col="RENGLONES SOL."]{ display:none; }
 
-/* Auto-compact for narrow screens */
-@media (max-width: 1100px){
-  #ordersTable{ width:100%; }
-  #ordersTable.compact{ table-layout: fixed; }
-}
+/* === Patch vFinal: tabla y filtros === */
+.table-wrap table{ border-collapse: collapse; width:100%; }
+.table-wrap thead th{ position: sticky; top: var(--stickyTop,64px); background:#fff; z-index: 5; }
+.table-wrap thead, .table-wrap tbody, .table-wrap tr, .table-wrap th, .table-wrap td{ margin:0; padding:0; }
+.table-wrap th, .table-wrap td{ padding: 8px 10px; }
+.table-wrap thead tr::before{ content:none !important; } /* evita filas fantasma por estilos de usuario */
+#filters .row{ display:flex; flex-wrap:nowrap; gap:8px; align-items:center; overflow:auto; }
+#filters select, #filters input{ max-width:170px; }
