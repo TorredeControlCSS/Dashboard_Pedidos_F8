@@ -296,3 +296,7 @@ async function refreshKpis(filters){ const st=await fetchStats(filters); setKpis
 async function refreshCharts(filters){ const st=await fetchStats(filters); await renderCharts(st); }
 
 async function renderCharts(st){ console.warn('renderCharts no definida; stats:', st); }
+// --- parche runtime ---
+window.renderTable = (typeof renderTable === 'function') ? renderTable : function(){ console.warn('renderTable no disponible'); };
+window.renderCharts = window.renderCharts || (async function(){ /* noop: evita error si no hay charts */ });
+
