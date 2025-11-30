@@ -1,5 +1,5 @@
-// v2025-11-30a
-console.log('app.js v2025-11-30a');
+// v2025-11-30b
+console.log('app.js v2025-11-30b');
 
 const A = window.APP.A_URL;
 const B = window.APP.B_URL;
@@ -39,62 +39,14 @@ function formatAllIsoDatesInRow(row){ const out={...row}; for(const k of Object.
 function renderKpis(d){ const el=document.getElementById('kpis'); if(el) el.textContent = `Total pedidos: ${d.totalPedidos}`; }
 function loadKpis(){ window.onKpis=(res)=>renderKpis(res.data); const s=document.createElement('script'); s.src = `${A}?route=kpis&callback=onKpis&_=${Date.now()}`; document.body.appendChild(s); }
 
-function headerWidthMap(){ return {
-  'CATEG.':180,'UNIDAD':220,'TIPO':100,'F8 SALMI':110,'F8 SISCONI':110,'GRUPO':90,'SUSTANCIAS':140,
-  'CANT. ASIG.':90,'CANT. SOL.':90,'RENGLONES ASI.':110,'RENGLONES SOL.':110,
-  'FECHA F8':100,'RECIBO F8':100,'ASIGNACIÓN':100,'SALIDA':100,'DESPACHO':100,'FACTURACIÓN':110,'EMPACADO':100,
-  'PROY. ENTREGA':110,'ENTREGA REAL':110,'INCOTERM':100,'ESTADO':110,'COMENT.':180,'TIEMPO':80,
-  'COMPLET':90,'FILL CANT.':90,'FILL RENGL.':100
-};}
-
-function renderTableFromFiltered(page){
-  const pageSize = 150;
-  const start = (page-1)*pageSize;
-  const chunk = FILTERED_ROWS.slice(start, start+pageSize).map(r=>({ ...r, ...derivePerRow(r) }));
-  const headers = chunk.length ? Object.keys(chunk[0]) : [];
-  currentHeaders=headers; currentRows=chunk.map(r=>({...r})); currentIdColName = headers.find(h=>normalizeName(h)===N_ID_HEADER)||null;
-
-  const widths = headerWidthMap();
-  const head = document.querySelector('#tabla thead');
-  const body = document.querySelector('#tabla tbody');
-
-  head.innerHTML = headers.length ? `<tr>${headers.map(h=>`<th data-col="${h}" style="width:${widths[h]||120}px">${h}</th>`).join('')}</tr>` : '';
-  const rowsFmt = chunk.map(formatAllIsoDatesInRow);
-  body.innerHTML = rowsFmt.map((r, ri)=>`<tr>${
-    headers.map(k=>{
-      const keyNorm=normalizeName(k);
-      const editableDate=editMode && N_EDITABLE_DATE.has(keyNorm);
-      const editableInt=editMode && N_EDITABLE_INT.has(keyNorm);
-      const editableText=editMode && N_EDITABLE_TEXT.has(keyNorm);
-      const classes=(editableDate||editableInt||editableText)?' class="editable"':'';
-      const w=widths[k]||120;
-      return `<td${classes} data-ri="${ri}" data-col="${k}" style="width:${w}px">${r[k]??''}</td>`;
-    }).join('')
-  }</tr>`).join('');
-
-  const totalPages=Math.ceil(FILTERED_ROWS.length/pageSize);
-  const jump=Math.max(1, Math.round(100/pageSize)); const prev=Math.max(1,page-1); const next=Math.min(totalPages,page+1);
-  const minus100=Math.max(1,page-jump); const plus100=Math.min(totalPages,page+jump);
-
-  document.getElementById('paginacion').innerHTML =
-    `<button onclick="renderTableFromFiltered(${prev})"${page===1?' disabled':''}>« Anterior</button>`+
-    `<button onclick="renderTableFromFiltered(${minus100})">-100</button>`+
-    `<span style="padding:4px 8px">Página ${page} / ${totalPages}</span>`+
-    `<button onclick="renderTableFromFiltered(${plus100})">+100</button>`+
-    `<button onclick="renderTableFromFiltered(${next})"${page===totalPages?' disabled':''}>Siguiente »</button>`;
-}
-function currentPageNumber(){ const t=document.querySelector('#paginacion span'); if(!t) return 1; const m=t.textContent.match(/Página (\d+)/); return m?+m[1]:1; }
-
-// ===== Cargar dataset completo (paginando) =====
+/* ===== dataset completo con paginación ===== */
 async function loadMetricsAll(){
-  const PAGE_SIZE = 5000;       // subimos a 5000 para menos rondas
+  const PAGE_SIZE = 5000;
   let page = 1;
   let all = [];
 
   while (true) {
-    // usamos JSONP igual que antes
-    /* global onOrdersPage */
-    await new Promise((resolve) => {
+    const len = await new Promise((resolve) => {
       window.onOrdersPage = (res)=>{
         const rows = (res && res.data && res.data.rows) ? res.data.rows : [];
         all = all.concat(rows);
@@ -103,29 +55,25 @@ async function loadMetricsAll(){
       const s = document.createElement('script');
       s.src = `${A}?route=orders.list&page=${page}&pageSize=${PAGE_SIZE}&callback=onOrdersPage&_=${Date.now()}`;
       document.body.appendChild(s);
-    }).then((len)=>{
-      page += 1;
-      if (len < PAGE_SIZE) return; // última página
     });
-
-    // si la última ronda devolvió < PAGE_SIZE salimos del while
-    const lastLen = all.length % PAGE_SIZE;
-    if (lastLen || all.length === 0) break;
+    page += 1;
+    if (len < PAGE_SIZE) break;
   }
 
   ALL_ROWS = all;
   FILTERED_ROWS = ALL_ROWS.slice();
-
-  // pinta métricas globales (sobre TODO el dataset)
   computeAndRenderMetrics(ALL_ROWS, FILTERED_ROWS);
-  // inicializa opciones de filtros con TODO el dataset
-  initFilterOptions(FILTERED_ROWS);
+  initFilterOptions(); // usa ALL_ROWS siempre
 }
 
-function initFilterOptions(rows){
-  const uniq = (arr)=> Array.from(new Set(arr.filter(Boolean))).sort();
-  const fill = (id, values)=>{ const sel=document.getElementById(id); if(!sel) return; const cur=sel.value;
-    sel.innerHTML = `<option value="">Todas</option>` + values.map(v=>`<option>${v}</option>`).join('');
+/* ===== Filtros (siempre con ALL_ROWS para no perder valores como CEDIS) ===== */
+function initFilterOptions(){
+  const rows = ALL_ROWS;
+  const uniq = (arr)=> Array.from(new Set(arr.map(v=> (v==null?'':String(v)).trim()).filter(Boolean))).sort();
+  const fill = (id, values)=>{
+    const sel=document.getElementById(id); if(!sel) return;
+    const cur=sel.value;
+    sel.innerHTML = `<option value="">${id==='fCat'?'Todas':id==='fEstado'?'Todos':'Todos'}</option>` + values.map(v=>`<option>${v}</option>`).join('');
     if (cur) sel.value = cur;
   };
   fill('fCat',   uniq(rows.map(r=>r[FIELDS_FOR_FILTERS.categoria])));
@@ -169,6 +117,54 @@ function clearFilters(){
   renderTableFromFiltered(1);
 }
 
+/* ===== tabla ===== */
+function headerWidthMap(){ return {
+  'CATEG.':180,'UNIDAD':220,'TIPO':110,'F8 SALMI':120,'F8 SISCONI':120,'GRUPO':100,'SUSTANCIAS':150,
+  'CANT. ASIG.':100,'CANT. SOL.':100,'RENGLONES ASI.':120,'RENGLONES SOL.':120,
+  'FECHA F8':110,'RECIBO F8':110,'ASIGNACIÓN':110,'SALIDA':110,'DESPACHO':110,'FACTURACIÓN':110,'EMPACADO':110,
+  'PROY. ENTREGA':120,'ENTREGA REAL':120,'INCOTERM':110,'ESTADO':120,'COMENT.':220,'TIEMPO':90,
+  'COMPLET':100,'FILL CANT.':100,'FILL RENGL.':110
+};}
+
+function renderTableFromFiltered(page){
+  const pageSize = 150;
+  const start = (page-1)*pageSize;
+  const chunk = FILTERED_ROWS.slice(start, start+pageSize).map(r=>({ ...r, ...derivePerRow(r) }));
+  const headers = chunk.length ? Object.keys(chunk[0]) : [];
+  currentHeaders=headers; currentRows=chunk.map(r=>({...r})); currentIdColName = headers.find(h=>normalizeName(h)===N_ID_HEADER)||null;
+
+  const widths = headerWidthMap();
+  const head = document.querySelector('#tabla thead');
+  const body = document.querySelector('#tabla tbody');
+
+  head.innerHTML = headers.length ? `<tr>${headers.map(h=>`<th data-col="${h}" style="width:${widths[h]||120}px">${h}</th>`).join('')}</tr>` : '';
+  const rowsFmt = chunk.map(formatAllIsoDatesInRow);
+  body.innerHTML = rowsFmt.map((r, ri)=>`<tr>${
+    headers.map(k=>{
+      const keyNorm=normalizeName(k);
+      const editableDate=editMode && N_EDITABLE_DATE.has(keyNorm);
+      const editableInt=editMode && N_EDITABLE_INT.has(keyNorm);
+      const editableText=editMode && N_EDITABLE_TEXT.has(keyNorm);
+      const classes=(editableDate||editableInt||editableText)?' class="editable"':'';
+      const w=widths[k]||120;
+      return `<td${classes} data-ri="${ri}" data-col="${k}" style="width:${w}px">${r[k]??''}</td>`;
+    }).join('')
+  }</tr>`).join('');
+
+  const totalPages=Math.ceil(FILTERED_ROWS.length/pageSize);
+  const jump=Math.max(1, Math.round(100/pageSize)); const prev=Math.max(1,page-1); const next=Math.min(totalPages,page+1);
+  const minus100=Math.max(1,page-jump); const plus100=Math.min(totalPages,page+jump);
+
+  document.getElementById('paginacion').innerHTML =
+    `<button onclick="renderTableFromFiltered(${prev})"${page===1?' disabled':''}>« Anterior</button>`+
+    `<button onclick="renderTableFromFiltered(${minus100})">-100</button>`+
+    `<span style="padding:4px 8px">Página ${page} / ${totalPages}</span>`+
+    `<button onclick="renderTableFromFiltered(${plus100})">+100</button>`+
+    `<button onclick="renderTableFromFiltered(${next})"${page===totalPages?' disabled':''}>Siguiente »</button>`;
+}
+function currentPageNumber(){ const t=document.querySelector('#paginacion span'); if(!t) return 1; const m=t.textContent.match(/Página (\d+)/); return m?+m[1]:1; }
+
+/* ===== editor inline ===== */
 document.querySelector('#tabla').addEventListener('click', (ev)=>{
   const td = ev.target.closest('td.editable'); if (!td || !editMode) return;
   const ri=+td.dataset.ri, col=td.dataset.col, row=currentRows[ri];
@@ -216,16 +212,14 @@ document.querySelector('#tabla').addEventListener('click', (ev)=>{
   };
 });
 
-// Login + edición
+/* ===== Login + edición ===== */
 const btnLogin=document.getElementById('btnLogin'); const btnEditMode=document.getElementById('btnEditMode');
 const loginBox=document.getElementById('loginBox'); const loginBoxBtn=document.getElementById('loginBoxBtn'); const loginClose=document.getElementById('loginClose');
 function renderGoogleButton(){
-  loginBoxBtn.innerHTML=''; if(!window.google||!google.accounts||!google.accounts.id){ setTimeout(renderGoogleButton,200); return; }
-  google.accounts.id.initialize({client_id:CLIENT_ID, callback:(resp)=>{ idToken=resp.credential; btnEditMode.disabled=false; btnLogin.textContent='Sesión iniciada'; loginBox.style.display='none'; alert('Sesión iniciada. Activa “Modo edición”.'); }});
-  google.accounts.id.renderButton(loginBoxBtn,{type:'standard',theme:'outline',size:'large',text:'signin_with'});
+  if(!window.google||!google.accounts||!google.accounts.id){ setTimeout(renderGoogleButton,200); return; }
+  google.accounts.id.initialize({client_id:CLIENT_ID, callback:(resp)=>{ idToken=resp.credential; btnEditMode.disabled=false; btnLogin.textContent='Sesión iniciada'; alert('Sesión iniciada. Activa “Modo edición”.'); }});
 }
-btnLogin.onclick=()=>{ loginBox.style.display='flex'; renderGoogleButton(); };
-if (loginClose) loginClose.onclick=()=>{ loginBox.style.display='none'; };
+btnLogin.onclick=()=>{ renderGoogleButton(); };
 btnEditMode.onclick=()=>{ editMode=!editMode; btnEditMode.textContent=`Modo edición: ${editMode?'ON':'OFF'}`; renderTableFromFiltered(currentPageNumber()); };
 
 const btnRefresh=document.getElementById('btnRefresh');
@@ -234,7 +228,29 @@ btnRefresh.onclick=()=>{ btnRefresh.textContent='Actualizando…'; btnRefresh.di
   .finally(()=>{ btnRefresh.textContent='Actualizar'; btnRefresh.disabled=false; });
 };
 
+/* ===== sticky top dinámico + scroll sincronizado ===== */
+function updateStickyTop(){
+  const hdr = document.querySelector('.app-header');
+  const kpis = document.getElementById('kpis-compact');
+  const filt = document.getElementById('filters');
+  const h = (hdr?.offsetHeight||0) + (kpis?.offsetHeight||0) + (filt?.offsetHeight||0) + 10;
+  document.documentElement.style.setProperty('--stickyTop', h + 'px');
+}
+window.addEventListener('resize', updateStickyTop);
+
+// scroll sincronizado
+(function syncHScroll(){
+  const topBar = document.getElementById('top-scroll');
+  const tw = document.querySelector('.table-wrap');
+  if (!topBar || !tw) return;
+  let locking = false;
+  topBar.addEventListener('scroll', ()=>{ if(locking) return; locking=true; tw.scrollLeft = topBar.scrollLeft; locking=false; });
+  tw.addEventListener('scroll', ()=>{ if(locking) return; locking=true; topBar.scrollLeft = tw.scrollLeft; locking=false; });
+})();
+
+/* ===== Init ===== */
 function init(){
+  updateStickyTop();
   loadKpis();
   loadMetricsAll().then(()=> renderTableFromFiltered(1));
   document.getElementById('btnApply').onclick=applyFilters;
