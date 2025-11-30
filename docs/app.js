@@ -1,86 +1,3 @@
-
-/* === FINAL PATCH PRELUDE === */
-(function(){
-  const A = (window.APP && window.APP.A_URL) || window.A || '';
-
-  // fetchStats compatible con 'stats' y fallback 'kpis'
-  if (!window.fetchStats){
-    window.fetchStats = async function fetchStats(filters){
-      try{
-        const p = new URLSearchParams({route:'stats'});
-        if (filters && typeof filters==='object'){
-          Object.entries(filters).forEach(([k,v])=>{ if(v!=null && v!=='') p.append(k, v); });
-        }
-        const r = await jsonp(`${A}?${p.toString()}`);
-        if(r && r.status==='ok') return r.data||{};
-        throw new Error('stats failed');
-      }catch(e){
-        const p2 = new URLSearchParams({route:'kpis'});
-        if (filters && typeof filters==='object'){
-          Object.entries(filters).forEach(([k,v])=>{ if(v!=null && v!=='') p2.append(k, v); });
-        }
-        const r2 = await jsonp(`${A}?${p2.toString()}`);
-        return (r2 && r2.data) || {};
-      }
-    };
-  }
-
-  // Wrappers por si el código original llama a estas
-  if (!window.refreshKpis){
-    window.refreshKpis = async function refreshKpis(filters){
-      const st = await window.fetchStats(filters);
-      if (typeof setKpis==='function') setKpis(st.kpis || st);
-    };
-  }
-  if (!window.refreshCharts){
-    window.refreshCharts = async function refreshCharts(filters){
-      const st = await window.fetchStats(filters);
-      if (typeof renderCharts==='function') await renderCharts(st);
-    };
-  }
-})();
-
-
-/* === FINAL PATCH: filtros robustos (incluye CEDIS) === */
-async function populateFilters(){
-  try{
-    const norm = v => String(v==null?'':v).replace(/\s+/g,' ').trim();
-    const distinct = (arr) => Array.from(new Set(arr.map(norm))).filter(Boolean).sort((a,b)=>a.localeCompare(b,'es'));
-    const cols = {cat:[], unidad:[], tipo:[], grupo:[], estado:[]};
-    const pageSize = 500;
-
-    const first = await jsonp(`${(window.APP&&APP.A_URL)||window.A||''}?` + new URLSearchParams({route:'orders.list', page:1, pageSize}).toString());
-    if(first.status!=='ok') return;
-    const total = Number(first.data?.total||0);
-    const totalPages = Math.min(Math.ceil(total/pageSize), 5);
-    const collect = (rows)=>rows.forEach(r=>{
-      cols.cat.push(r['CATEG.']);
-      cols.unidad.push(r['UNIDAD']);
-      cols.tipo.push(r['TIPO']);
-      cols.grupo.push(r['GRUPO']);
-      cols.estado.push(r['ESTADO']||'');
-    });
-    collect(first.data?.rows||[]);
-    for(let p=2;p<=totalPages;p++){
-      const res = await jsonp(`${(window.APP&&APP.A_URL)||window.A||''}?` + new URLSearchParams({route:'orders.list', page:p, pageSize}).toString());
-      if(res.status==='ok') collect(res.data?.rows||[]);
-    }
-
-    const setSel = (id, vals, labelTodos='Todas') => {
-      const el=document.getElementById(id); if(!el) return;
-      const cur=el.value;
-      const opts=distinct(vals);
-      el.innerHTML = `<option value="">${labelTodos}</option>` + opts.map(v=>`<option>${v}</option>`).join('');
-      if(cur && opts.includes(cur)) el.value=cur;
-    };
-    setSel('fCat', cols.cat);
-    setSel('fUnidad', cols.unidad);
-    setSel('fTipo', cols.tipo, 'Todos');
-    setSel('fGrupo', cols.grupo);
-    setSel('fEstado', cols.estado);
-  }catch(e){ console.warn('populateFilters fallo:', e); }
-}
-
 // app.js v2025-12-01a — KPIs/Charts desde stats, tabla paginada, login y edición
 if (window.__APP_LOADED__) {
   console.log('app.js ya cargado, skip');
@@ -127,10 +44,9 @@ const parseIsoDate  = v => { const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(v||''); ret
 async function fetchStats(filters){
   const p=new URLSearchParams({route:'stats'});
   Object.entries(filters).forEach(([k,v])=>{ if(v) p.set(k,v); });
-  const key=p.toString(); if(cacheOrders.has(key)) return cacheOrders.get(key);
   const res=await jsonp(`${A}?${p.toString()}`);
   if(res.status!=='ok') throw new Error(res.error||'stats_error');
-  cacheOrders.set(key,res.data); return res.data;
+  return res.data;
 }
 function setKpis(k){
   const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=(v==null?'—':(+v).toLocaleString()); };
@@ -185,73 +101,14 @@ function perRowMetrics(row){
   return { TIEMPO: days ? `${days}d` : '', COMPLET: complet ? 'SI':'NO', 'FILL CANT.': `${fillCant}%`, 'FILL RENGL.': `${fillReng}%` };
 }
 
-const cacheOrders=new Map();
 async function fetchTable(page, pageSize, filters){
   const p=new URLSearchParams({route:'orders.list', page, pageSize});
   Object.entries(filters).forEach(([k,v])=>{ if(v) p.set(k,v); });
-  const key=p.toString(); if(cacheOrders.has(key)) return cacheOrders.get(key);
   const res=await jsonp(`${A}?${p.toString()}`);
   if(res.status!=='ok') throw new Error(res.error||'orders_error');
-  cacheOrders.set(key,res.data); return res.data;
+  return res.data;
 }
 
-
-/* ------------ Poblado de filtros (sample 500) ------------ */
-
-async function populateFilters(){
-  const norm = v => String(v==null?'':v).replace(/\s+/g,' ').trim();
-  const distinct = (arr) => Array.from(new Set(arr.map(norm))).filter(Boolean).sort((a,b)=>a.localeCompare(b,'es'));
-  const cols = {cat:[], unidad:[], tipo:[], grupo:[], estado:[]};
-  const pageSize = 500;
-  const first = await jsonp(`${A}?` + new URLSearchParams({route:'orders.list', page:1, pageSize}).toString());
-  if(first.status!=='ok') return;
-  const total = Number(first.data?.total||0);
-  const totalPages = Math.min(Math.ceil(total/pageSize), 5);
-  function collect(rows){
-    rows.forEach(r=>{
-      cols.cat.push(r['CATEG.']);
-      cols.unidad.push(r['UNIDAD']);
-      cols.tipo.push(r['TIPO']);
-      cols.grupo.push(r['GRUPO']);
-      cols.estado.push(r['ESTADO']||'');
-    });
-  }
-  collect(first.data?.rows||[]);
-  for (let p=2; p<=totalPages; p++){
-    const res = await jsonp(`${A}?` + new URLSearchParams({route:'orders.list', page:p, pageSize}).toString());
-    if(res.status==='ok') collect(res.data?.rows||[]);
-  }
-  const setSel = (id, vals, labelTodos='Todas') => {
-    const el=document.getElementById(id); if(!el) return;
-    const cur=el.value;
-    const opts=distinct(vals);
-    el.innerHTML = `<option value="">${labelTodos}</option>` + opts.map(v=>`<option>${v}</option>`).join('');
-    if(cur && opts.includes(cur)) el.value = cur;
-  };
-  setSel('fCat', cols.cat);
-  setSel('fUnidad', cols.unidad);
-  setSel('fTipo', cols.tipo, 'Todos');
-  setSel('fGrupo', cols.grupo);
-  setSel('fEstado', cols.estado);
-}
-);
-  const res=await jsonp(`${A}?${params.toString()}`);
-  if(res.status!=='ok') return;
-  const rows=(res.data&&res.data.rows)||[];
-  const norm = v => String(v==null?'':v).replace(/\s+/g,' ').trim();
-  function setSel(id, vals, labelTodos){ 
-    const el=document.getElementById(id); if(!el) return;
-    const opts=Array.from(new Set(vals.map(norm).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'es'));
-    const first=el.value;
-    el.innerHTML = `<option value="">${labelTodos||'Todas'}</option>` + opts.map(v=>`<option>${v}</option>`).join('');
-    if(first && opts.includes(first)) el.value=first;
-  }
-  setSel('fCat',    rows.map(r=>r['CATEG.']));
-  setSel('fUnidad', rows.map(r=>r['UNIDAD']));
-  setSel('fTipo',   rows.map(r=>r['TIPO']), 'Todos');
-  setSel('fGrupo',  rows.map(r=>r['GRUPO']));
-  setSel('fEstado', rows.map(r=>r['ESTADO']||''));
-}
 async function renderTable(page=1){
   const pageSize=150, filters=getFilters();
   const data=await fetchTable(page, pageSize, filters);
@@ -301,7 +158,6 @@ async function renderTable(page=1){
     `<span style="padding:4px 8px">Página ${page} / ${totalPages}</span>`+
     `<button onclick="renderTable(${plus100})">+100</button>`+
     `<button onclick="renderTable(${next})"${page===totalPages?' disabled':''}>Siguiente »</button>`;
-  /* prefetch next */ if(page<totalPages){ fetchTable(page+1, pageSize, filters).catch(()=>{}); }
 }
 
 /* ------------ Edición inline ------------ */
@@ -341,7 +197,7 @@ document.querySelector('#tabla').addEventListener('click', async (ev)=>{
         td.textContent = (isDate && /^\d{4}-\d{2}-\d{2}$/.test(value))
           ? (()=>{ const [y,m,d]=value.split('-'); const mon=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][+m-1]; return `${d}-${mon}-${y.slice(2)}`; })()
           : value;
-        await refreshKpis(getFilters()); requestAnimationFrame(()=>{ refreshCharts(getFilters()); });
+        await refreshKpisAndCharts(getFilters());
         const m=document.querySelector('#paginacion span')?.textContent.match(/Página (\d+)/); const cur=m?+m[1]:1;
         await renderTable(cur);
       } else { td.innerHTML=old; alert('Error: '+(res.error||'desconocido')); }
@@ -374,16 +230,14 @@ btnEditMode?.addEventListener('click', ()=>{
 
 /* ------------ Botones ------------ */
 document.getElementById('btnApply')?.addEventListener('click', async ()=>{
-  await refreshKpis(getFilters()); requestAnimationFrame(()=>{ refreshCharts(getFilters()); }); await populateFilters();
-  await renderTable(1);
+  await refreshKpisAndCharts(getFilters()); await renderTable(1);
 });
 document.getElementById('btnClear')?.addEventListener('click', async ()=>{
-  ['fCat','fUnidad','fTipo','fGrupo','fEstado','fBuscar','fDesde','fHasta'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-  await refreshKpis(getFilters()); requestAnimationFrame(()=>{ refreshCharts(getFilters()); }); await populateFilters();
-  await renderTable(1);
+  ['fCat','fUnidad','fTipo','fGrupo','fEstado','fBuscar','fDesde','fHasta'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+  await refreshKpisAndCharts(getFilters()); await renderTable(1);
 });
 document.getElementById('btnRefresh')?.addEventListener('click', async ()=>{
-  await refreshKpis(getFilters()); requestAnimationFrame(()=>{ refreshCharts(getFilters()); });
+  await refreshKpisAndCharts(getFilters());
   const m=document.querySelector('#paginacion span')?.textContent.match(/Página (\d+)/); const cur=m?+m[1]:1;
   await renderTable(cur);
 });
@@ -406,43 +260,9 @@ async function init(){
   const stickyTopPx = (headerEl?.offsetHeight || 64);
   document.documentElement.style.setProperty('--stickyTop', stickyTopPx + 'px');
 
-  await refreshKpis(getFilters()); requestAnimationFrame(()=>{ refreshCharts(getFilters()); });
-  await populateFilters();
+  await refreshKpisAndCharts(getFilters());
   await renderTable(1);
 }
 init();
 
 } // guard
-
-async function refreshKpis(filters){ const st=await fetchStats(filters); setKpis(st.kpis); }
-async function refreshCharts(filters){ const st=await fetchStats(filters); await renderCharts(st); }
-
-async function renderCharts(st){ console.warn('renderCharts no definida; stats:', st); }
-
-
-/* === FINAL PATCH POSTLUDE === */
-// Exponer renderTable para que los botones funcionen, y evitar error si aún no fue definida.
-window.renderTable = (typeof renderTable === 'function') ? renderTable : function(){ console.warn('renderTable no disponible'); };
-// Evitar warning si no hay gráficos en esta vista.
-window.renderCharts = window.renderCharts || (async function(){});
-
-// Llamar a populateFilters una vez al inicio si existe init() que luego hace renderTable(1)
-(function(){
-  try{
-    const _init = (typeof init==='function') ? init : null;
-    if (_init && !window.__PF_DONE__){
-      const orig_init = _init;
-      window.__PF_DONE__ = true;
-      window.init = async function(){
-        await populateFilters();
-        return orig_init.apply(this, arguments);
-      }
-    } else {
-      // Si no hay init, al menos poblar filtros ahora (no rompe nada)
-      populateFilters().catch(()=>{});
-    }
-  }catch(e){}
-})();
-// parches runtime (no alteran tu lógica)
-window.renderTable = (typeof renderTable === 'function') ? renderTable : function(){};
-window.renderCharts = (typeof renderCharts === 'function') ? renderCharts : (async function(){});
