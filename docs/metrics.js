@@ -1,4 +1,9 @@
-// ===== Estado por fila (según fechas) =====
+// Usa la misma fuente del sitio en Chart.js
+if (window.Chart && Chart.defaults && Chart.defaults.font) {
+  try { Chart.defaults.font.family = getComputedStyle(document.body).fontFamily || 'inherit'; } catch(e){}
+}
+
+// ===== Estado por fila =====
 function deriveStage(row){
   const has = k => row[k] && String(row[k]).trim().length > 0;
   if (has('ENTREGA REAL'))     return 'ENTREGADA';
@@ -10,14 +15,14 @@ function deriveStage(row){
   return 'PENDIENTE';
 }
 
-// ===== Indicadores por pedido =====
+// ===== Indicadores por pedido (por fila) =====
 function derivePerRow(row){
   const estado = deriveStage(row);
   const parseSheetDate = (v)=>{
     if (!v) return null;
     if (v instanceof Date) return v;
     if (/^\d{4}-\d{2}-\d{2}T/.test(v)) return new Date(v);
-    return null; // otros formatos se ignoran para el cálculo de días
+    return null;
   };
   const fechaF8 = parseSheetDate(row['FECHA F8']) || parseSheetDate(row['RECIBO F8']);
   const fin = parseSheetDate(row['ENTREGA REAL']) || new Date();
@@ -41,14 +46,14 @@ function derivePerRow(row){
   };
 }
 
-// ===== Agregaciones globales =====
+// ===== Agregaciones =====
 function buildAggregates(rows){
   const byGroup = new Map();
   const tot = {
     pedidos: rows.length, urgencia: 0, mensual: 0,
     asignado: 0, solicitado: 0, renglonesAsig: 0, renglonesSol: 0
   };
-  const evol = {}; // { 'YYYY-MM-DD': {rec: N, comp: M} }
+  const evol = {}; // { 'YYYY-MM-DD': {rec:n, comp:m} }
 
   for (const r of rows){
     const stage = deriveStage(r);
@@ -56,8 +61,8 @@ function buildAggregates(rows){
     if (!byGroup.has(g)) byGroup.set(g, {group:g, total:0,
       'F8 RECIBIDA':0,'EN ASIGNACIÓN':0,'SALIDA DE SALMI':0,'FACTURADO':0,'EMPACADO':0,'ENTREGADA':0,'PENDIENTE':0
     });
-    const bucket = byGroup.get(g);
-    bucket.total++; bucket[stage]++;
+    const b = byGroup.get(g);
+    b.total++; b[stage]++;
 
     const tipo = String(r['TIPO']||'').toUpperCase();
     if (tipo==='URGENCIA') tot.urgencia++; if (tipo==='MENSUAL') tot.mensual++;
@@ -91,7 +96,7 @@ function buildAggregates(rows){
   return { tot, groups, evol: evolSorted };
 }
 
-// ===== KPIs =====
+// ===== KPIs (globales) =====
 function renderKpisCompact(tot){
   const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
   set('kpi-total', (tot.pedidos||0).toLocaleString());
@@ -134,15 +139,16 @@ function renderDistribucionEstados(rows){
   chartPastel = new Chart(el.getContext('2d'), {
     type:'doughnut',
     data:{ labels, datasets:[{ data:counts }] },
-    options:{ responsive:true, plugins:{
-      legend:{ position:'bottom' },
-      tooltip:{ callbacks:{
-        label:(ctx)=>{
+    options:{
+      responsive:true, maintainAspectRatio:true, cutout:'65%', layout:{padding:6},
+      plugins:{
+        legend:{ position:'bottom' },
+        tooltip:{ callbacks:{ label:(ctx)=>{
           const n=ctx.parsed; const p=Math.round((n/total)*100);
-          return `${ctx.label}: ${n} (${p}%)`;
-        }
-      } }
-    } }
+          return `${ctx.label}: ${p}% (${n})`;
+        }}}
+      }
+    }
   });
 }
 
@@ -151,12 +157,12 @@ function renderEstadoPorGrupo100(groups){
   const labels = groups.map(g=>g.group);
   const total = (g)=>g.total||1;
   const series = [
-    {k:'F8 RECIBIDA',      lab:'F8 RECIBIDA'},
-    {k:'EN ASIGNACIÓN',    lab:'EN ASIGNACIÓN'},
-    {k:'SALIDA DE SALMI',  lab:'SALIDA DE SALMI'},
-    {k:'FACTURADO',        lab:'FACTURADO'},
-    {k:'EMPACADO',         lab:'EMPACADO'},
-    {k:'ENTREGADA',        lab:'ENTREGADA'}
+    {k:'F8 RECIBIDA', lab:'F8 RECIBIDA'},
+    {k:'EN ASIGNACIÓN', lab:'EN ASIGNACIÓN'},
+    {k:'SALIDA DE SALMI', lab:'SALIDA DE SALMI'},
+    {k:'FACTURADO', lab:'FACTURADO'},
+    {k:'EMPACADO', lab:'EMPACADO'},
+    {k:'ENTREGADA', lab:'ENTREGADA'}
   ];
   const datasets = series.map(s=>({
     label:s.lab,
@@ -166,23 +172,28 @@ function renderEstadoPorGrupo100(groups){
   chartGrupo = new Chart(el.getContext('2d'), {
     type:'bar',
     data:{ labels, datasets },
-    options:{ responsive:true, plugins:{
-      legend:{position:'bottom'},
-      tooltip:{ callbacks:{ label:(ctx)=>{
-        const g=groups[ctx.dataIndex];
-        const n=g[series[ctx.datasetIndex].k];
-        const p=ctx.parsed.y;
-        return `${ctx.dataset.label}: ${p}% (${n})`;
-      }}}
-    }, scales:{ x:{ stacked:true }, y:{ stacked:true, beginAtZero:true, max:100 } } }
+    options:{
+      responsive:true,
+      plugins:{ legend:{position:'bottom'},
+        tooltip:{ callbacks:{ label:(ctx)=>{
+          const g=groups[ctx.dataIndex];
+          const n=g[series[ctx.datasetIndex].k];
+          const p=ctx.parsed.y;
+          return `${ctx.dataset.label}: ${p}% (${n})`;
+        }}}
+      },
+      scales:{ x:{ stacked:true }, y:{ stacked:true, beginAtZero:true, max:100 } }
+    }
   });
 }
 
-// ===== Entrada única para métricas y gráficos =====
-async function computeAndRenderMetricsFromRows(allRows){
-  const { tot, groups, evol } = buildAggregates(allRows);
-  renderKpisCompact(tot);
+// ===== Entrada única: KPIs globales + gráficos sobre filtrados =====
+async function computeAndRenderMetrics(allRows, filteredRows){
+  const { tot: totAll } = buildAggregates(allRows);
+  renderKpisCompact(totAll);
+
+  const { groups, evol } = buildAggregates(filteredRows);
   renderEvolucion(evol);
-  renderDistribucionEstados(allRows);
+  renderDistribucionEstados(filteredRows);
   renderEstadoPorGrupo100(groups);
 }
