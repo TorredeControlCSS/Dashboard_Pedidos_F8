@@ -59,9 +59,21 @@ function setKpis(k){
   if(urg) urg.textContent=(k.urg==null?'—':(+k.urg).toLocaleString());
   if(men) men.textContent=(k.mens==null?'—':(+k.mens).toLocaleString());
 }
+
+// NUEVO: mostrar conteos por TIPO (MENSUAL / URGENTE)
+function setTipoCounts(tipoDist){
+  const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=(v==null?'—':(+v).toLocaleString()); };
+  const getVal=(keys)=>{ for(let i=0;i<keys.length;i++){ if(tipoDist[keys[i]]!=null) return tipoDist[keys[i]]; } return 0; };
+  const mens = getVal(['MENSUAL','MENSUALES','MENS','MENSUAL ']);
+  const urg  = getVal(['URGENTE','URG','URG.','URG ']);
+  set('kpi-tipo-mens', mens);
+  set('kpi-tipo-urg', urg);
+}
+
 async function refreshKpisAndCharts(filters){
   const stats=await fetchStats(filters);
   setKpis(stats.kpis);
+  if (stats && stats.tipoDist) setTipoCounts(stats.tipoDist);
   if (window.renderChartsFromStats) window.renderChartsFromStats(stats);
 }
 
