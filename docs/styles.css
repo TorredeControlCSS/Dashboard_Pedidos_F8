@@ -133,4 +133,38 @@ h1,h3 { margin: 0; }
 .table-wrap table { border-collapse: collapse; width:100%; border-spacing:0; table-layout: fixed; }
 .table-wrap th, .table-wrap td { white-space: normal; word-break: break-word; }
 
+/* (Este archivo reemplaza o añade al final de tu styles.css) */
+/* ========================== STYLES PATCH ========================== */
+:root { --stickyTop: 64px; }
 
+.table-wrap{
+  margin: 8px 16px;
+  overflow: auto;
+}
+
+/* Asegura que el header sticky quede por encima y tenga fondo */
+.table-wrap table{ border-collapse: collapse; width:100%; border-spacing:0; table-layout: fixed; }
+.table-wrap thead th{
+  position: sticky !important;
+  top: var(--stickyTop, 64px) !important;
+  z-index: 9999 !important;
+  background: #fff !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  padding: 8px 10px;
+  text-align: left;
+}
+.table-wrap th, .table-wrap td{
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  vertical-align: top;
+  word-break: break-word;
+  white-space: normal;
+}
+
+/* Pequeño ajuste para filtros y grid */
+#filters .row{ display:flex; flex-wrap:nowrap; gap:8px; align-items:center; overflow:auto; }
+#filters select, #filters input{ max-width:170px; }
+
+/* Asegurar que cuando sea editable se muestre claro */
+td.editable { cursor: pointer; background: #fffbe6; }
+/* ================================================================= */
