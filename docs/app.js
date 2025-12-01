@@ -1,13 +1,16 @@
-// app.js v2025-12-01b — ajustes: stickyTop dinámico, pageSize más pequeño, re-render edit mode
+// app.js v2025-12-01 — versión completa y consolidada
+// Contiene: KPIs/Charts desde stats, tabla paginada, login, edición inline,
+// recalculo dinámico de sticky header y exposición de funciones globales.
+
 if (window.__APP_LOADED__) {
   console.log('app.js ya cargado, skip');
 } else {
 window.__APP_LOADED__ = true;
-console.log('app.js v2025-12-01b');
+console.log('app.js v2025-12-01');
 
-const A = window.APP.A_URL;
-const B = window.APP.B_URL;
-const CLIENT_ID = window.APP.CLIENT_ID;
+const A = window.APP && window.APP.A_URL;
+const B = window.APP && window.APP.B_URL;
+const CLIENT_ID = window.APP && window.APP.CLIENT_ID;
 
 const ID_HEADER = 'F8 SALMI';
 const N = s => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\./g,'').replace(/\s+/g,' ').trim().toUpperCase();
@@ -20,64 +23,74 @@ const S_DATE = new Set(DATE_FIELDS.map(N));
 const S_INT  = new Set(INT_FIELDS.map(N));
 const S_TXT  = new Set(TXT_FIELDS.map(N));
 
-let idToken=null, editMode=false;
-let currentHeaders=[], currentRows=[], currentIdCol=null;
+let idToken = null;
+let editMode = false;
+let currentHeaders = [], currentRows = [], currentIdCol = null;
 let currentPage = 1;
-const DEFAULT_PAGE_SIZE = 50; // más rápido que 150
+const DEFAULT_PAGE_SIZE = 50; // ajustar si quieres más/menos velocidad
 
-/* JSONP */
+/* ------------ JSONP helper ------------ */
 function jsonp(url){
   return new Promise((resolve,reject)=>{
-    const cb='cb_'+Math.random().toString(36).slice(2);
-    window[cb]=(payload)=>{ try{ resolve(payload); } finally{ delete window[cb]; s.remove(); } };
-    const s=document.createElement('script'); s.onerror=()=>reject(new Error('network'));
-    s.src=url+(url.includes('?')?'&':'?')+`callback=${cb}&_=${Date.now()}`;
+    const cb = 'cb_' + Math.random().toString(36).slice(2);
+    const s = document.createElement('script');
+    window[cb] = (payload) => { try { resolve(payload); } finally { try{ delete window[cb]; }catch(e){}; s.remove(); } };
+    s.onerror = () => { try{ delete window[cb]; }catch(e){}; s.remove(); reject(new Error('network')); };
+    s.src = url + (url.includes('?') ? '&' : '?') + `callback=${cb}&_=${Date.now()}`;
     document.body.appendChild(s);
   });
 }
 
-/* Fechas helpers */
-const monES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-const isIsoZ = v => typeof v==='string' && /^\d{4}-\d{2}-\d{2}T/.test(v) && v.endsWith('Z');
-const toDDMonYY = v => { const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(v); if(!m) return v; const [_,y,mn,d]=m; return `${d}-${monES[parseInt(mn,10)-1]}-${y.slice(-2)}`; };
-const parseIsoDate  = v => { const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(v||''); return m ? new Date(Date.UTC(+m[1],+m[2]-1,+m[3])) : null; };
+/* ------------ Fechas helpers ------------ */
+const monES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const isIsoZ = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v) && v.endsWith('Z');
+const toDDMonYY = v => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v); if(!m) return v; const [_,y,mn,d] = m; return `${d}-${monES[parseInt(mn,10)-1]}-${y.slice(-2)}`; };
+const parseIsoDate = v => { const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(v||''); return m ? new Date(Date.UTC(+m[1],+m[2]-1,+m[3])) : null; };
 
-/* KPIs/Charts */
+/* ------------ KPIs / Charts ------------ */
 async function fetchStats(filters){
-  const p=new URLSearchParams({route:'stats'});
-  Object.entries(filters).forEach(([k,v])=>{ if(v) p.set(k,v); });
-  const res=await jsonp(`${A}?${p.toString()}`);
-  if(res.status!=='ok') throw new Error(res.error||'stats_error');
+  const p = new URLSearchParams({ route: 'stats' });
+  Object.entries(filters||{}).forEach(([k,v]) => { if(v) p.set(k,v); });
+  const res = await jsonp(`${A}?${p.toString()}`);
+  if(!res || res.status !== 'ok') throw new Error(res && res.error ? res.error : 'stats_error');
   return res.data;
 }
+
 function setKpis(k){
-  const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=(v==null?'—':(+v).toLocaleString()); };
+  const set = (id,v) => { const el = document.getElementById(id); if(el) el.textContent = (v==null ? '—' : (+v).toLocaleString()); };
   set('kpi-total', k.total);
   set('kpi-asignado', k.asignado);
   set('kpi-solicitado', k.solicitado);
   set('kpi-reng-asig', k.rengAsig);
   set('kpi-reng-sol', k.rengSol);
-  const urg=document.getElementById('kpi-urg'), men=document.getElementById('kpi-men');
-  if(urg) urg.textContent=(k.urg==null?'—':(+k.urg).toLocaleString());
-  if(men) men.textContent=(k.mens==null?'—':(+k.mens).toLocaleString());
+  const urg = document.getElementById('kpi-urg'), men = document.getElementById('kpi-men');
+  if(urg) urg.textContent = (k.urg==null ? '—' : (+k.urg).toLocaleString());
+  if(men) men.textContent = (k.mens==null ? '—' : (+k.mens).toLocaleString());
 }
+
+// Añadir conteos por tipo (MENSUAL / URGENTE)
 function setTipoCounts(tipoDist){
-  const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=(v==null?'—':(+v).toLocaleString()); };
-  const getVal=(keys)=>{ for(let i=0;i<keys.length;i++){ if(tipoDist[keys[i]]!=null) return tipoDist[keys[i]]; } return 0; };
+  const set = (id,v) => { const el = document.getElementById(id); if(el) el.textContent = (v==null ? '—' : (+v).toLocaleString()); };
+  const getVal = (keys) => { if(!tipoDist) return 0; for(let i=0;i<keys.length;i++){ if(tipoDist[keys[i]]!=null) return tipoDist[keys[i]]; } return 0; };
   const mens = getVal(['MENSUAL','MENSUALES','MENS','MENSUAL ']);
-  const urg  = getVal(['URGENTE','URG','URG.','URG ']);
+  const urg = getVal(['URGENTE','URG','URG.','URG ']);
   set('kpi-tipo-mens', mens);
   set('kpi-tipo-urg', urg);
 }
 
 async function refreshKpisAndCharts(filters){
-  const stats=await fetchStats(filters);
+  const stats = await fetchStats(filters);
   setKpis(stats.kpis);
   if (stats && stats.tipoDist) setTipoCounts(stats.tipoDist);
-  if (window.renderChartsFromStats) window.renderChartsFromStats(stats);
+  // Render charts if available
+  if (window.renderChartsFromStats) {
+    try { window.renderChartsFromStats(stats); } catch(e){ console.warn('renderChartsFromStats failed', e); }
+  }
+  // Después de renderizar charts y KPIs, recalculamos stickyTop
+  setTimeout(updateStickyTop, 120);
 }
 
-/* Filtros */
+/* ------------ Filtros ------------ */
 function getFilters(){
   return {
     cat:    document.getElementById('fCat')?.value || '',
@@ -91,14 +104,14 @@ function getFilters(){
   };
 }
 
-/* Tabla y paginación */
+/* ------------ Tabla y paginación ------------ */
 function widthMap(){ return {
   'CATEG.':180,'UNIDAD':220,'TIPO':110,'F8 SALMI':120,'F8 SISCONI':120,'GRUPO':110,'SUSTANCIAS':160,
   'CANT. ASIG.':110,'CANT. SOL.':110,'RENGLONES ASI.':130,'RENGLONES SOL.':130,
   'FECHA F8':110,'RECIBO F8':110,'ASIGNACIÓN':110,'SALIDA':110,'DESPACHO':110,'FACTURACIÓN':120,'EMPACADO':110,
   'PROY. ENTREGA':130,'ENTREGA REAL':130,'INCOTERM':110,'ESTADO':130,'COMENT.':220,
   'TIEMPO':90,'COMPLET':100,'FILL CANT.':110,'FILL RENGL.':120
-};}
+}; }
 
 function perRowMetrics(row){
   const complet = !!row['ENTREGA REAL'];
@@ -114,36 +127,38 @@ function perRowMetrics(row){
 }
 
 async function fetchTable(page, pageSize, filters){
-  const p=new URLSearchParams({route:'orders.list', page, pageSize});
-  Object.entries(filters).forEach(([k,v])=>{ if(v) p.set(k,v); });
-  const res=await jsonp(`${A}?${p.toString()}`);
-  if(res.status!=='ok') throw new Error(res.error||'orders_error');
+  const p = new URLSearchParams({ route:'orders.list', page, pageSize });
+  Object.entries(filters||{}).forEach(([k,v])=>{ if(v) p.set(k,v); });
+  const res = await jsonp(`${A}?${p.toString()}`);
+  if(!res || res.status !== 'ok') throw new Error(res && res.error ? res.error : 'orders_error');
   return res.data;
 }
 
-async function renderTable(page=1){
+async function renderTable(page = 1){
   currentPage = page || 1;
   const pageSize = DEFAULT_PAGE_SIZE;
-  const filters=getFilters();
-  const data=await fetchTable(page, pageSize, filters);
-  const rawRows=data.rows||[];
-  const headers = data.header || (rawRows[0]?Object.keys(rawRows[0]):[]);
-  const W=widthMap();
+  const filters = getFilters();
 
-  currentHeaders = Array.from(new Set([
-    ...headers,
-    'TIEMPO', 'COMPLET', 'FILL CANT.', 'FILL RENGL.'
-  ]));
+  // Mostrar un loading ligero si quieres
+  const pgnEl = document.getElementById('paginacion');
+  if(pgnEl) pgnEl.innerHTML = `<span style="padding:4px 8px">Cargando…</span>`;
+
+  const data = await fetchTable(currentPage, pageSize, filters);
+  const rawRows = data.rows || [];
+  const headers = data.header || (rawRows[0] ? Object.keys(rawRows[0]) : []);
+  const W = widthMap();
+
+  currentHeaders = Array.from(new Set([ ...headers, 'TIEMPO', 'COMPLET', 'FILL CANT.', 'FILL RENGL.' ]));
   currentRows = rawRows.map(r=>{
-    const out={...r};
-    Object.keys(out).forEach(k=>{ if (isIsoZ(out[k])) out[k]=toDDMonYY(out[k]); });
+    const out = {...r};
+    Object.keys(out).forEach(k=>{ if (isIsoZ(out[k])) out[k] = toDDMonYY(out[k]); });
     Object.assign(out, perRowMetrics(r));
     return out;
   });
-  currentIdCol = headers.find(h=>N(h)===N_ID) || null;
+  currentIdCol = headers.find(h => N(h) === N_ID) || null;
 
-  const thead=document.querySelector('#tabla thead');
-  const tbody=document.querySelector('#tabla tbody');
+  const thead = document.querySelector('#tabla thead');
+  const tbody = document.querySelector('#tabla tbody');
 
   if (thead) {
     thead.innerHTML = `<tr>${
@@ -153,72 +168,84 @@ async function renderTable(page=1){
   if (tbody) {
     tbody.innerHTML = currentRows.map((r,ri)=>`<tr>${
       currentHeaders.map(k=>{
-        const kN=N(k);
+        const kN = N(k);
         const editable = editMode && (S_DATE.has(kN) || S_INT.has(kN) || S_TXT.has(kN));
         const cls = editable ? ' class="editable" style="cursor:pointer;background:#fffbe6;"' : '';
-        return `<td${cls} data-ri="${ri}" data-col="${k}">${r[k]??''}</td>`;
+        return `<td${cls} data-ri="${ri}" data-col="${k}">${r[k] ?? ''}</td>`;
       }).join('')
     }</tr>`).join('');
   }
 
-  const totalPages=Math.ceil((data.total||0)/pageSize);
-  const prev=Math.max(1,page-1), next=Math.min(totalPages,page+1);
-  const step=Math.max(1, Math.floor(100/pageSize)); // -/+100
-  const minus100=Math.max(1, page - step);
-  const plus100 =Math.min(totalPages, page + step);
-  document.getElementById('paginacion').innerHTML =
+  const totalPages = Math.ceil((data.total||0)/pageSize);
+  const prev = Math.max(1, page-1), next = Math.min(totalPages, page+1);
+  const step = Math.max(1, Math.floor(100/pageSize));
+  const minus100 = Math.max(1, page - step);
+  const plus100 = Math.min(totalPages, page + step);
+
+  if(pgnEl) pgnEl.innerHTML =
     `<button onclick="renderTable(${prev})"${page===1?' disabled':''}>« Anterior</button>`+
     `<button onclick="renderTable(${minus100})">-100</button>`+
     `<span style="padding:4px 8px">Página ${page} / ${totalPages}</span>`+
     `<button onclick="renderTable(${plus100})">+100</button>`+
     `<button onclick="renderTable(${next})"${page===totalPages?' disabled':''}>Siguiente »</button>`;
+
+  // Small delay to let DOM settle, then adjust sticky top
+  setTimeout(updateStickyTop, 60);
 }
 
-/* Edición inline */
-document.querySelector('#tabla').addEventListener('click', async (ev)=>{
-  const td=ev.target.closest('td.editable'); if(!td || !editMode) return;
-  const ri=+td.dataset.ri, col=td.dataset.col, row=currentRows[ri];
-  const idCol=currentIdCol, orderId=idCol?row[idCol]:null;
+/* ------------ Edición inline (tabla) ------------ */
+document.querySelector('#tabla')?.addEventListener('click', async (ev)=>{
+  const td = ev.target.closest && ev.target.closest('td.editable');
+  if(!td || !editMode) return;
+  const ri = +td.dataset.ri, col = td.dataset.col, row = currentRows[ri];
+  const idCol = currentIdCol, orderId = idCol ? row[idCol] : null;
   if(!orderId){ alert(`No se encontró la columna ID (${ID_HEADER}).`); return; }
 
-  const kN=N(col);
-  const isDate=S_DATE.has(kN), isInt=S_INT.has(kN), isTxt=S_TXT.has(kN);
+  const kN = N(col);
+  const isDate = S_DATE.has(kN), isInt = S_INT.has(kN), isTxt = S_TXT.has(kN);
   if (td.querySelector('input')) return;
 
-  const old=td.textContent; td.innerHTML='';
-  const input=document.createElement('input'); input.style.width='100%'; input.style.boxSizing='border-box';
+  const old = td.textContent; td.innerHTML = '';
+  const input = document.createElement('input'); input.style.width='100%'; input.style.boxSizing='border-box';
   if(isDate){ input.type='date'; }
   else if(isInt){ input.type='number'; input.step='1'; input.min='0'; const n=parseInt(old,10); if(!isNaN(n)) input.value=String(n); }
-  else { input.type='text'; input.value=old||''; }
-  const bS=document.createElement('button'); bS.textContent='Guardar'; bS.style.marginTop='4px';
-  const bC=document.createElement('button'); bC.textContent='Cancelar'; bC.style.margin='4px 0 0 6px';
-  const wrap=document.createElement('div'); wrap.appendChild(input);
-  const btns=document.createElement('div'); btns.appendChild(bS); btns.appendChild(bC);
-  td.appendChild(wrap); td.appendChild(btns); input.focus();
-  bC.onclick=()=>{ td.innerHTML=old; };
+  else { input.type='text'; input.value = old || ''; }
 
-  bS.onclick=async ()=>{
+  const bS = document.createElement('button'); bS.textContent='Guardar'; bS.style.marginTop='4px';
+  const bC = document.createElement('button'); bC.textContent='Cancelar'; bC.style.margin='4px 0 0 6px';
+  const wrap = document.createElement('div'); wrap.appendChild(input);
+  const btns = document.createElement('div'); btns.appendChild(bS); btns.appendChild(bC);
+  td.appendChild(wrap); td.appendChild(btns); input.focus();
+  bC.onclick = ()=>{ td.innerHTML = old; };
+
+  bS.onclick = async ()=>{
     if(!idToken){ alert('Primero haz clic en “Acceder”.'); return; }
-    let value=input.value.trim();
+    let value = input.value.trim();
     if(isDate && !/^\d{4}-\d{2}-\d{2}$/.test(value)){ alert('Fecha inválida (YYYY-MM-DD).'); return; }
     if(isInt && !/^-?\d+$/.test(value)){ alert('Ingresa un entero.'); return; }
     if(isTxt && value.length>500){ alert('Comentario muy largo (≤500).'); return; }
 
-    td.innerHTML='Guardando…';
+    td.innerHTML = 'Guardando…';
     try{
-      const res=await jsonp(`${B}?route=orders.update&idToken=${encodeURIComponent(idToken)}&id=${encodeURIComponent(orderId)}&field=${encodeURIComponent(col)}&value=${encodeURIComponent(value)}`);
-      if(res.status==='ok'){
+      const res = await jsonp(`${B}?route=orders.update&idToken=${encodeURIComponent(idToken)}&id=${encodeURIComponent(orderId)}&field=${encodeURIComponent(col)}&value=${encodeURIComponent(value)}`);
+      if(res && res.status === 'ok'){
         td.textContent = (isDate && /^\d{4}-\d{2}-\d{2}$/.test(value))
           ? (()=>{ const [y,m,d]=value.split('-'); const mon=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][+m-1]; return `${d}-${mon}-${y.slice(2)}`; })()
           : value;
         await refreshKpisAndCharts(getFilters());
         await renderTable(currentPage);
-      } else { td.innerHTML=old; alert('Error: '+(res.error||'desconocido')); }
-    }catch(e){ td.innerHTML=old; alert('Error de red'); }
+      } else {
+        td.innerHTML = old;
+        alert('Error: ' + (res && res.error ? res.error : 'desconocido'));
+      }
+    }catch(e){
+      td.innerHTML = old;
+      alert('Error de red');
+    }
   };
 });
 
-/* Login / edición */
+/* ------------ Login / Edición UI ------------ */
 const btnLogin = document.getElementById('btnLogin');
 const btnEditMode = document.getElementById('btnEditMode');
 
@@ -227,65 +254,88 @@ function ensureGsi(){
   alert('Falta la librería de Google Identity. Verifica <script src="https://accounts.google.com/gsi/client"> en index.html');
   return false;
 }
+
 btnLogin?.addEventListener('click', ()=>{
   if (!ensureGsi()) return;
   google.accounts.id.initialize({
     client_id: CLIENT_ID,
-    callback: (resp)=>{ idToken=resp.credential; btnEditMode.disabled=false; btnLogin.textContent='Sesión iniciada'; alert('Sesión iniciada. Activa “Modo edición”.'); }
+    callback: (resp)=>{ idToken = resp.credential; btnEditMode.disabled = false; btnLogin.textContent = 'Sesión iniciada'; alert('Sesión iniciada. Activa “Modo edición”.'); }
   });
-  google.accounts.id.prompt(); // one-tap
+  google.accounts.id.prompt();
 });
 
 btnEditMode?.addEventListener('click', ()=>{
-  editMode=!editMode;
-  btnEditMode.textContent=`Modo edición: ${editMode?'ON':'OFF'}`;
-  // Re-render para aplicar clases editable en celdas
+  editMode = !editMode;
+  btnEditMode.textContent = `Modo edición: ${editMode ? 'ON' : 'OFF'}`;
+  // Re-render la tabla para aplicar/remover clases editable
   renderTable(currentPage);
 });
 
-/* Botones */
+/* ------------ Botones de control ------------ */
 document.getElementById('btnApply')?.addEventListener('click', async ()=>{
-  await refreshKpisAndCharts(getFilters()); await renderTable(1);
+  await refreshKpisAndCharts(getFilters());
+  await renderTable(1);
 });
 document.getElementById('btnClear')?.addEventListener('click', async ()=>{
   ['fCat','fUnidad','fTipo','fGrupo','fEstado','fBuscar','fDesde','fHasta'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
-  await refreshKpisAndCharts(getFilters()); await renderTable(1);
+  await refreshKpisAndCharts(getFilters());
+  await renderTable(1);
 });
 document.getElementById('btnRefresh')?.addEventListener('click', async ()=>{
   await refreshKpisAndCharts(getFilters());
   await renderTable(currentPage);
 });
 
-/* Scroll superior sincronizado (igual) */
+/* ------------ Scroll superior sincronizado (mantener) ------------ */
 (function syncHScroll(){
-  const topBar=document.getElementById('top-scroll');
-  const tw=document.querySelector('.table-wrap');
-  if(!topBar||!tw) return;
+  const topBar = document.getElementById('top-scroll');
+  const tw = document.querySelector('.table-wrap');
+  if(!topBar || !tw) return;
   topBar.innerHTML = `<div style="width:${Math.max(tw.scrollWidth, tw.clientWidth)}px;height:1px"></div>`;
-  let lock=false;
-  topBar.addEventListener('scroll', ()=>{ if(lock) return; lock=true; tw.scrollLeft=topBar.scrollLeft; lock=false; });
-  tw.addEventListener('scroll',     ()=>{ if(lock) return; lock=true; topBar.scrollLeft=tw.scrollLeft; lock=false; });
+  let lock = false;
+  topBar.addEventListener('scroll', ()=>{ if(lock) return; lock=true; tw.scrollLeft = topBar.scrollLeft; lock=false; });
+  tw.addEventListener('scroll',     ()=>{ if(lock) return; lock=true; topBar.scrollLeft = tw.scrollLeft; lock=false; });
 })();
 
-/* Exponer funciones globales (para onclick inline) */
+/* ------------ Sticky header dynamic calculation ------------ */
+function updateStickyTop(){
+  try{
+    const headerEl = document.querySelector('.app-header');
+    const kpisEl = document.getElementById('kpis');
+    const filtersEl = document.getElementById('filters');
+    const headerH = headerEl?.offsetHeight || 64;
+    const kpisH = kpisEl?.offsetHeight || 0;
+    const filtersH = filtersEl?.offsetHeight || 0;
+    // margen extra
+    const stickyTopPx = headerH + kpisH + filtersH + 12;
+    document.documentElement.style.setProperty('--stickyTop', stickyTopPx + 'px');
+  }catch(e){
+    console.warn('updateStickyTop error', e);
+  }
+}
+window.addEventListener('resize', ()=>{ setTimeout(updateStickyTop, 120); });
+
+/* Ejecutar al final de renderCharts/refresh para estabilizar layout (ya lo llamamos en refreshKpisAndCharts) */
+
+/* ------------ Exportar funciones globales (para onclick inline y debugging) ------------ */
 window.renderTable = renderTable;
 window.refreshKpisAndCharts = refreshKpisAndCharts;
 window.fetchTable = fetchTable;
+window.fetchStats = fetchStats;
 
-/* Init: calcular stickyTop dinámicamente */
+/* ------------ Init (arranque) ------------ */
 async function init(){
-  const headerEl = document.querySelector('.app-header');
-  const kpisEl = document.getElementById('kpis');
-  const filtersEl = document.getElementById('filters');
-  const headerH = headerEl?.offsetHeight || 64;
-  const kpisH = kpisEl?.offsetHeight || 0;
-  const filtersH = filtersEl?.offsetHeight || 0;
-  const stickyTopPx = headerH + kpisH + filtersH + 12; // margen extra
-  document.documentElement.style.setProperty('--stickyTop', stickyTopPx + 'px');
-
-  // Ejecutar refresco inicial
-  await refreshKpisAndCharts(getFilters());
-  await renderTable(1);
+  // Calcular stickyTop inicial (tolerancia luego de layout)
+  updateStickyTop();
+  // Cargar KPIs y tabla inicial
+  try{
+    await refreshKpisAndCharts(getFilters());
+    await renderTable(1);
+    // recalcular tras carga
+    setTimeout(updateStickyTop, 200);
+  }catch(e){
+    console.warn('init error', e);
+  }
 }
 init();
 
