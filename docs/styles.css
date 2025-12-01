@@ -119,6 +119,8 @@ h1,h3 { margin: 0; }
   #filters select, #filters input[type="text"], #filters input[type="date"]{ max-width: 180px; }
 }
 
+/* ... (mantén el resto del CSS) ... */
+
 /* === CSS PATCH: evitar solapamiento del header === */
 .table-wrap thead th {
   position: sticky !important;
@@ -128,4 +130,7 @@ h1,h3 { margin: 0; }
   box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
 .table-wrap { padding-top: 8px; }
-.table-wrap table { border-collapse: collapse; width:100%; border-spacing:0; }
+.table-wrap table { border-collapse: collapse; width:100%; border-spacing:0; table-layout: fixed; }
+.table-wrap th, .table-wrap td { white-space: normal; word-break: break-word; }
+
+
