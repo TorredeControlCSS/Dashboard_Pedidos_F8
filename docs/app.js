@@ -1,9 +1,9 @@
-// app.js v2025-12-01a — KPIs/Charts desde stats, tabla paginada, login y edición
+// app.js v2025-12-01b — ajustes: stickyTop dinámico, pageSize más pequeño, re-render edit mode
 if (window.__APP_LOADED__) {
   console.log('app.js ya cargado, skip');
 } else {
 window.__APP_LOADED__ = true;
-console.log('app.js v2025-12-01a');
+console.log('app.js v2025-12-01b');
 
 const A = window.APP.A_URL;
 const B = window.APP.B_URL;
@@ -22,8 +22,10 @@ const S_TXT  = new Set(TXT_FIELDS.map(N));
 
 let idToken=null, editMode=false;
 let currentHeaders=[], currentRows=[], currentIdCol=null;
+let currentPage = 1;
+const DEFAULT_PAGE_SIZE = 50; // más rápido que 150
 
-/* ------------ JSONP ------------ */
+/* JSONP */
 function jsonp(url){
   return new Promise((resolve,reject)=>{
     const cb='cb_'+Math.random().toString(36).slice(2);
@@ -34,13 +36,13 @@ function jsonp(url){
   });
 }
 
-/* ------------ Fechas ------------ */
+/* Fechas helpers */
 const monES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 const isIsoZ = v => typeof v==='string' && /^\d{4}-\d{2}-\d{2}T/.test(v) && v.endsWith('Z');
 const toDDMonYY = v => { const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(v); if(!m) return v; const [_,y,mn,d]=m; return `${d}-${monES[parseInt(mn,10)-1]}-${y.slice(-2)}`; };
 const parseIsoDate  = v => { const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(v||''); return m ? new Date(Date.UTC(+m[1],+m[2]-1,+m[3])) : null; };
 
-/* ------------ KPIs/Charts (stats) ------------ */
+/* KPIs/Charts */
 async function fetchStats(filters){
   const p=new URLSearchParams({route:'stats'});
   Object.entries(filters).forEach(([k,v])=>{ if(v) p.set(k,v); });
@@ -59,8 +61,6 @@ function setKpis(k){
   if(urg) urg.textContent=(k.urg==null?'—':(+k.urg).toLocaleString());
   if(men) men.textContent=(k.mens==null?'—':(+k.mens).toLocaleString());
 }
-
-// NUEVO: mostrar conteos por TIPO (MENSUAL / URGENTE)
 function setTipoCounts(tipoDist){
   const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=(v==null?'—':(+v).toLocaleString()); };
   const getVal=(keys)=>{ for(let i=0;i<keys.length;i++){ if(tipoDist[keys[i]]!=null) return tipoDist[keys[i]]; } return 0; };
@@ -77,7 +77,7 @@ async function refreshKpisAndCharts(filters){
   if (window.renderChartsFromStats) window.renderChartsFromStats(stats);
 }
 
-/* ------------ Filtros ------------ */
+/* Filtros */
 function getFilters(){
   return {
     cat:    document.getElementById('fCat')?.value || '',
@@ -91,7 +91,7 @@ function getFilters(){
   };
 }
 
-/* ------------ Tabla y paginación ------------ */
+/* Tabla y paginación */
 function widthMap(){ return {
   'CATEG.':180,'UNIDAD':220,'TIPO':110,'F8 SALMI':120,'F8 SISCONI':120,'GRUPO':110,'SUSTANCIAS':160,
   'CANT. ASIG.':110,'CANT. SOL.':110,'RENGLONES ASI.':130,'RENGLONES SOL.':130,
@@ -122,7 +122,9 @@ async function fetchTable(page, pageSize, filters){
 }
 
 async function renderTable(page=1){
-  const pageSize=150, filters=getFilters();
+  currentPage = page || 1;
+  const pageSize = DEFAULT_PAGE_SIZE;
+  const filters=getFilters();
   const data=await fetchTable(page, pageSize, filters);
   const rawRows=data.rows||[];
   const headers = data.header || (rawRows[0]?Object.keys(rawRows[0]):[]);
@@ -153,7 +155,7 @@ async function renderTable(page=1){
       currentHeaders.map(k=>{
         const kN=N(k);
         const editable = editMode && (S_DATE.has(kN) || S_INT.has(kN) || S_TXT.has(kN));
-        const cls = editable ? ' class="editable"' : '';
+        const cls = editable ? ' class="editable" style="cursor:pointer;background:#fffbe6;"' : '';
         return `<td${cls} data-ri="${ri}" data-col="${k}">${r[k]??''}</td>`;
       }).join('')
     }</tr>`).join('');
@@ -172,7 +174,7 @@ async function renderTable(page=1){
     `<button onclick="renderTable(${next})"${page===totalPages?' disabled':''}>Siguiente »</button>`;
 }
 
-/* ------------ Edición inline ------------ */
+/* Edición inline */
 document.querySelector('#tabla').addEventListener('click', async (ev)=>{
   const td=ev.target.closest('td.editable'); if(!td || !editMode) return;
   const ri=+td.dataset.ri, col=td.dataset.col, row=currentRows[ri];
@@ -210,14 +212,13 @@ document.querySelector('#tabla').addEventListener('click', async (ev)=>{
           ? (()=>{ const [y,m,d]=value.split('-'); const mon=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][+m-1]; return `${d}-${mon}-${y.slice(2)}`; })()
           : value;
         await refreshKpisAndCharts(getFilters());
-        const m=document.querySelector('#paginacion span')?.textContent.match(/Página (\d+)/); const cur=m?+m[1]:1;
-        await renderTable(cur);
+        await renderTable(currentPage);
       } else { td.innerHTML=old; alert('Error: '+(res.error||'desconocido')); }
     }catch(e){ td.innerHTML=old; alert('Error de red'); }
   };
 });
 
-/* ------------ Login / edición ------------ */
+/* Login / edición */
 const btnLogin = document.getElementById('btnLogin');
 const btnEditMode = document.getElementById('btnEditMode');
 
@@ -238,9 +239,11 @@ btnLogin?.addEventListener('click', ()=>{
 btnEditMode?.addEventListener('click', ()=>{
   editMode=!editMode;
   btnEditMode.textContent=`Modo edición: ${editMode?'ON':'OFF'}`;
+  // Re-render para aplicar clases editable en celdas
+  renderTable(currentPage);
 });
 
-/* ------------ Botones ------------ */
+/* Botones */
 document.getElementById('btnApply')?.addEventListener('click', async ()=>{
   await refreshKpisAndCharts(getFilters()); await renderTable(1);
 });
@@ -250,11 +253,10 @@ document.getElementById('btnClear')?.addEventListener('click', async ()=>{
 });
 document.getElementById('btnRefresh')?.addEventListener('click', async ()=>{
   await refreshKpisAndCharts(getFilters());
-  const m=document.querySelector('#paginacion span')?.textContent.match(/Página (\d+)/); const cur=m?+m[1]:1;
-  await renderTable(cur);
+  await renderTable(currentPage);
 });
 
-/* ------------ Scroll superior sincronizado ------------ */
+/* Scroll superior sincronizado (igual) */
 (function syncHScroll(){
   const topBar=document.getElementById('top-scroll');
   const tw=document.querySelector('.table-wrap');
@@ -265,19 +267,23 @@ document.getElementById('btnRefresh')?.addEventListener('click', async ()=>{
   tw.addEventListener('scroll',     ()=>{ if(lock) return; lock=true; topBar.scrollLeft=tw.scrollLeft; lock=false; });
 })();
 
-/* ------------ Exportar funciones globales usadas por onclick inline ------------ */
-// Exponer renderTable y refreshKpisAndCharts para que los atributos onclick del HTML funcionen.
+/* Exponer funciones globales (para onclick inline) */
 window.renderTable = renderTable;
 window.refreshKpisAndCharts = refreshKpisAndCharts;
 window.fetchTable = fetchTable;
 
- /* ------------ Init ------------ */
+/* Init: calcular stickyTop dinámicamente */
 async function init(){
-  // stickyTop: SOLO header azul
   const headerEl = document.querySelector('.app-header');
-  const stickyTopPx = (headerEl?.offsetHeight || 64);
+  const kpisEl = document.getElementById('kpis');
+  const filtersEl = document.getElementById('filters');
+  const headerH = headerEl?.offsetHeight || 64;
+  const kpisH = kpisEl?.offsetHeight || 0;
+  const filtersH = filtersEl?.offsetHeight || 0;
+  const stickyTopPx = headerH + kpisH + filtersH + 12; // margen extra
   document.documentElement.style.setProperty('--stickyTop', stickyTopPx + 'px');
 
+  // Ejecutar refresco inicial
   await refreshKpisAndCharts(getFilters());
   await renderTable(1);
 }
