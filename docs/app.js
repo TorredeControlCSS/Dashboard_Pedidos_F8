@@ -29,7 +29,7 @@ let currentHeaders = [], currentRows = [], currentIdCol = null;
 let currentPage = 1;
 const DEFAULT_PAGE_SIZE = 50; // ajustar si quieres más/menos velocidad
 
-/* ------------ JSONP helper ------------ */
+/* JSONP helper */
 function jsonp(url){
   return new Promise((resolve,reject)=>{
     const cb = 'cb_' + Math.random().toString(36).slice(2);
@@ -41,13 +41,13 @@ function jsonp(url){
   });
 }
 
-/* ------------ Fechas helpers ------------ */
+/* Fechas helpers */
 const monES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 const isIsoZ = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v) && v.endsWith('Z');
 const toDDMonYY = v => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v); if(!m) return v; const [_,y,mn,d] = m; return `${d}-${monES[parseInt(mn,10)-1]}-${y.slice(-2)}`; };
 const parseIsoDate = v => { const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(v||''); return m ? new Date(Date.UTC(+m[1],+m[2]-1,+m[3])) : null; };
 
-/* ------------ KPIs / Charts ------------ */
+/* KPIs / Charts */
 async function fetchStats(filters){
   const p = new URLSearchParams({ route: 'stats' });
   Object.entries(filters||{}).forEach(([k,v]) => { if(v) p.set(k,v); });
@@ -82,15 +82,13 @@ async function refreshKpisAndCharts(filters){
   const stats = await fetchStats(filters);
   setKpis(stats.kpis);
   if (stats && stats.tipoDist) setTipoCounts(stats.tipoDist);
-  // Render charts if available
   if (window.renderChartsFromStats) {
     try { window.renderChartsFromStats(stats); } catch(e){ console.warn('renderChartsFromStats failed', e); }
   }
-  // Después de renderizar charts y KPIs, recalculamos stickyTop
   setTimeout(updateStickyTop, 120);
 }
 
-/* ------------ Filtros ------------ */
+/* Filtros */
 function getFilters(){
   return {
     cat:    document.getElementById('fCat')?.value || '',
@@ -104,7 +102,7 @@ function getFilters(){
   };
 }
 
-/* ------------ Tabla y paginación ------------ */
+/* Tabla y paginación */
 function widthMap(){ return {
   'CATEG.':180,'UNIDAD':220,'TIPO':110,'F8 SALMI':120,'F8 SISCONI':120,'GRUPO':110,'SUSTANCIAS':160,
   'CANT. ASIG.':110,'CANT. SOL.':110,'RENGLONES ASI.':130,'RENGLONES SOL.':130,
@@ -139,7 +137,6 @@ async function renderTable(page = 1){
   const pageSize = DEFAULT_PAGE_SIZE;
   const filters = getFilters();
 
-  // Mostrar un loading ligero si quieres
   const pgnEl = document.getElementById('paginacion');
   if(pgnEl) pgnEl.innerHTML = `<span style="padding:4px 8px">Cargando…</span>`;
 
@@ -189,11 +186,10 @@ async function renderTable(page = 1){
     `<button onclick="renderTable(${plus100})">+100</button>`+
     `<button onclick="renderTable(${next})"${page===totalPages?' disabled':''}>Siguiente »</button>`;
 
-  // Small delay to let DOM settle, then adjust sticky top
   setTimeout(updateStickyTop, 60);
 }
 
-/* ------------ Edición inline (tabla) ------------ */
+/* Edición inline */
 document.querySelector('#tabla')?.addEventListener('click', async (ev)=>{
   const td = ev.target.closest && ev.target.closest('td.editable');
   if(!td || !editMode) return;
@@ -245,7 +241,7 @@ document.querySelector('#tabla')?.addEventListener('click', async (ev)=>{
   };
 });
 
-/* ------------ Login / Edición UI ------------ */
+/* Login / Edición UI */
 const btnLogin = document.getElementById('btnLogin');
 const btnEditMode = document.getElementById('btnEditMode');
 
@@ -267,11 +263,10 @@ btnLogin?.addEventListener('click', ()=>{
 btnEditMode?.addEventListener('click', ()=>{
   editMode = !editMode;
   btnEditMode.textContent = `Modo edición: ${editMode ? 'ON' : 'OFF'}`;
-  // Re-render la tabla para aplicar/remover clases editable
   renderTable(currentPage);
 });
 
-/* ------------ Botones de control ------------ */
+/* Botones */
 document.getElementById('btnApply')?.addEventListener('click', async ()=>{
   await refreshKpisAndCharts(getFilters());
   await renderTable(1);
@@ -286,7 +281,7 @@ document.getElementById('btnRefresh')?.addEventListener('click', async ()=>{
   await renderTable(currentPage);
 });
 
-/* ------------ Scroll superior sincronizado (mantener) ------------ */
+/* Scroll superior sincronizado */
 (function syncHScroll(){
   const topBar = document.getElementById('top-scroll');
   const tw = document.querySelector('.table-wrap');
@@ -297,7 +292,7 @@ document.getElementById('btnRefresh')?.addEventListener('click', async ()=>{
   tw.addEventListener('scroll',     ()=>{ if(lock) return; lock=true; topBar.scrollLeft = tw.scrollLeft; lock=false; });
 })();
 
-/* ------------ Sticky header dynamic calculation ------------ */
+/* Sticky header dynamic calculation */
 function updateStickyTop(){
   try{
     const headerEl = document.querySelector('.app-header');
@@ -306,7 +301,6 @@ function updateStickyTop(){
     const headerH = headerEl?.offsetHeight || 64;
     const kpisH = kpisEl?.offsetHeight || 0;
     const filtersH = filtersEl?.offsetHeight || 0;
-    // margen extra
     const stickyTopPx = headerH + kpisH + filtersH + 12;
     document.documentElement.style.setProperty('--stickyTop', stickyTopPx + 'px');
   }catch(e){
@@ -315,23 +309,18 @@ function updateStickyTop(){
 }
 window.addEventListener('resize', ()=>{ setTimeout(updateStickyTop, 120); });
 
-/* Ejecutar al final de renderCharts/refresh para estabilizar layout (ya lo llamamos en refreshKpisAndCharts) */
-
-/* ------------ Exportar funciones globales (para onclick inline y debugging) ------------ */
+/* Exportar funciones globales */
 window.renderTable = renderTable;
 window.refreshKpisAndCharts = refreshKpisAndCharts;
 window.fetchTable = fetchTable;
 window.fetchStats = fetchStats;
 
-/* ------------ Init (arranque) ------------ */
+/* Init */
 async function init(){
-  // Calcular stickyTop inicial (tolerancia luego de layout)
   updateStickyTop();
-  // Cargar KPIs y tabla inicial
   try{
     await refreshKpisAndCharts(getFilters());
     await renderTable(1);
-    // recalcular tras carga
     setTimeout(updateStickyTop, 200);
   }catch(e){
     console.warn('init error', e);
