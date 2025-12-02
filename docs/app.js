@@ -226,19 +226,28 @@ async function renderTable(page = 1){
     }</tr>`).join('');
   }
 
-  const totalPages = Math.ceil((data.total||0)/pageSize);
-  const prev = Math.max(1, page-1), next = Math.min(totalPages, page+1);
-  const step = Math.max(1, Math.floor(100/pageSize));
-  const minus100 = Math.max(1, page - step);
-  const plus100 = Math.min(totalPages, page + step);
-
-  if(pgnEl) pgnEl.innerHTML =
-    `<button onclick="renderTable(${prev})"${page===1?' disabled':''}>« Anterior</button>`+
-    `<button onclick="renderTable(${minus100})">-100</button>`+
-    `<span style="padding:4px 8px">Página ${page} / ${totalPages}</span>`+
-    `<button onclick="renderTable(${plus100})">+100</button>`+
-    `<button onclick="renderTable(${next})"${page===totalPages?' disabled':''}>Siguiente »</button>`;
-
+    const totalPages = Math.ceil((data.total||0)/pageSize);
+    const prev = Math.max(1, page-1), next = Math.min(totalPages, page+1);
+    const step = Math.max(1, Math.floor(100/pageSize));
+    const minus100 = Math.max(1, page - step);
+    const plus100 = Math.min(totalPages, page + step);
+  
+    if(pgnEl) pgnEl.innerHTML =
+      `<button onclick="renderTable(${prev})"${page===1?' disabled':''}>« Anterior</button>`+
+      `<button onclick="renderTable(${minus100})">-100</button>`+
+      `<span style="padding:4px 8px">Página ${page} / ${totalPages}</span>`+
+      `<button onclick="renderTable(${plus100})">+100</button>`+
+      `<button onclick="renderTable(${next})"${page===totalPages?' disabled':''}>Siguiente »</button>`;
+  
+    // --- NUEVO: KPIs de tiempos basados en las filas cargadas ---
+    try{
+      const tKpis = computeTimeKpisFromRows(currentRows);
+      setTimeKpis(tKpis);
+      console.log('Time KPIs (pagina actual):', tKpis);
+    }catch(e){
+      console.warn('Error calculando KPIs de tiempo', e);
+    }
+    // --- FIN NUEVO ---
   setTimeout(updateStickyTop, 60);
 }
 
