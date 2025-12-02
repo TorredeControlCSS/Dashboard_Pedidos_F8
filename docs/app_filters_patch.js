@@ -1,3 +1,4 @@
+// desactivado: los filtros se llenan ahora desde app.js
 // Patch robusto: intenta orders.meta (todo el dataset) y si falla hace fallback a orders.list (multi-page)
 (function(){
   // === JSONP helper local (independiente de app.js) ===
