@@ -199,3 +199,26 @@ td.editable {
     white-space: nowrap;
   }
 }
+/* Estados de completado y fill-rate */
+td.state-ok{
+  background-color:#dcfce7;  /* verde claro */
+  color:#166534;
+  font-weight:600;
+}
+td.state-bad{
+  background-color:#fee2e2;  /* rojo claro */
+  color:#991b1b;
+  font-weight:600;
+}
+td.fill-high{
+  background-color:#dbeafe;  /* azul claro */
+  color:#1d4ed8;
+}
+td.fill-medium{
+  background-color:#fef9c3;  /* amarillo claro */
+  color:#854d0e;
+}
+td.fill-low{
+  background-color:#fee2e2;  /* rojo claro */
+  color:#991b1b;
+}
