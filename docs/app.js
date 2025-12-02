@@ -251,6 +251,38 @@ function setTimeKpis(t){
   set('kpi-t-diff', t.diff);
 }
 
+/* Meta para filtros: pedir únicos al Script A (orders.meta) */
+async function fetchMeta(){
+  const p = new URLSearchParams({ route: 'orders.meta' });
+  const res = await jsonp(`${A}?${p.toString()}`);
+  if (!res || res.status !== 'ok') throw new Error(res && res.error ? res.error : 'meta_error');
+  return res.data || {};
+}
+
+async function populateFiltersFromMeta(){
+  try{
+    const meta = await fetchMeta();
+    const setOptions = (id, items, includeAllLabel) => {
+      const el = document.getElementById(id);
+      if(!el) return;
+      const prefix = includeAllLabel
+        ? '<option value="">Todas</option>'
+        : '<option value="">Todos</option>';
+      el.innerHTML = prefix + (items||[]).map(v=>`<option value="${v}">${v}</option>`).join('');
+    };
+
+    setOptions('fCat',    meta.categorias || [], true);
+    setOptions('fUnidad', meta.unidades   || [], true);
+    setOptions('fTipo',   meta.tipos      || [], false);
+    setOptions('fGrupo',  meta.grupos     || [], false);
+    setOptions('fEstado', meta.estados    || [], true);
+
+    console.log('populateFiltersFromMeta (app.js):', meta);
+  }catch(e){
+    console.warn('populateFiltersFromMeta error', e);
+  }
+}
+  
 /* Llamada a orders.list */
 async function fetchTable(page, pageSize, filters){
   const p = new URLSearchParams({ route:'orders.list', page, pageSize });
@@ -474,7 +506,7 @@ window.fetchStats = fetchStats;
 async function init(){
   updateStickyTop();
   try{
-    await populateFilters();                // <- llena filtros desde orders.list
+    await populateFiltersFromMeta();                // <- llena filtros desde orders.list
     await refreshKpisAndCharts(getFilters());
     await renderTable(1);
     setTimeout(updateStickyTop, 200);
