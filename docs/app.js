@@ -207,6 +207,9 @@ async function renderTable(page = 1){
   });
   currentIdCol = headers.find(h => N(h) === N_ID) || null;
 
+    // Exponer currentRows para depuración en consola
+  window._currentRows = currentRows;
+  
   const thead = document.querySelector('#tabla thead');
   const tbody = document.querySelector('#tabla tbody');
 
