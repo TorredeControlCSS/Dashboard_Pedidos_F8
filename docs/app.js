@@ -1,6 +1,6 @@
 // app.js v2025-12-01 — versión completa y consolidada
 // Contiene: KPIs/Charts desde stats, tabla paginada, login, edición inline,
-// recalculo dinámico de sticky header y exposición de funciones globales.
+// recalculo dinámico de sticky header, filtros desde orders.list y exposición de funciones globales.
 
 if (window.__APP_LOADED__) {
   console.log('app.js ya cargado, skip');
@@ -34,8 +34,18 @@ function jsonp(url){
   return new Promise((resolve,reject)=>{
     const cb = 'cb_' + Math.random().toString(36).slice(2);
     const s = document.createElement('script');
-    window[cb] = (payload) => { try { resolve(payload); } finally { try{ delete window[cb]; }catch(e){}; s.remove(); } };
-    s.onerror = () => { try{ delete window[cb]; }catch(e){}; s.remove(); reject(new Error('network')); };
+    window[cb] = (payload) => {
+      try { resolve(payload); }
+      finally {
+        try{ delete window[cb]; }catch(e){}
+        s.remove();
+      }
+    };
+    s.onerror = () => {
+      try{ delete window[cb]; }catch(e){}
+      s.remove();
+      reject(new Error('network'));
+    };
     s.src = url + (url.includes('?') ? '&' : '?') + `callback=${cb}&_=${Date.now()}`;
     document.body.appendChild(s);
   });
@@ -44,8 +54,16 @@ function jsonp(url){
 /* Fechas helpers */
 const monES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 const isIsoZ = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v) && v.endsWith('Z');
-const toDDMonYY = v => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v); if(!m) return v; const [_,y,mn,d] = m; return `${d}-${monES[parseInt(mn,10)-1]}-${y.slice(-2)}`; };
-const parseIsoDate = v => { const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(v||''); return m ? new Date(Date.UTC(+m[1],+m[2]-1,+m[3])) : null; };
+const toDDMonYY = v => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v);
+  if(!m) return v;
+  const [_,y,mn,d] = m;
+  return `${d}-${monES[parseInt(mn,10)-1]}-${y.slice(-2)}`;
+};
+const parseIsoDate = v => {
+  const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(v||'');
+  return m ? new Date(Date.UTC(+m[1],+m[2]-1,+m[3])) : null;
+};
 
 /* KPIs / Charts */
 async function fetchStats(filters){
@@ -57,23 +75,36 @@ async function fetchStats(filters){
 }
 
 function setKpis(k){
-  const set = (id,v) => { const el = document.getElementById(id); if(el) el.textContent = (v==null ? '—' : (+v).toLocaleString()); };
+  const set = (id,v) => {
+    const el = document.getElementById(id);
+    if(el) el.textContent = (v==null ? '—' : (+v).toLocaleString());
+  };
   set('kpi-total', k.total);
   set('kpi-asignado', k.asignado);
   set('kpi-solicitado', k.solicitado);
   set('kpi-reng-asig', k.rengAsig);
   set('kpi-reng-sol', k.rengSol);
-  const urg = document.getElementById('kpi-urg'), men = document.getElementById('kpi-men');
+  const urg = document.getElementById('kpi-urg'),
+        men = document.getElementById('kpi-men');
   if(urg) urg.textContent = (k.urg==null ? '—' : (+k.urg).toLocaleString());
   if(men) men.textContent = (k.mens==null ? '—' : (+k.mens).toLocaleString());
 }
 
-// Añadir conteos por tipo (MENSUAL / URGENTE)
+// Conteos por tipo (MENSUAL / URGENTE) si stats.tipoDist existe
 function setTipoCounts(tipoDist){
-  const set = (id,v) => { const el = document.getElementById(id); if(el) el.textContent = (v==null ? '—' : (+v).toLocaleString()); };
-  const getVal = (keys) => { if(!tipoDist) return 0; for(let i=0;i<keys.length;i++){ if(tipoDist[keys[i]]!=null) return tipoDist[keys[i]]; } return 0; };
+  const set = (id,v) => {
+    const el = document.getElementById(id);
+    if(el) el.textContent = (v==null ? '—' : (+v).toLocaleString());
+  };
+  const getVal = (keys) => {
+    if(!tipoDist) return 0;
+    for(let i=0;i<keys.length;i++){
+      if(tipoDist[keys[i]]!=null) return tipoDist[keys[i]];
+    }
+    return 0;
+  };
   const mens = getVal(['MENSUAL','MENSUALES','MENS','MENSUAL ']);
-  const urg = getVal(['URGENTE','URG','URG.','URG ']);
+  const urg  = getVal(['URGENTE','URG','URG.','URG ']);
   set('kpi-tipo-mens', mens);
   set('kpi-tipo-urg', urg);
 }
@@ -83,12 +114,13 @@ async function refreshKpisAndCharts(filters){
   setKpis(stats.kpis);
   if (stats && stats.tipoDist) setTipoCounts(stats.tipoDist);
   if (window.renderChartsFromStats) {
-    try { window.renderChartsFromStats(stats); } catch(e){ console.warn('renderChartsFromStats failed', e); }
+    try { window.renderChartsFromStats(stats); }
+    catch(e){ console.warn('renderChartsFromStats failed', e); }
   }
   setTimeout(updateStickyTop, 120);
 }
 
-/* Filtros */
+/* Filtros: leer valores seleccionados */
 function getFilters(){
   return {
     cat:    document.getElementById('fCat')?.value || '',
@@ -100,6 +132,46 @@ function getFilters(){
     desde:  document.getElementById('fDesde')?.value || '',
     hasta:  document.getElementById('fHasta')?.value || ''
   };
+}
+
+/* Filtros: poblar opciones desde orders.list (Script A) */
+async function populateFilters(){
+  try{
+    const PAGE_SIZE = 2000; // puedes subir/bajar según rendimiento
+    const data = await fetchTable(1, PAGE_SIZE, {}); // sin filtros
+    const rows = data.rows || [];
+
+    const uniqueSorted = (arr) =>
+      Array.from(new Set((arr||[]).filter(Boolean))).sort();
+
+    const cat    = uniqueSorted(rows.map(r => r['CATEG.']  || ''));
+    const unidad = uniqueSorted(rows.map(r => r['UNIDAD']  || ''));
+    const tipo   = uniqueSorted(rows.map(r => r['TIPO']    || ''));
+    const grupo  = uniqueSorted(rows.map(r => r['GRUPO']   || ''));
+    const estado = uniqueSorted(rows.map(r => r['ESTADO']  || ''));
+
+    const setOptions = (id, items, includeAllLabel) => {
+      const el = document.getElementById(id);
+      if(!el) return;
+      const prefix = includeAllLabel
+        ? '<option value="">Todas</option>'
+        : '<option value="">Todos</option>';
+      el.innerHTML = prefix + (items||[]).map(v=>`<option value="${v}">${v}</option>`).join('');
+    };
+
+    setOptions('fCat',    cat,    true);
+    setOptions('fUnidad', unidad, true);
+    setOptions('fTipo',   tipo,   false);
+    setOptions('fGrupo',  grupo,  false);
+    setOptions('fEstado', estado, true);
+
+    console.log('populateFilters (app.js):', {
+      totalRows: rows.length,
+      categorias: cat
+    });
+  }catch(e){
+    console.warn('populateFilters error', e);
+  }
 }
 
 /* Tabla y paginación */
@@ -116,14 +188,20 @@ function perRowMetrics(row){
   const rec = row['RECIBO F8'] && parseIsoDate(row['RECIBO F8']);
   const end = row['ENTREGA REAL'] ? parseIsoDate(row['ENTREGA REAL']) : new Date();
   const days = (rec && end) ? Math.max(0, Math.round((end-rec)/86400000)) : '';
-  const toNum = v => (typeof v==='number')?v: parseFloat(String(v||'').replace(',','.')) || 0;
+  const toNum = v => (typeof v==='number') ? v : parseFloat(String(v||'').replace(',','.')) || 0;
   const asig = toNum(row['CANT. ASIG.']), sol  = toNum(row['CANT. SOL.']);
   const rasi = toNum(row['RENGLONES ASI.']), rsol = toNum(row['RENGLONES SOL.']);
   const fillCant = sol>0 ? Math.round((asig/sol)*100) : 0;
   const fillReng = rsol>0 ? Math.round((rasi/rsol)*100) : 0;
-  return { TIEMPO: days ? `${days}d` : '', COMPLET: complet ? 'SI':'NO', 'FILL CANT.': `${fillCant}%`, 'FILL RENGL.': `${fillReng}%` };
+  return {
+    TIEMPO: days ? `${days}d` : '',
+    COMPLET: complet ? 'SI':'NO',
+    'FILL CANT.': `${fillCant}%`,
+    'FILL RENGL.': `${fillReng}%`
+  };
 }
-  // === KPIs de TIEMPO (RECIBO F8 -> PROY. ENTREGA / ENTREGA REAL) ===
+
+/* KPIs de TIEMPO (RECIBO F8 -> PROY. ENTREGA / ENTREGA REAL) */
 function computeTimeKpisFromRows(rows){
   const toDate = (v) => parseIsoDate(v);
   let sumReal = 0, nReal = 0;
@@ -133,7 +211,6 @@ function computeTimeKpisFromRows(rows){
     const rec = r['RECIBO F8'] && toDate(r['RECIBO F8']);
     if (!rec) return;
 
-    // Tiempo REAL: RECIBO F8 -> ENTREGA REAL (solo completados)
     if (r['ENTREGA REAL']) {
       const end = toDate(r['ENTREGA REAL']);
       if (end && end >= rec) {
@@ -142,8 +219,6 @@ function computeTimeKpisFromRows(rows){
         nReal++;
       }
     }
-
-    // Tiempo PROMETIDO: RECIBO F8 -> PROY. ENTREGA
     if (r['PROY. ENTREGA']) {
       const prom = toDate(r['PROY. ENTREGA']);
       if (prom && prom >= rec) {
@@ -169,14 +244,14 @@ function setTimeKpis(t){
       el.textContent = '—';
       return;
     }
-    el.textContent = v.toFixed(1); // 1 decimal
+    el.textContent = v.toFixed(1);
   };
   set('kpi-t-real', t.avgReal);
   set('kpi-t-prom', t.avgProm);
   set('kpi-t-diff', t.diff);
 }
-// === FIN KPIs de TIEMPO ===
 
+/* Llamada a orders.list */
 async function fetchTable(page, pageSize, filters){
   const p = new URLSearchParams({ route:'orders.list', page, pageSize });
   Object.entries(filters||{}).forEach(([k,v])=>{ if(v) p.set(k,v); });
@@ -207,15 +282,15 @@ async function renderTable(page = 1){
   });
   currentIdCol = headers.find(h => N(h) === N_ID) || null;
 
-    // Exponer currentRows para depuración en consola
+  // Exponer currentRows para depuración en consola
   window._currentRows = currentRows;
-  
+
   const thead = document.querySelector('#tabla thead');
   const tbody = document.querySelector('#tabla tbody');
 
   if (thead) {
     thead.innerHTML = `<tr>${
-      currentHeaders.map(h => `<th data-col="${h}">${h}</th>`).join('')
+      currentHeaders.map(h => `<th data-col="${h}" style="min-width:${W[h]||100}px">${h}</th>`).join('')
     }</tr>`;
   }
   if (tbody) {
@@ -229,29 +304,28 @@ async function renderTable(page = 1){
     }</tr>`).join('');
   }
 
-    const totalPages = Math.ceil((data.total||0)/pageSize);
-    const prev = Math.max(1, page-1), next = Math.min(totalPages, page+1);
-    const step = Math.max(1, Math.floor(100/pageSize));
-    const minus100 = Math.max(1, page - step);
-    const plus100 = Math.min(totalPages, page + step);
-  
-    if(pgnEl) pgnEl.innerHTML =
-      `<button onclick="renderTable(${prev})"${page===1?' disabled':''}>« Anterior</button>`+
-      `<button onclick="renderTable(${minus100})">-100</button>`+
-      `<span style="padding:4px 8px">Página ${page} / ${totalPages}</span>`+
-      `<button onclick="renderTable(${plus100})">+100</button>`+
-      `<button onclick="renderTable(${next})"${page===totalPages?' disabled':''}>Siguiente »</button>`;
-  
-    // --- NUEVO: KPIs de tiempos basados en las filas cargadas ---
-    try{
-      // Usar los datos crudos (ISO) para los KPIs de tiempo
-      const tKpis = computeTimeKpisFromRows(rawRows);
-      setTimeKpis(tKpis);
-      console.log('Time KPIs (pagina actual):', tKpis);
-    }catch(e){
-      console.warn('Error calculando KPIs de tiempo', e);
-    }
-    // --- FIN NUEVO ---
+  const totalPages = Math.ceil((data.total||0)/pageSize);
+  const prev = Math.max(1, page-1), next = Math.min(totalPages, page+1);
+  const step = Math.max(1, Math.floor(100/pageSize));
+  const minus100 = Math.max(1, page - step);
+  const plus100 = Math.min(totalPages, page + step);
+
+  if(pgnEl) pgnEl.innerHTML =
+    `<button onclick="renderTable(${prev})"${page===1?' disabled':''}>« Anterior</button>`+
+    `<button onclick="renderTable(${minus100})">-100</button>`+
+    `<span style="padding:4px 8px">Página ${page} / ${totalPages}</span>`+
+    `<button onclick="renderTable(${plus100})">+100</button>`+
+    `<button onclick="renderTable(${next})"${page===totalPages?' disabled':''}>Siguiente »</button>`;
+
+  // KPIs de tiempo basados en los datos crudos
+  try{
+    const tKpis = computeTimeKpisFromRows(rawRows);
+    setTimeKpis(tKpis);
+    console.log('Time KPIs (pagina actual):', tKpis);
+  }catch(e){
+    console.warn('Error calculando KPIs de tiempo', e);
+  }
+
   setTimeout(updateStickyTop, 60);
 }
 
@@ -321,7 +395,12 @@ btnLogin?.addEventListener('click', ()=>{
   if (!ensureGsi()) return;
   google.accounts.id.initialize({
     client_id: CLIENT_ID,
-    callback: (resp)=>{ idToken = resp.credential; btnEditMode.disabled = false; btnLogin.textContent = 'Sesión iniciada'; alert('Sesión iniciada. Activa “Modo edición”.'); }
+    callback: (resp)=>{
+      idToken = resp.credential;
+      btnEditMode.disabled = false;
+      btnLogin.textContent = 'Sesión iniciada';
+      alert('Sesión iniciada. Activa “Modo edición”.');
+    }
   });
   google.accounts.id.prompt();
 });
@@ -338,7 +417,9 @@ document.getElementById('btnApply')?.addEventListener('click', async ()=>{
   await renderTable(1);
 });
 document.getElementById('btnClear')?.addEventListener('click', async ()=>{
-  ['fCat','fUnidad','fTipo','fGrupo','fEstado','fBuscar','fDesde','fHasta'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+  ['fCat','fUnidad','fTipo','fGrupo','fEstado','fBuscar','fDesde','fHasta'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.value='';
+  });
   await refreshKpisAndCharts(getFilters());
   await renderTable(1);
 });
@@ -354,8 +435,16 @@ document.getElementById('btnRefresh')?.addEventListener('click', async ()=>{
   if(!topBar || !tw) return;
   topBar.innerHTML = `<div style="width:${Math.max(tw.scrollWidth, tw.clientWidth)}px;height:1px"></div>`;
   let lock = false;
-  topBar.addEventListener('scroll', ()=>{ if(lock) return; lock=true; tw.scrollLeft = topBar.scrollLeft; lock=false; });
-  tw.addEventListener('scroll',     ()=>{ if(lock) return; lock=true; topBar.scrollLeft = tw.scrollLeft; lock=false; });
+  topBar.addEventListener('scroll', ()=>{
+    if(lock) return; lock=true;
+    tw.scrollLeft = topBar.scrollLeft;
+    lock=false;
+  });
+  tw.addEventListener('scroll', ()=>{
+    if(lock) return; lock=true;
+    topBar.scrollLeft = tw.scrollLeft;
+    lock=false;
+  });
 })();
 
 /* Sticky header dynamic calculation */
@@ -385,6 +474,7 @@ window.fetchStats = fetchStats;
 async function init(){
   updateStickyTop();
   try{
+    await populateFilters();                // <- llena filtros desde orders.list
     await refreshKpisAndCharts(getFilters());
     await renderTable(1);
     setTimeout(updateStickyTop, 200);
