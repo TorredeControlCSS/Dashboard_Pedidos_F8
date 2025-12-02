@@ -39,23 +39,49 @@
     console.info('filters populated from orders.meta');
   }
 
-  async function populateFromList(A){
-    const url = A + '?route=orders.list&page=1&pageSize=150';
+async function populateFromList(A){
+  // Leemos varias páginas de orders.list para construir los filtros
+  const PAGE_SIZE = 500;   // filas por página
+  const MAX_PAGES = 10;    // hasta 10 páginas -> máximo ~5000 filas
+
+  let allRows = [];
+  let page = 1;
+
+  while (page <= MAX_PAGES) {
+    const url = A + '?route=orders.list&page=' + page + '&pageSize=' + PAGE_SIZE;
     const res = await jsonpFetch(url);
-    if(!res || res.status !== 'ok') throw new Error('list_bad_response');
-    const rows = res.data && res.data.rows || [];
-    const cat = uniqueSorted(rows.map(r=>r['CATEG.']||''));
-    const unidad = uniqueSorted(rows.map(r=>r['UNIDAD']||''));
-    const tipo = uniqueSorted(rows.map(r=>r['TIPO']||''));
-    const grupo = uniqueSorted(rows.map(r=>r['GRUPO']||''));
-    const estado = uniqueSorted(rows.map(r=>r['ESTADO']||''));
-    setOptions('fCat', cat, true);
-    setOptions('fUnidad', unidad, true);
-    setOptions('fTipo', tipo, false);
-    setOptions('fGrupo', grupo, false);
-    setOptions('fEstado', estado, true);
-    console.info('filters populated from orders.list fallback (page1)');
+    if(!res || res.status !== 'ok') break;
+
+    const data = res.data || {};
+    const rows = data.rows || [];
+    if (!rows.length) break;
+
+    allRows = allRows.concat(rows);
+
+    const total = data.total || 0;
+    const maxPagesFromTotal = Math.ceil(total / PAGE_SIZE);
+    if (page >= maxPagesFromTotal) break;  // ya llegamos al final real
+
+    page++;
   }
+
+  const cat    = uniqueSorted(allRows.map(r=>r['CATEG.']  || ''));
+  const unidad = uniqueSorted(allRows.map(r=>r['UNIDAD']  || ''));
+  const tipo   = uniqueSorted(allRows.map(r=>r['TIPO']    || ''));
+  const grupo  = uniqueSorted(allRows.map(r=>r['GRUPO']   || ''));
+  const estado = uniqueSorted(allRows.map(r=>r['ESTADO']  || ''));
+
+  setOptions('fCat',    cat,    true);
+  setOptions('fUnidad', unidad, true);
+  setOptions('fTipo',   tipo,   false);
+  setOptions('fGrupo',  grupo,  false);
+  setOptions('fEstado', estado, true);
+
+  console.info('filters populated from orders.list multi-page fallback', {
+    pagesUsed: page,
+    totalRows: allRows.length
+  });
+}
 
   async function populateFiltersFromServer(){
     try{
