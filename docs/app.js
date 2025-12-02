@@ -134,46 +134,6 @@ function getFilters(){
   };
 }
 
-/* Filtros: poblar opciones desde orders.list (Script A) */
-async function populateFilters(){
-  try{
-    const PAGE_SIZE = 2000; // puedes subir/bajar según rendimiento
-    const data = await fetchTable(1, PAGE_SIZE, {}); // sin filtros
-    const rows = data.rows || [];
-
-    const uniqueSorted = (arr) =>
-      Array.from(new Set((arr||[]).filter(Boolean))).sort();
-
-    const cat    = uniqueSorted(rows.map(r => r['CATEG.']  || ''));
-    const unidad = uniqueSorted(rows.map(r => r['UNIDAD']  || ''));
-    const tipo   = uniqueSorted(rows.map(r => r['TIPO']    || ''));
-    const grupo  = uniqueSorted(rows.map(r => r['GRUPO']   || ''));
-    const estado = uniqueSorted(rows.map(r => r['ESTADO']  || ''));
-
-    const setOptions = (id, items, includeAllLabel) => {
-      const el = document.getElementById(id);
-      if(!el) return;
-      const prefix = includeAllLabel
-        ? '<option value="">Todas</option>'
-        : '<option value="">Todos</option>';
-      el.innerHTML = prefix + (items||[]).map(v=>`<option value="${v}">${v}</option>`).join('');
-    };
-
-    setOptions('fCat',    cat,    true);
-    setOptions('fUnidad', unidad, true);
-    setOptions('fTipo',   tipo,   false);
-    setOptions('fGrupo',  grupo,  false);
-    setOptions('fEstado', estado, true);
-
-    console.log('populateFilters (app.js):', {
-      totalRows: rows.length,
-      categorias: cat
-    });
-  }catch(e){
-    console.warn('populateFilters error', e);
-  }
-}
-
 /* Tabla y paginación */
 function widthMap(){ return {
   'CATEG.':180,'UNIDAD':220,'TIPO':110,'F8 SALMI':120,'F8 SISCONI':120,'GRUPO':110,'SUSTANCIAS':160,
