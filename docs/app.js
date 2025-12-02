@@ -62,7 +62,10 @@ const toDDMonYY = v => {
 };
 const parseIsoDate = v => {
   const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(v||'');
-  return m ? new Date(Date.UTC(+m[1],+m[2]-1,+m[3])) : null;
+  if (!m) return null;
+  const y = +m[1], mn = +m[2], d = +m[3];
+  // Crear fecha en zona local, sin UTC, para que no se corra un día
+  return new Date(y, mn-1, d);
 };
 
 /* KPIs / Charts */
