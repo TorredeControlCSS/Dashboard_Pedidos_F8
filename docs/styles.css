@@ -101,7 +101,7 @@ h1,h3 { margin: 0; }
 .table-wrap thead th{
   position: sticky !important;
   /* Valor fijo: pegado justo debajo de los filtros / gráfica */
-  top: 140px !important;               /* AJUSTABLE: prueba 200–220 según tu pantalla */
+  top: 40px !important;               /* AJUSTABLE: prueba 200–220 según tu pantalla */
   z-index: 9999 !important;
 
   background: #e5e7eb !important;
