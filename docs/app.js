@@ -61,11 +61,12 @@ const toDDMonYY = v => {
   return `${d}-${monES[parseInt(mn,10)-1]}-${y.slice(-2)}`;
 };
 const parseIsoDate = v => {
-  const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(v||'');
+  if (!v) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v);
   if (!m) return null;
   const y = +m[1], mn = +m[2], d = +m[3];
-  // Crear fecha en zona local, sin UTC, para que no se corra un día
-  return new Date(y, mn-1, d);
+  // Fecha local sin UTC; usamos solo año/mes/día para evitar corrimientos
+  return new Date(y, mn - 1, d);
 };
 
 /* KPIs / Charts */
