@@ -1,3 +1,4 @@
+// desactivado: la lógica de stats vive ahora en app.js
 /* --- PATCH: provide fetchStats + wrappers (safe if already exist) --- */
 (function(){
   const A = (window.APP && window.APP.A_URL) || window.A || '';
