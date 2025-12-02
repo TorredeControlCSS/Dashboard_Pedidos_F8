@@ -16,7 +16,11 @@ h1,h3 { margin: 0; }
   box-shadow:0 2px 4px rgba(0,0,0,.08);
 }
 .app-header .brand{display:flex; gap:10px; align-items:center;}
-.app-header .brand img{border-radius:6px; background: transparent;}
+.app-header .brand img{border-radius:6px; background: transparent;
+                      width: 48px;           /* antes probablemente era 32px */
+                      height: 48px;
+                      object-fit: contain;   /* para que no se deforme */
+                      }
 .app-header .header-actions button,
 .app-header .header-actions a{margin-left:8px}
 
