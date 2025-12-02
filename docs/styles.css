@@ -21,150 +21,179 @@ h1,h3 { margin: 0; }
 .app-header .header-actions a{margin-left:8px}
 
 /* KPIs */
-#kpis{display:grid; grid-template-columns: repeat(6, minmax(120px,1fr)); gap:10px; padding:10px 16px;}
-.kpi{background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:8px 12px;}
+#kpis{
+  display:grid;
+  grid-template-columns: repeat(6, minmax(120px,1fr));
+  gap:10px;
+  padding:10px 16px;
+}
+.kpi{
+  background:#f8fafc;
+  border:1px solid #e5e7eb;
+  border-radius:8px;
+  padding:8px 12px;
+}
 .kpi div{font-size:12px; color:#6b7280;}
 .kpi strong{font-size:18px;}
 
 /* Filtros */
 #filters{padding:8px 16px;}
-#filters .row{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:6px;}
+#filters .row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+  margin-bottom:6px;
+}
 #filters label{font-size:12px; color:#475569}
+#filters select, #filters input{
+  font-size:12px;
+  padding:4px 6px;
+}
 
 /* Gráficos */
-#charts{display:grid; grid-template-columns: 2fr 1fr 1fr; gap:12px; padding:8px 16px;}
-.card{border:1px solid #e5e7eb; border-radius:8px; padding:10px; background:#fff; height: 280px;}
-.card h3{font-size:14px; margin-bottom:8px; color:#334155}
-#charts .card canvas{ width:100% !important; height:220px !important; }
+#charts{
+  display:grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap:12px;
+  padding:8px 16px;
+}
+.card{
+  border:1px solid #e5e7eb;
+  border-radius:8px;
+  padding:10px;
+  background:#fff;
+  height: 280px;
+}
+.card h3{
+  font-size:14px;
+  margin-bottom:8px;
+  color:#334155
+}
+#charts .card canvas{
+  width:100% !important;
+  height:220px !important;
+}
 
 /* Scroll superior sincronizado */
 #top-scroll{height:12px; overflow:auto; margin:0 16px;}
 
-/* Tabla */
-.table-wrap{
-  margin: 8px 16px;
-  overflow: auto;              /* scroll horizontal y vertical si hace falta */
-}
-.table-wrap table{
-  border-collapse: collapse;
-  width: max-content;          /* ancho real según columnas */
-  min-width: 100%;             /* pero no menos que el contenedor */
-}
-/* encabezado fijo */
-.table-wrap thead th{
-  position: sticky;
-  top: var(--stickyTop, 64px); /* SOLO header azul */
-  z-index: 3;
-  background: #fff;
-  border-bottom: 2px solid #e5e5e5;
-}
-/* celdas */
-.table-wrap th,
-.table-wrap td{
-  border:1px solid #e5e7eb;
-  padding: 8px 10px;
-  line-height: 1.15;
-  vertical-align: top;
-  white-space: nowrap;
-}
-
-.pager{padding:8px 16px; display:flex; gap:8px; align-items:center;}
-.pager button{padding:6px 10px}
-
-
-/* === Patch vFinal: tabla y filtros === */
-.table-wrap table{ border-collapse: collapse; width:100%; }
-.table-wrap thead th{ position: sticky; top: var(--stickyTop,64px); background:#fff; z-index: 5; }
-.table-wrap thead, .table-wrap tbody, .table-wrap tr, .table-wrap th, .table-wrap td{ margin:0; padding:0; }
-.table-wrap th, .table-wrap td{ padding: 8px 10px; }
-.table-wrap thead tr::before{ content:none !important; } /* evita filas fantasma por estilos de usuario */
-#filters .row{ display:flex; flex-wrap:nowrap; gap:8px; align-items:center; overflow:auto; }
-#filters select, #filters input{ max-width:170px; }
-
-
-@media (min-width: 1100px){
-  #filters .row{ display:flex; flex-wrap:nowrap; gap:8px; align-items:center; }
-  #filters select, #filters input[type="text"], #filters input[type="date"]{ max-width: 180px; }
-}
-
-/* === FINAL PATCH (no-risk) === */
-:root{ --stickyTop:64px; }
-
-/* Encabezado fijo sin filas encima */
-.table-wrap table{ border-collapse: collapse; width:100%; border-spacing:0; }
-.table-wrap thead th{ position: sticky; top: var(--stickyTop); background:#fff; z-index: 5; }
-.table-wrap thead tr::before{ content:none !important; } /* evita filas fantasma */
-.table-wrap th, .table-wrap td{ padding:8px 10px; }
-
-/* Filtros en una sola línea en desktop */
-@media (min-width: 1100px){
-  #filters .row{ display:flex; flex-wrap:nowrap; gap:8px; align-items:center; overflow:auto; }
-  #filters select, #filters input[type="text"], #filters input[type="date"]{ max-width: 180px; }
-}
-
-/* Evitar scroll lateral cuando sea posible (sin romper datos) */
-.table-wrap td{ word-break: break-word; }
-
-:root{ --stickyTop:64px; }
-
-/* Encabezado fijo arriba (sin filas fantasma) */
-.table-wrap table{ border-collapse: collapse; width:100%; border-spacing:0; }
-.table-wrap thead th{ position: sticky; top: var(--stickyTop); background:#fff; z-index: 5; }
-.table-wrap thead tr::before{ content:none !important; }
-.table-wrap th, .table-wrap td{ padding:8px 10px; }
-
-/* Filtros en una sola línea en desktop */
-@media (min-width: 1100px){
-  #filters .row{ display:flex; flex-wrap:nowrap; gap:8px; align-items:center; overflow:auto; }
-  #filters select, #filters input[type="text"], #filters input[type="date"]{ max-width: 180px; }
-}
-
-/* ... (mantén el resto del CSS) ... */
-
-/* === CSS PATCH: evitar solapamiento del header === */
-.table-wrap thead th {
-  position: sticky !important;
-  top: var(--stickyTop, 64px) !important;
-  z-index: 9999 !important;
-  background: #fff !important;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-}
-.table-wrap { padding-top: 8px; }
-.table-wrap table { border-collapse: collapse; width:100%; border-spacing:0; table-layout: fixed; }
-.table-wrap th, .table-wrap td { white-space: normal; word-break: break-word; }
-
-/* (Este archivo reemplaza o añade al final de tu styles.css) */
-/* ========================== STYLES PATCH ========================== */
-:root { --stickyTop: 64px; }
+/* ================== TABLA PRINCIPAL ================== */
 
 .table-wrap{
-  margin: 8px 16px;
-  overflow: auto;
-}
-
-/* Asegura que el header sticky quede por encima y tenga fondo */
-.table-wrap table{ border-collapse: collapse; width:100%; border-spacing:0; table-layout: fixed; }
-.table-wrap thead th{
-  position: sticky !important;
-  top: var(--stickyTop, 64px) !important;
-  z-index: 9999 !important;
-  background: #fff !important;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-  padding: 8px 10px;
-  text-align: left;
-}
-.table-wrap th, .table-wrap td{
-  padding: 8px 10px;
+  margin: 8px 16px 40px;
   border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: #ffffff;
+  overflow: auto;              /* scroll horizontal/vertical si hace falta */
+}
+
+/* La tabla ocupa al menos el ancho del contenedor y se expande según contenido */
+.table-wrap table{
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  table-layout: auto;          /* dejamos que el navegador ajuste según contenido */
+  font-size: 12px;
+}
+
+/* Encabezados */
+.table-wrap thead th{
+  position: sticky !important;
+  top: var(--stickyTop, 64px) !important;
+  z-index: 9999 !important;
+  background: #f3f4f6 !important;
+  color: #111827;
+  font-weight: 600;
+  padding: 6px 8px;
+  border-bottom: 1px solid #d1d5db;
+  border-right: 1px solid #e5e7eb;
+  white-space: nowrap;         /* no cortar el texto en varias líneas raras */
+  text-align: left;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+/* Celdas */
+.table-wrap tbody td{
+  padding: 4px 8px;
+  border-bottom: 1px solid #f3f4f6;
+  border-right: 1px solid #f3f4f6;
+  white-space: nowrap;         /* una sola línea por celda */
+  text-overflow: ellipsis;
+  overflow: hidden;
   vertical-align: top;
-  word-break: break-word;
+}
+
+/* Zebra para facilitar lectura */
+.table-wrap tbody tr:nth-child(even){
+  background-color: #f9fafb;
+}
+
+/* Hover sutil para fila */
+.table-wrap tbody tr:hover{
+  background-color: #eef2ff;
+}
+
+/* Columnas de fecha centradas */
+.table-wrap td[data-col="FECHA F8"],
+.table-wrap td[data-col="RECIBO F8"],
+.table-wrap td[data-col="ASIGNACIÓN"],
+.table-wrap td[data-col="SALIDA"],
+.table-wrap td[data-col="DESPACHO"],
+.table-wrap td[data-col="FACTURACIÓN"],
+.table-wrap td[data-col="EMPACADO"],
+.table-wrap td[data-col="PROY. ENTREGA"],
+.table-wrap td[data-col="ENTREGA REAL"]{
+  text-align: center;
+}
+
+/* Columnas numéricas alineadas a la derecha */
+.table-wrap td[data-col="CANT. ASIG."],
+.table-wrap td[data-col="CANT. SOL."],
+.table-wrap td[data-col="RENGLONES ASI."],
+.table-wrap td[data-col="RENGLONES SOL."],
+.table-wrap td[data-col="TIEMPO"],
+.table-wrap td[data-col="FILL CANT."],
+.table-wrap td[data-col="FILL RENGL."]{
+  text-align: right;
+}
+
+/* Celdas que queremos permitir varias líneas (ej. comentarios) */
+.table-wrap td[data-col="COMENT."],
+.table-wrap td[data-col="SUSTANCIAS"]{
   white-space: normal;
 }
 
-/* Pequeño ajuste para filtros y grid */
-#filters .row{ display:flex; flex-wrap:nowrap; gap:8px; align-items:center; overflow:auto; }
-#filters select, #filters input{ max-width:170px; }
+/* Celda editable (ya se marca también en app.js) */
+td.editable {
+  cursor: pointer;
+  background: #fffbeb;
+}
 
-/* Asegurar que cuando sea editable se muestre claro */
-td.editable { cursor: pointer; background: #fffbe6; }
-/* ================================================================= */
+/* ================== PAGINACIÓN ================== */
+.pager{
+  padding:8px 16px;
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+.pager button{
+  padding:6px 10px;
+  font-size:12px;
+}
+
+/* ================== FILTROS (ajuste desktop) ================== */
+@media (min-width: 1100px){
+  #filters .row{
+    display:flex;
+    flex-wrap:nowrap;
+    gap:8px;
+    align-items:center;
+    overflow:auto;
+  }
+  #filters select,
+  #filters input[type="text"],
+  #filters input[type="date"]{
+    max-width: 180px;
+  }
+}
