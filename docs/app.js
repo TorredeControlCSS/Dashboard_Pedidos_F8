@@ -123,6 +123,59 @@ function perRowMetrics(row){
   const fillReng = rsol>0 ? Math.round((rasi/rsol)*100) : 0;
   return { TIEMPO: days ? `${days}d` : '', COMPLET: complet ? 'SI':'NO', 'FILL CANT.': `${fillCant}%`, 'FILL RENGL.': `${fillReng}%` };
 }
+  // === KPIs de TIEMPO (RECIBO F8 -> PROY. ENTREGA / ENTREGA REAL) ===
+function computeTimeKpisFromRows(rows){
+  const toDate = (v) => parseIsoDate(v);
+  let sumReal = 0, nReal = 0;
+  let sumProm = 0, nProm = 0;
+
+  (rows || []).forEach(r=>{
+    const rec = r['RECIBO F8'] && toDate(r['RECIBO F8']);
+    if (!rec) return;
+
+    // Tiempo REAL: RECIBO F8 -> ENTREGA REAL (solo completados)
+    if (r['ENTREGA REAL']) {
+      const end = toDate(r['ENTREGA REAL']);
+      if (end && end >= rec) {
+        const days = (end - rec)/86400000;
+        sumReal += days;
+        nReal++;
+      }
+    }
+
+    // Tiempo PROMETIDO: RECIBO F8 -> PROY. ENTREGA
+    if (r['PROY. ENTREGA']) {
+      const prom = toDate(r['PROY. ENTREGA']);
+      if (prom && prom >= rec) {
+        const daysP = (prom - rec)/86400000;
+        sumProm += daysP;
+        nProm++;
+      }
+    }
+  });
+
+  const avgReal = nReal ? (sumReal/nReal) : null;
+  const avgProm = nProm ? (sumProm/nProm) : null;
+  const diff = (avgReal!=null && avgProm!=null) ? (avgReal - avgProm) : null;
+
+  return { avgReal, avgProm, diff, nReal, nProm };
+}
+
+function setTimeKpis(t){
+  const set = (id, v) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (v == null || isNaN(v)) {
+      el.textContent = '—';
+      return;
+    }
+    el.textContent = v.toFixed(1); // 1 decimal
+  };
+  set('kpi-t-real', t.avgReal);
+  set('kpi-t-prom', t.avgProm);
+  set('kpi-t-diff', t.diff);
+}
+// === FIN KPIs de TIEMPO ===
 
 async function fetchTable(page, pageSize, filters){
   const p = new URLSearchParams({ route:'orders.list', page, pageSize });
