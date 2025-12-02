@@ -296,14 +296,42 @@ async function renderTable(page = 1){
     }</tr>`;
   }
   if (tbody) {
-    tbody.innerHTML = currentRows.map((r,ri)=>`<tr>${
-      currentHeaders.map(k=>{
-        const kN = N(k);
-        const editable = editMode && (S_DATE.has(kN) || S_INT.has(kN) || S_TXT.has(kN));
-        const cls = editable ? ' class="editable" style="cursor:pointer;background:#fffbe6;"' : '';
-        return `<td${cls} data-ri="${ri}" data-col="${k}">${r[k] ?? ''}</td>`;
-      }).join('')
-    }</tr>`).join('');
+
+      tbody.innerHTML = currentRows.map((r,ri)=>`<tr>${
+    currentHeaders.map(k=>{
+      const kN = N(k);
+      const editable = editMode && (S_DATE.has(kN) || S_INT.has(kN) || S_TXT.has(kN));
+  
+      let classes = [];
+      let style = '';
+  
+      if (editable){
+        classes.push('editable');
+        style += 'cursor:pointer;background:#fffbe6;';
+      }
+  
+      // COMPLET: SI (verde) / NO (rojo)
+      if (k === 'COMPLET'){
+        if (String(r[k]||'').toUpperCase() === 'SI') classes.push('state-ok');
+        else classes.push('state-bad');
+      }
+  
+      // FILL CANT. y FILL RENGL. por rangos
+      if (k === 'FILL CANT.' || k === 'FILL RENGL.'){
+        const valStr = String(r[k] || '').replace('%','');
+        const valNum = parseFloat(valStr);
+        if (!isNaN(valNum)){
+          if (valNum >= 95) classes.push('fill-high');      // >=95% azul
+          else if (valNum >= 80) classes.push('fill-medium'); // 80–94% amarillo
+          else classes.push('fill-low');                    // <80% rojo
+        }
+      }
+  
+      const clsAttr = classes.length ? ` class="${classes.join(' ')}"` : '';
+      const styleAttr = style ? ` style="${style}"` : '';
+      return `<td${clsAttr}${styleAttr} data-ri="${ri}" data-col="${k}">${r[k] ?? ''}</td>`;
+    }).join('')
+}</tr>`).join('');
   }
 
   const totalPages = Math.ceil((data.total||0)/pageSize);
