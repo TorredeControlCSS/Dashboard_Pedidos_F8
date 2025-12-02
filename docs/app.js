@@ -120,6 +120,15 @@ async function refreshKpisAndCharts(filters){
   setTimeout(updateStickyTop, 120);
 }
 
+/* Teoría de colas: métricas M/M/s por grupo desde Script A */
+async function fetchQueueMetrics(filters){
+  const p = new URLSearchParams({ route: 'queue.metrics' });
+  Object.entries(filters || {}).forEach(([k,v]) => { if (v) p.set(k,v); });
+  const res = await jsonp(`${A}?${p.toString()}`);
+  if (!res || res.status !== 'ok') throw new Error(res && res.error ? res.error : 'queue_error');
+  return res.data;
+}
+
 /* Filtros: leer valores seleccionados */
 function getFilters(){
   return {
@@ -321,6 +330,69 @@ async function renderTable(page = 1){
   setTimeout(updateStickyTop, 60);
 }
 
+/* Tabla de Teoría de Colas por grupo */
+async function renderQueueTable(filters){
+  try{
+    const data = await fetchQueueMetrics(filters || {});
+    const grupos = data.grupos || [];
+
+    const thead = document.querySelector('#tabla-queues thead');
+    const tbody = document.querySelector('#tabla-queues tbody');
+    if (!thead || !tbody) return;
+
+    thead.innerHTML = `<tr>
+      <th>GRUPO</th>
+      <th>s</th>
+      <th>λ (llegadas/día)</th>
+      <th>μ (salidas/día)</th>
+      <th>ρ (utilización)</th>
+      <th>W_real (días)</th>
+      <th>W_model (días)</th>
+      <th>Wq (días en cola)</th>
+      <th>L (en sistema)</th>
+      <th>Lq (en cola)</th>
+      <th># llegadas</th>
+      <th># completados</th>
+    </tr>`;
+
+    const fmt = (v, dec=2) => {
+      if (v == null || isNaN(v)) return '—';
+      return (+v).toFixed(dec);
+    };
+
+    tbody.innerHTML = grupos.map(g => {
+      const saturado = (g.mu === 0) || (g.lambda != null && g.mu != null && g.s && g.lambda >= g.s * g.mu);
+      const rhoPct = (g.rho == null || isNaN(g.rho)) ? '—' : (g.rho*100).toFixed(1) + '%';
+
+      const W_model = saturado ? '—' : fmt(g.W_model, 2);
+      const Wq      = saturado ? '—' : fmt(g.Wq, 2);
+      const L       = saturado ? '—' : fmt(g.L, 2);
+      const Lq      = saturado ? '—' : fmt(g.Lq, 2);
+
+      const rowClass = saturado ? ' style="background:#fef2f2"' : '';
+
+      return `<tr${rowClass}>
+        <td>${g.grupo}</td>
+        <td style="text-align:right">${g.s}</td>
+        <td style="text-align:right">${fmt(g.lambda, 3)}</td>
+        <td style="text-align:right">${fmt(g.mu, 3)}</td>
+        <td style="text-align:right">${rhoPct}</td>
+        <td style="text-align:right">${fmt(g.W_real, 2)}</td>
+        <td style="text-align:right">${W_model}</td>
+        <td style="text-align:right">${Wq}</td>
+        <td style="text-align:right">${L}</td>
+        <td style="text-align:right">${Lq}</td>
+        <td style="text-align:right">${g.llegadas}</td>
+        <td style="text-align:right">${g.completados}</td>
+      </tr>`;
+    }).join('');
+
+    console.log('queue.metrics:', data);
+  }catch(e){
+    console.warn('renderQueueTable error', e);
+  }
+}
+
 /* Edición inline */
 document.querySelector('#tabla')?.addEventListener('click', async (ev)=>{
   const td = ev.target.closest && ev.target.closest('td.editable');
@@ -405,19 +477,25 @@ btnEditMode?.addEventListener('click', ()=>{
 
 /* Botones */
 document.getElementById('btnApply')?.addEventListener('click', async ()=>{
-  await refreshKpisAndCharts(getFilters());
+  const f = getFilters();
+  await refreshKpisAndCharts(f);
   await renderTable(1);
+  await renderQueueTable(f);
 });
 document.getElementById('btnClear')?.addEventListener('click', async ()=>{
   ['fCat','fUnidad','fTipo','fGrupo','fEstado','fBuscar','fDesde','fHasta'].forEach(function(id){
     var el=document.getElementById(id); if(el) el.value='';
   });
-  await refreshKpisAndCharts(getFilters());
+  const f = getFilters();
+  await refreshKpisAndCharts(f);
   await renderTable(1);
+  await renderQueueTable(f);
 });
 document.getElementById('btnRefresh')?.addEventListener('click', async ()=>{
-  await refreshKpisAndCharts(getFilters());
+  const f = getFilters();
+  await refreshKpisAndCharts(f);
   await renderTable(currentPage);
+  await renderQueueTable(f);
 });
 
 /* Scroll superior sincronizado */
@@ -461,14 +539,18 @@ window.renderTable = renderTable;
 window.refreshKpisAndCharts = refreshKpisAndCharts;
 window.fetchTable = fetchTable;
 window.fetchStats = fetchStats;
+window.fetchQueueMetrics = fetchQueueMetrics;
+window.renderQueueTable = renderQueueTable;
 
 /* Init */
 async function init(){
   updateStickyTop();
   try{
     await populateFiltersFromMeta();                // <- llena filtros desde orders.list
-    await refreshKpisAndCharts(getFilters());
+    const f = getFilters();
+    await refreshKpisAndCharts(f);
     await renderTable(1);
+    await renderQueueTable(f);
     setTimeout(updateStickyTop, 200);
   }catch(e){
     console.warn('init error', e);
