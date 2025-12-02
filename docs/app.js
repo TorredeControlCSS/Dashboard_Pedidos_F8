@@ -244,7 +244,8 @@ async function renderTable(page = 1){
   
     // --- NUEVO: KPIs de tiempos basados en las filas cargadas ---
     try{
-      const tKpis = computeTimeKpisFromRows(currentRows);
+      // Usar los datos crudos (ISO) para los KPIs de tiempo
+      const tKpis = computeTimeKpisFromRows(rawRows);
       setTimeKpis(tKpis);
       console.log('Time KPIs (pagina actual):', tKpis);
     }catch(e){
