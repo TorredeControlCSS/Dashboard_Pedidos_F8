@@ -93,24 +93,24 @@ h1,h3 { margin: 0; }
   width: 100%;
   border-collapse: collapse;
   border-spacing: 0;
-  table-layout: auto;          /* dejamos que el navegador ajuste según contenido */
+  table-layout: auto;
   font-size: 12px;
 }
 
 /* Encabezados */
 .table-wrap thead th{
   position: sticky !important;
-  top: var(--stickyTop, 64px) !important;
+  top: var(--stickyTop, 160px) !important; /* usar SIEMPRE el stickyTop calculado en app.js */
   z-index: 9999 !important;
-  background: #f3f4f6 !important;
+
+  background: #e5e7eb !important;   /* gris más fuerte para distinguirlo de las filas */
   color: #111827;
   font-weight: 600;
   padding: 6px 8px;
-  border-bottom: 1px solid #d1d5db;
-  border-right: 1px solid #e5e7eb;
-  white-space: nowrap;         /* no cortar el texto en varias líneas raras */
+  border-bottom: 1px solid #9ca3af;
+  border-right: 1px solid #d1d5db;
+  white-space: nowrap;
   text-align: left;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
 
 /* Celdas */
@@ -118,7 +118,7 @@ h1,h3 { margin: 0; }
   padding: 4px 8px;
   border-bottom: 1px solid #f3f4f6;
   border-right: 1px solid #f3f4f6;
-  white-space: nowrap;         /* una sola línea por celda */
+  white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
   vertical-align: top;
@@ -158,13 +158,13 @@ h1,h3 { margin: 0; }
   text-align: right;
 }
 
-/* Celdas que queremos permitir varias líneas (ej. comentarios) */
+/* Celdas con texto largo permitimos varias líneas */
 .table-wrap td[data-col="COMENT."],
 .table-wrap td[data-col="SUSTANCIAS"]{
   white-space: normal;
 }
 
-/* Celda editable (ya se marca también en app.js) */
+/* Celda editable */
 td.editable {
   cursor: pointer;
   background: #fffbeb;
