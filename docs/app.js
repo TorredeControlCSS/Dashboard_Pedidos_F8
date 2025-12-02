@@ -137,6 +137,7 @@ function getFilters(){
     tipo:   document.getElementById('fTipo')?.value || '',
     grupo:  document.getElementById('fGrupo')?.value || '',
     estado: document.getElementById('fEstado')?.value || '',
+    coment: document.getElementById('fComent')?.value || '',
     text:   document.getElementById('fBuscar')?.value || '',
     desde:  document.getElementById('fDesde')?.value || '',
     hasta:  document.getElementById('fHasta')?.value || ''
@@ -483,7 +484,7 @@ document.getElementById('btnApply')?.addEventListener('click', async ()=>{
   await renderQueueTable(f);
 });
 document.getElementById('btnClear')?.addEventListener('click', async ()=>{
-  ['fCat','fUnidad','fTipo','fGrupo','fEstado','fBuscar','fDesde','fHasta'].forEach(function(id){
+  ['fCat','fUnidad','fTipo','fGrupo','fEstado','fComent','fBuscar','fDesde','fHasta'].forEach(function(id){
     var el=document.getElementById(id); if(el) el.value='';
   });
   const f = getFilters();
