@@ -22,11 +22,16 @@ h1,h3 { margin: 0; }
 
 /* KPIs */
 #kpis{
-  display:grid;
-  grid-template-columns: repeat(6, minmax(120px,1fr));
+  display:flex;
+  flex-wrap:nowrap;
   gap:10px;
   padding:10px 16px;
+  overflow-x:auto;
 }
+.kpi{
+  min-width: 180px;
+}
+
 .kpi{
   background:#f8fafc;
   border:1px solid #e5e7eb;
