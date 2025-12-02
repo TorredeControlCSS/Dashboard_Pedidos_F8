@@ -100,10 +100,11 @@ h1,h3 { margin: 0; }
 /* Encabezados */
 .table-wrap thead th{
   position: sticky !important;
-  top: var(--stickyTop, 160px) !important; /* usar SIEMPRE el stickyTop calculado en app.js */
+  /* Encabezado más arriba: restamos algo al stickyTop calculado */
+  top: calc(var(--stickyTop, 160px) - 120px) !important;
   z-index: 9999 !important;
 
-  background: #e5e7eb !important;   /* gris más fuerte para distinguirlo de las filas */
+  background: #e5e7eb !important;
   color: #111827;
   font-weight: 600;
   padding: 6px 8px;
