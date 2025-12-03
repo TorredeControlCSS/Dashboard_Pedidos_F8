@@ -391,9 +391,9 @@ async function renderQueueTable(filters){
     const tbody = document.querySelector('#tabla-queues tbody');
     if (!thead || !tbody) return;
 
+    // Sin la columna "s"
     thead.innerHTML = `<tr>
       <th>GRUPO</th>
-      <th>s</th>
       <th>λ (llegadas/día)</th>
       <th>μ (salidas/día)</th>
       <th>ρ (utilización)</th>
@@ -438,7 +438,6 @@ async function renderQueueTable(filters){
 
       return `<tr${rowClass}>
         <td>${shortGroup(g.grupo)}</td>
-        <td style="text-align:right">${g.s}</td>
         <td style="text-align:right">${fmt(g.lambda, 3)}</td>
         <td style="text-align:right">${fmt(g.mu, 3)}</td>
         <td style="text-align:right">${rhoPct}</td>
