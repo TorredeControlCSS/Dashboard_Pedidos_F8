@@ -8,27 +8,42 @@ function _ctx(id){ const el=document.getElementById(id); return el ? el.getConte
 function renderChartsFromStats(stats){
   if(!stats) return;
 
-  // EVOLUCIÓN
-  (()=>{
-    const ctx=_ctx('ch-evol'); if(!ctx) return;
-    const L=stats.series?.labels||[];
-    const R=stats.series?.recibidos||[];
-    const C=stats.series?.completados||[];
-    const P=stats.series?.proyectados||[];
-    if(_chEvol) _chEvol.destroy();
-    _chEvol=new Chart(ctx,{
-      type:'line',
-      data:{
-        labels:L,
-        datasets:[
-          {label:'Pedidos recibidos', data:R, fill:false, tension:.25},
-          {label:'Pedidos completados', data:C, fill:false, tension:.25},
-          {label:'Proyectado entrega', data:P, fill:false, tension:.25}
-        ]
+// EVOLUCIÓN
+(()=>{
+  const ctx=_ctx('ch-evol'); if(!ctx) return;
+  const L=stats.series?.labels||[];
+  const R=stats.series?.recibidos||[];
+  const C=stats.series?.completados||[];
+  const P=stats.series?.proyectados||[];
+  if(_chEvol) _chEvol.destroy();
+  _chEvol=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:L,
+      datasets:[
+        {label:'Pedidos recibidos',   data:R, fill:false, tension:.25},
+        {label:'Pedidos completados', data:C, fill:false, tension:.25},
+        {label:'Proyectado entrega',  data:P, fill:false, tension:.25}
+      ]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{ position:'bottom' },
+        tooltip:{
+          mode:'nearest',        // toma el punto más cercano
+          intersect:false,       // no exige estar justo encima
+        }
       },
-      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}} }
-    });
-  })();
+      interaction:{
+        mode:'nearest',          // comportamiento general de hover
+        intersect:false,         // más tolerante al mouse
+        axis:'x'                 // opcional: se fija por eje X (fecha)
+      }
+    }
+  });
+})();
 
   // COMENTARIOS (nuevo gráfico, reemplaza donut de estados)
   (()=>{
@@ -141,5 +156,6 @@ function renderChartsFromStats(stats){
 }
 
 window.renderChartsFromStats = renderChartsFromStats;
+
 
 
