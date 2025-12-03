@@ -13,12 +13,20 @@ const B = window.APP && window.APP.B_URL;
 const CLIENT_ID = window.APP && window.APP.CLIENT_ID;
 
 const ID_HEADER = 'F8 SALMI';
-const N = s => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\./g,'').replace(/\s+/g,' ').trim().toUpperCase();
+const N = s => String(s||'')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g,'')
+  .replace(/\./g,'')
+  .replace(/\s+/g,' ')
+  .trim()
+  .toUpperCase();
 const N_ID = N(ID_HEADER);
 
 const DATE_FIELDS = ['ASIGNACIÓN','SALIDA','DESPACHO','FACTURACIÓN','EMPACADO','PROY. ENTREGA','ENTREGA REAL'];
 const INT_FIELDS  = ['CANT. ASIG.','CANT. SOL.','RENGLONES ASI.','RENGLONES SOL.'];
 const TXT_FIELDS  = ['COMENT.'];
+
+// Opciones fijas para comentarios (tanto filtro como edición)
 const COMMENT_OPTIONS = [
   '',
   'DISCREPANCIA DE INVENTARIO',
@@ -32,6 +40,7 @@ const COMMENT_OPTIONS = [
   'ERROR DE CAPTACION',
   'ENTREGADO'
 ];
+
 const S_DATE = new Set(DATE_FIELDS.map(N));
 const S_INT  = new Set(INT_FIELDS.map(N));
 const S_TXT  = new Set(TXT_FIELDS.map(N));
@@ -40,7 +49,7 @@ let idToken = null;
 let editMode = false;
 let currentHeaders = [], currentRows = [], currentIdCol = null;
 let currentPage = 1;
-const DEFAULT_PAGE_SIZE = 50; // ajustar si quieres más/menos velocidad
+const DEFAULT_PAGE_SIZE = 50;
 
 /* JSONP helper */
 function jsonp(url){
@@ -257,11 +266,11 @@ async function populateFiltersFromMeta(){
       el.innerHTML = currentFirst + rest;
     };
 
-    setOptions('fCat',    meta.categorias || [], true);
-    setOptions('fUnidad', meta.unidades   || [], true);
-    setOptions('fTipo',   meta.tipos      || [], false);
-    setOptions('fGrupo',  meta.grupos     || [], false);
-    setOptions('fEstado', meta.estados    || [], true);
+    setOptions('fCat',    meta.categorias || []);
+    setOptions('fUnidad', meta.unidades   || []);
+    setOptions('fTipo',   meta.tipos      || []);
+    setOptions('fGrupo',  meta.grupos     || []);
+    setOptions('fEstado', meta.estados    || []);
 
     console.log('populateFiltersFromMeta (app.js):', meta);
   }catch(e){
@@ -300,7 +309,6 @@ async function renderTable(page = 1){
   });
   currentIdCol = headers.find(h => N(h) === N_ID) || null;
 
-  // Exponer currentRows para depuración en consola
   window._currentRows = currentRows;
 
   const thead = document.querySelector('#tabla thead');
@@ -312,42 +320,41 @@ async function renderTable(page = 1){
     }</tr>`;
   }
   if (tbody) {
+    tbody.innerHTML = currentRows.map((r,ri)=>`<tr>${
+      currentHeaders.map(k=>{
+        const kN = N(k);
+        const editable = editMode && (S_DATE.has(kN) || S_INT.has(kN) || S_TXT.has(kN));
 
-      tbody.innerHTML = currentRows.map((r,ri)=>`<tr>${
-    currentHeaders.map(k=>{
-      const kN = N(k);
-      const editable = editMode && (S_DATE.has(kN) || S_INT.has(kN) || S_TXT.has(kN));
-  
-      let classes = [];
-      let style = '';
-  
-      if (editable){
-        classes.push('editable');
-        style += 'cursor:pointer;background:#fffbe6;';
-      }
-  
-      // COMPLET: SI (verde) / NO (rojo)
-      if (k === 'COMPLET'){
-        if (String(r[k]||'').toUpperCase() === 'SI') classes.push('state-ok');
-        else classes.push('state-bad');
-      }
-  
-      // FILL CANT. y FILL RENGL. por rangos
-      if (k === 'FILL CANT.' || k === 'FILL RENGL.'){
-        const valStr = String(r[k] || '').replace('%','');
-        const valNum = parseFloat(valStr);
-        if (!isNaN(valNum)){
-          if (valNum >= 95) classes.push('fill-high');      // >=95% azul
-          else if (valNum >= 80) classes.push('fill-medium'); // 80–94% amarillo
-          else classes.push('fill-low');                    // <80% rojo
+        let classes = [];
+        let style = '';
+
+        if (editable){
+          classes.push('editable');
+          style += 'cursor:pointer;background:#fffbe6;';
         }
-      }
-  
-      const clsAttr = classes.length ? ` class="${classes.join(' ')}"` : '';
-      const styleAttr = style ? ` style="${style}"` : '';
-      return `<td${clsAttr}${styleAttr} data-ri="${ri}" data-col="${k}">${r[k] ?? ''}</td>`;
-    }).join('')
-}</tr>`).join('');
+
+        // COMPLET: SI (verde) / NO (rojo)
+        if (k === 'COMPLET'){
+          if (String(r[k]||'').toUpperCase() === 'SI') classes.push('state-ok');
+          else classes.push('state-bad');
+        }
+
+        // FILL CANT. y FILL RENGL. por rangos
+        if (k === 'FILL CANT.' || k === 'FILL RENGL.'){
+          const valStr = String(r[k] || '').replace('%','');
+          const valNum = parseFloat(valStr);
+          if (!isNaN(valNum)){
+            if (valNum >= 95) classes.push('fill-high');
+            else if (valNum >= 80) classes.push('fill-medium');
+            else classes.push('fill-low');
+          }
+        }
+
+        const clsAttr = classes.length ? ` class="${classes.join(' ')}"` : '';
+        const styleAttr = style ? ` style="${style}"` : '';
+        return `<td${clsAttr}${styleAttr} data-ri="${ri}" data-col="${k}">${r[k] ?? ''}</td>`;
+      }).join('')
+    }</tr>`).join('');
   }
 
   const totalPages = Math.ceil((data.total||0)/pageSize);
@@ -363,7 +370,6 @@ async function renderTable(page = 1){
     `<button onclick="renderTable(${plus100})">+100</button>`+
     `<button onclick="renderTable(${next})"${page===totalPages?' disabled':''}>Siguiente »</button>`;
 
-  // KPIs de tiempo basados en los datos crudos
   try{
     const tKpis = computeTimeKpisFromRows(rawRows);
     setTimeKpis(tKpis);
@@ -444,6 +450,7 @@ document.querySelector('#tabla')?.addEventListener('click', async (ev)=>{
   if (ev.target.closest('.coment-editor') || ev.target.closest('.cell-editor')) {
     return;
   }
+
   const td = ev.target.closest && ev.target.closest('td.editable');
   if(!td || !editMode) return;
   const ri = +td.dataset.ri, col = td.dataset.col, row = currentRows[ri];
@@ -452,9 +459,9 @@ document.querySelector('#tabla')?.addEventListener('click', async (ev)=>{
 
   const kN = N(col);
   const isDate = S_DATE.has(kN), isInt = S_INT.has(kN), isTxt = S_TXT.has(kN);
-  if (td.querySelector('input')) return;
+  if (td.querySelector('input') || td.querySelector('select')) return;
 
-    const old = td.textContent;
+  const old = td.textContent;
   td.innerHTML = '';
 
   let inputEl;
@@ -475,7 +482,18 @@ document.querySelector('#tabla')?.addEventListener('click', async (ev)=>{
     const input = document.createElement('input');
     input.style.width='100%';
     input.style.boxSizing='border-box';
-    ...
+    if(isDate){
+      input.type='date';
+    } else if(isInt){
+      input.type='number';
+      input.step='1';
+      input.min='0';
+      const n=parseInt(old,10);
+      if(!isNaN(n)) input.value=String(n);
+    } else {
+      input.type='text';
+      input.value = old || '';
+    }
     inputEl = input;
   }
 
@@ -483,7 +501,7 @@ document.querySelector('#tabla')?.addEventListener('click', async (ev)=>{
   const bC = document.createElement('button'); bC.textContent='Cancelar'; bC.style.margin='4px 0 0 6px';
 
   const wrap = document.createElement('div');
-  wrap.className = 'coment-editor';   // <- importante, para el closest() de arriba
+  wrap.className = 'coment-editor';
   wrap.appendChild(inputEl);
 
   const btns = document.createElement('div');
@@ -493,23 +511,23 @@ document.querySelector('#tabla')?.addEventListener('click', async (ev)=>{
   td.appendChild(wrap);
   td.appendChild(btns);
   inputEl.focus();
-  
+
   bC.onclick = ()=>{ td.innerHTML = old; };
-  
+
   bS.onclick = async ()=>{
     if(!idToken){ alert('Primero haz clic en “Acceder”.'); return; }
-    // Leer valor según sea input o select
     let value = (inputEl.value || '').trim();
+
     if(isDate && !/^\d{4}-\d{2}-\d{2}$/.test(value)){ alert('Fecha inválida (YYYY-MM-DD).'); return; }
     if(isInt && !/^-?\d+$/.test(value)){ alert('Ingresa un entero.'); return; }
-    if(isTxt && value.length>500){ alert('Comentario muy largo (≤500).'); return; }
+    if(isTxt && !isComent && value.length>500){ alert('Comentario muy largo (≤500).'); return; }
 
     td.innerHTML = 'Guardando…';
     try{
       const res = await jsonp(`${B}?route=orders.update&idToken=${encodeURIComponent(idToken)}&id=${encodeURIComponent(orderId)}&field=${encodeURIComponent(col)}&value=${encodeURIComponent(value)}`);
       if(res && res.status === 'ok'){
         td.textContent = (isDate && /^\d{4}-\d{2}-\d{2}$/.test(value))
-          ? (()=>{ const [y,m,d]=value.split('-'); const mon=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][+m-1]; return `${d}-${mon}-${y.slice(2)}`; })()
+          ? (()=>{ const [y,m,d]=value.split('-'); const mon=monES[+m-1]; return `${d}-${mon}-${y.slice(2)}`; })()
           : value;
         await refreshKpisAndCharts(getFilters());
         await renderTable(currentPage);
@@ -530,7 +548,7 @@ const btnEditMode = document.getElementById('btnEditMode');
 
 function ensureGsi(){
   if (window.google && google.accounts && google.accounts.id) return true;
-  alert('Falta la librería de Google Identity. Verifica <script src="https://accounts.google.com/gsi/client"> en index.html');
+  alert('Falta la librería de Google Identity. Verifica <script src="https://accounts.google.com/gsi/client" async defer></script> en index.html');
   return false;
 }
 
@@ -540,7 +558,7 @@ btnLogin?.addEventListener('click', ()=>{
     client_id: CLIENT_ID,
     callback: (resp)=>{
       idToken = resp.credential;
-      btnEditMode.disabled = false;
+      if (btnEditMode) btnEditMode.disabled = false;
       btnLogin.textContent = 'Sesión iniciada';
       alert('Sesión iniciada. Activa “Modo edición”.');
     }
@@ -562,10 +580,9 @@ const btnRefreshEl = document.getElementById('btnRefresh');
 let filtersBusy = false;
 
 async function runFilters(action){
-  if (filtersBusy) return;          // evita clicks repetidos
+  if (filtersBusy) return;
   filtersBusy = true;
 
-  // marcar botones como "loading"
   [btnApplyEl, btnClearEl, btnRefreshEl].forEach(b=>{
     if (b) {
       b.disabled = true;
@@ -664,7 +681,7 @@ window.renderQueueTable = renderQueueTable;
 async function init(){
   updateStickyTop();
   try{
-    await populateFiltersFromMeta();                // <- llena filtros desde orders.list
+    await populateFiltersFromMeta();
     const f = getFilters();
     await refreshKpisAndCharts(f);
     await renderTable(1);
