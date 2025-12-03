@@ -440,6 +440,10 @@ async function renderQueueTable(filters){
 
 /* Edición inline */
 document.querySelector('#tabla')?.addEventListener('click', async (ev)=>{
+  // Si el click viene de dentro de un editor ya abierto, no volver a crear el editor
+  if (ev.target.closest('.coment-editor') || ev.target.closest('.cell-editor')) {
+    return;
+  }
   const td = ev.target.closest && ev.target.closest('td.editable');
   if(!td || !editMode) return;
   const ri = +td.dataset.ri, col = td.dataset.col, row = currentRows[ri];
@@ -457,7 +461,6 @@ document.querySelector('#tabla')?.addEventListener('click', async (ev)=>{
   const isComent = (col === 'COMENT.');
 
   if (isComent){
-    // Select con opciones fijas de comentario
     const select = document.createElement('select');
     select.style.width = '100%';
     COMMENT_OPTIONS.forEach(opt => {
@@ -469,31 +472,28 @@ document.querySelector('#tabla')?.addEventListener('click', async (ev)=>{
     });
     inputEl = select;
   } else {
-    // Comportamiento original para fechas, enteros y texto libre
     const input = document.createElement('input');
     input.style.width='100%';
     input.style.boxSizing='border-box';
-    if(isDate){ 
-      input.type='date'; 
-    } else if(isInt){ 
-      input.type='number'; 
-      input.step='1'; 
-      input.min='0'; 
-      const n=parseInt(old,10); 
-      if(!isNaN(n)) input.value=String(n); 
-    } else { 
-      input.type='text'; 
-      input.value = old || ''; 
-    }
+    ...
     inputEl = input;
   }
 
   const bS = document.createElement('button'); bS.textContent='Guardar'; bS.style.marginTop='4px';
   const bC = document.createElement('button'); bC.textContent='Cancelar'; bC.style.margin='4px 0 0 6px';
-  const wrap = document.createElement('div'); wrap.appendChild(inputEl);
-  const btns = document.createElement('div'); btns.appendChild(bS); btns.appendChild(bC);
-  td.appendChild(wrap); td.appendChild(btns);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'coment-editor';   // <- importante, para el closest() de arriba
+  wrap.appendChild(inputEl);
+
+  const btns = document.createElement('div');
+  btns.appendChild(bS);
+  btns.appendChild(bC);
+
+  td.appendChild(wrap);
+  td.appendChild(btns);
   inputEl.focus();
+  
   bC.onclick = ()=>{ td.innerHTML = old; };
   
   bS.onclick = async ()=>{
