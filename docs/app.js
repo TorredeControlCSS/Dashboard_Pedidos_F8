@@ -6,7 +6,7 @@ if (window.__APP_LOADED__) {
   console.log('app.js ya cargado, skip');
 } else {
 window.__APP_LOADED__ = true;
-console.log('app.js v2025-12-01');
+console.log('app.js v2025-12-01 (optimizada pageSize=200)');
 
 const A = window.APP && window.APP.A_URL;
 const B = window.APP && window.APP.B_URL;
@@ -49,7 +49,9 @@ let idToken = null;
 let editMode = false;
 let currentHeaders = [], currentRows = [], currentIdCol = null;
 let currentPage = 1;
-const DEFAULT_PAGE_SIZE = 50;
+
+// Page size más pequeño para acelerar carga inicial/render de tabla
+const DEFAULT_PAGE_SIZE = 200;
 
 /* JSONP helper */
 function jsonp(url){
