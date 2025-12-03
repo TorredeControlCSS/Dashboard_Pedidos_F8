@@ -30,15 +30,37 @@ function renderChartsFromStats(stats){
     });
   })();
 
-  // DONUT
+  // COMENTARIOS (nuevo gráfico, reemplaza donut de estados)
   (()=>{
     const ctx=_ctx('ch-donut'); if(!ctx) return;
-    const obj=stats.distEstados||{};
+    const obj=stats.comentarios || {};
     const labels=Object.keys(obj);
     const values=labels.map(k=>obj[k]);
+
     if(_chDonut) _chDonut.destroy();
-    _chDonut=new Chart(ctx,{type:'doughnut', data:{labels,datasets:[{data:values}]},
-      options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}}});
+    _chDonut = new Chart(ctx,{
+      type:'bar',
+      data:{
+        labels,
+        datasets:[{
+          label:'Pedidos',
+          data: values,
+          backgroundColor:'#60a5fa'
+        }]
+      },
+      options:{
+        indexAxis:'y', // barras horizontales
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{
+          legend:{ display:false }
+        },
+        scales:{
+          x:{ beginAtZero:true, ticks:{ precision:0 } },
+          y:{ ticks:{ font:{ size:11 } } }
+        }
+      }
+    });
   })();
 
   // BARRAS POR GRUPO
@@ -64,3 +86,4 @@ function renderChartsFromStats(stats){
 }
 
 window.renderChartsFromStats = renderChartsFromStats;
+
