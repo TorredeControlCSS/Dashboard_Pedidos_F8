@@ -177,17 +177,17 @@ h1,h3 { margin: 0; }
 
 /* Comentarios más angosto, Avance y Congestión más anchos */
 .card-coment{
-  flex: 0.8 1 0;   /* ~20% del ancho */
+  flex: 0.4 1 0;   /* ~20% del ancho */
   height: 230px;
 }
 
 .card-grupos{
-  flex: 1.6 1 0;   /* ~40% */
+  flex: 2.0 1 0;   /* ~40% */
   height: 230px;
 }
 
 .card-queues{
-  flex: 1.6 1 0;   /* ~40% */
+  flex: 2.0 1 0;   /* ~40% */
   height: 230px;
 }
 
