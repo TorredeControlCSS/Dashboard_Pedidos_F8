@@ -96,34 +96,39 @@
     </div>
   </section>
   
-  <!-- Gráficos + tabla de colas compacta -->
-  <section id="charts">
-    <div class="card">
+<!-- Bloque único de gráficos + análisis -->
+<section id="charts">
+  <!-- Fila 1: Evolución ancho completo -->
+  <div class="charts-row-top">
+    <div class="card card-evol">
       <h3>Evolución de Pedidos</h3>
       <canvas id="ch-evol"></canvas>
     </div>
-    <div class="card">
+  </div>
+
+  <!-- Fila 2: 3 columnas -->
+  <div class="charts-row-bottom">
+    <div class="card card-coment">
       <h3>Comentarios (conteo de pedidos)</h3>
       <canvas id="ch-donut"></canvas>
     </div>
-    <div class="card">
+
+    <div class="card card-grupos">
       <h3>Estado de Avance por Grupo (% de pedidos)</h3>
       <canvas id="ch-grupos"></canvas>
     </div>
 
-    <!-- Tabla compacta de Análisis de Congestionamiento (M/M/s) debajo de los gráficos -->
-    <div class="queues-row">
-      <section id="queues-panel">
-        <h3>Análisis de Congestionamiento por Grupo (M/M/s)</h3>
-        <div class="queue-table-wrap">
-          <table id="tabla-queues">
-            <thead></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </section>
+    <div class="card card-queues">
+      <h3>Análisis de Congestionamiento por Grupo (M/M/s)</h3>
+      <div class="queue-table-wrap">
+        <table id="tabla-queues">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
-  </section>
+  </div>
+</section>
 
   <!-- Scroll superior sincronizado -->
   <div id="top-scroll"></div>
