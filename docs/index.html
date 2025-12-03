@@ -49,41 +49,35 @@
     
   </section>
 
-  <!-- Filtros -->
-  <section id="filters">
-    <div class="row">
-      <label>Categoría</label>
-      <select id="fCat"><option value="">Todas</option></select>
+<!-- Filtros -->
+<section id="filters">
+  <div class="row">
+    <label for="fCat">Categoría</label>
+    <select id="fCat">
+      <option value="">Todas</option>
+    </select>
 
-      <label>Unidad</label>
-      <select id="fUnidad"><option value="">Todas</option></select>
+    <label for="fUnidad">Unidad</label>
+    <select id="fUnidad">
+      <option value="">Todas</option>
+    </select>
 
-      <label>Tipo</label>
-      <select id="fTipo"><option value="">Todos</option></select>
+    <label for="fTipo">Tipo</label>
+    <select id="fTipo">
+      <option value="">Todos</option>
+    </select>
 
-      <label>Grupo</label>
-      <select id="fGrupo"><option value="">Todos</option></select>
+    <label for="fGrupo">Grupo</label>
+    <select id="fGrupo">
+      <option value="">Todos</option>
+    </select>
 
-      <label>Estado</label>
-      <select id="fEstado"><option value="">Todos</option></select>
-    </div>
+    <label for="fEstado">Estado</label>
+    <select id="fEstado">
+      <option value="">Todos</option>
+    </select>
 
-    <div class="row">
-      <label>Buscar</label>
-      <input id="fBuscar" placeholder="F8 SALMI / texto…"/>
-
-      <label>Desde</label>
-      <input id="fDesde" type="date"/>
-
-      <label>Hasta</label>
-      <input id="fHasta" type="date"/>
-
-      <button id="btnApply">Aplicar</button>
-      <button id="btnClear">Limpiar</button>
-    </div>
-  </section>
-
-  <label for="fComent">Comentario</label>
+    <label for="fComent">Comentario</label>
     <select id="fComent">
       <option value="">Todos</option>
       <option value="DISCREPANCIA DE INVENTARIO">DISCREPANCIA DE INVENTARIO</option>
@@ -94,6 +88,20 @@
       <option value="FACTURACION RETRASADA">FACTURACION RETRASADA</option>
       <option value="FALLAS EN SISTEMA">FALLAS EN SISTEMA</option>
     </select>
+
+    <label for="fBuscar">Buscar</label>
+    <input id="fBuscar" placeholder="F8 SALMI / texto…"/>
+
+    <label for="fDesde">Desde</label>
+    <input id="fDesde" type="date"/>
+
+    <label for="fHasta">Hasta</label>
+    <input id="fHasta" type="date"/>
+
+    <button id="btnApply">Aplicar</button>
+    <button id="btnClear">Limpiar</button>
+  </div>
+</section>
   
   <!-- Gráficos -->
   <section id="charts">
