@@ -411,6 +411,20 @@ async function renderQueueTable(filters){
       return (+v).toFixed(dec);
     };
 
+    // Función para acortar nombre de grupo solo en la vista
+    const shortGroup = (name) => {
+      if (!name) return '';
+      let s = String(name);
+
+      s = s.replace('LABORATORIO', 'LAB');
+      s = s.replace('ODONTOLOGÍA', 'ODO');
+      s = s.replace('ODONTOLOGIA', 'ODO');   // sin tilde por si acaso
+      s = s.replace('RADIOLOGIA', 'RAD');
+      s = s.replace('RADIOLOGÍA', 'RAD');
+
+      return s;
+    };
+
     tbody.innerHTML = grupos.map(g => {
       const saturado = (g.mu === 0) || (g.lambda != null && g.mu != null && g.s && g.lambda >= g.s * g.mu);
       const rhoPct = (g.rho == null || isNaN(g.rho)) ? '—' : (g.rho*100).toFixed(1) + '%';
@@ -423,7 +437,7 @@ async function renderQueueTable(filters){
       const rowClass = saturado ? ' style="background:#fef2f2"' : '';
 
       return `<tr${rowClass}>
-        <td>${g.grupo}</td>
+        <td>${shortGroup(g.grupo)}</td>
         <td style="text-align:right">${g.s}</td>
         <td style="text-align:right">${fmt(g.lambda, 3)}</td>
         <td style="text-align:right">${fmt(g.mu, 3)}</td>
