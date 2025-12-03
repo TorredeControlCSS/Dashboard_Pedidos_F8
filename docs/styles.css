@@ -413,47 +413,47 @@ td.fill-low{
   max-width: 90px;
 }
 
-#tabla-queues th:nth-child(3),
-#tabla-queues td:nth-child(3){  /* λ (llegadas/día) */
+#tabla-queues th:nth-child(2),
+#tabla-queues td:nth-child(2){  /* λ (llegadas/día) */
   max-width: 70px;
 }
 
-#tabla-queues th:nth-child(4),
-#tabla-queues td:nth-child(4){  /* μ (salidas/día) */
+#tabla-queues th:nth-child(3),
+#tabla-queues td:nth-child(3){  /* μ (salidas/día) */
+  max-width: 70px;
+}
+
+#tabla-queues th:nth-child(5),
+#tabla-queues td:nth-child(5){  /* W_real (días) */
   max-width: 70px;
 }
 
 #tabla-queues th:nth-child(6),
-#tabla-queues td:nth-child(6){  /* W_real (días) */
+#tabla-queues td:nth-child(6){  /* W_model (días) */
   max-width: 70px;
 }
 
 #tabla-queues th:nth-child(7),
-#tabla-queues td:nth-child(7){  /* W_model (días) */
-  max-width: 70px;
-}
-
-#tabla-queues th:nth-child(8),
-#tabla-queues td:nth-child(8){  /* Wq (días en cola) */
+#tabla-queues td:nth-child(7){  /* Wq (días en cola) */
   max-width: 80px;
 }
 
+#tabla-queues th:nth-child(8),
+#tabla-queues td:nth-child(8){  /* L (en sistema) */
+  max-width: 70px;
+}
+
 #tabla-queues th:nth-child(9),
-#tabla-queues td:nth-child(9){  /* L (en sistema) */
+#tabla-queues td:nth-child(9){ /* Lq (en cola) */
   max-width: 70px;
 }
 
 #tabla-queues th:nth-child(10),
-#tabla-queues td:nth-child(10){ /* Lq (en cola) */
+#tabla-queues td:nth-child(10){ /* # llegadas */
   max-width: 70px;
 }
 
 #tabla-queues th:nth-child(11),
-#tabla-queues td:nth-child(11){ /* # llegadas */
-  max-width: 70px;
-}
-
-#tabla-queues th:nth-child(12),
-#tabla-queues td:nth-child(12){ /* # completados */
+#tabla-queues td:nth-child(11){ /* # completados */
   max-width: 80px;
 }
