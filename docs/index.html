@@ -49,37 +49,31 @@
     
   </section>
 
-<!-- Filtros -->
+<!-- Filtros -->  
 <section id="filters">
   <div class="row">
-    <label for="fCat">Categoría</label>
     <select id="fCat">
-      <option value="">Todas</option>
+      <option value="">Todas las categorías</option>
     </select>
 
-    <label for="fUnidad">Unidad</label>
     <select id="fUnidad">
-      <option value="">Todas</option>
+      <option value="">Todas las unidades</option>
     </select>
 
-    <label for="fTipo">Tipo</label>
     <select id="fTipo">
-      <option value="">Todos</option>
+      <option value="">Todos los tipos</option>
     </select>
 
-    <label for="fGrupo">Grupo</label>
     <select id="fGrupo">
-      <option value="">Todos</option>
+      <option value="">Todos los grupos</option>
     </select>
 
-    <label for="fEstado">Estado</label>
     <select id="fEstado">
-      <option value="">Todos</option>
+      <option value="">Todos los estados</option>
     </select>
 
-    <label for="fComent">Comentario</label>
     <select id="fComent">
-      <option value="">Todos</option>
+      <option value="">Todos los comentarios</option>
       <option value="DISCREPANCIA DE INVENTARIO">DISCREPANCIA DE INVENTARIO</option>
       <option value="FALTA DE PERSONAL">FALTA DE PERSONAL</option>
       <option value="VIATICOS PARA VIAJES">VIATICOS PARA VIAJES</option>
@@ -89,16 +83,13 @@
       <option value="FALLAS EN SISTEMA">FALLAS EN SISTEMA</option>
     </select>
 
-    <label for="fBuscar">Buscar</label>
-    <input id="fBuscar" placeholder="F8 SALMI / texto…"/>
+    <input id="fBuscar" placeholder="🔎 Buscar F8 SALMI / texto…"/>
 
-    <label for="fDesde">Desde</label>
-    <input id="fDesde" type="date"/>
+    <input id="fDesde" type="date" placeholder="Desde"/>
+    <span class="filter-sep">a</span>
+    <input id="fHasta" type="date" placeholder="Hasta"/>
 
-    <label for="fHasta">Hasta</label>
-    <input id="fHasta" type="date"/>
-
-    <button id="btnApply">Aplicar</button>
+    <button id="btnApply">Aplicar filtros</button>
     <button id="btnClear">Limpiar</button>
   </div>
 </section>
