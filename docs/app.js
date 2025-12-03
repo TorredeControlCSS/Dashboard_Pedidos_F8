@@ -634,6 +634,7 @@ btnLogin?.addEventListener('click', ()=>{
 btnEditMode?.addEventListener('click', ()=>{
   editMode = !editMode;
   btnEditMode.textContent = `Modo edición: ${editMode ? 'ON' : 'OFF'}`;
+  btnEditMode.classList.toggle('edit-on', editMode); // <- para el color azul ON
   renderTable(currentPage);
 });
 
