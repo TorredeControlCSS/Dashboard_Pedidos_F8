@@ -46,18 +46,32 @@ h1,h3 { margin: 0; }
 .kpi strong{font-size:18px;}
 
 /* Filtros */
-#filters{padding:8px 16px;}
+#filters{
+  padding: 8px 16px 0;
+}
+
 #filters .row{
   display:flex;
   flex-wrap:wrap;
   gap:8px;
   align-items:center;
-  margin-bottom:6px;
 }
-#filters label{font-size:12px; color:#475569}
-#filters select, #filters input{
-  font-size:12px;
-  padding:4px 6px;
+
+/* En pantallas anchas, forzar una sola línea con scroll horizontal si no cabe */
+@media (min-width: 1100px){
+  #filters .row{
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  #filters label{
+    white-space: nowrap;
+  }
+  #filters select,
+  #filters input[type="text"],
+  #filters input[type="date"]{
+    max-width: 160px;  /* ajusta si hace falta */
+    white-space: nowrap;
+  }
 }
 
 /* Gráficos */
