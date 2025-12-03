@@ -551,27 +551,66 @@ btnEditMode?.addEventListener('click', ()=>{
   renderTable(currentPage);
 });
 
-/* Botones */
-document.getElementById('btnApply')?.addEventListener('click', async ()=>{
-  const f = getFilters();
-  await refreshKpisAndCharts(f);
-  await renderTable(1);
-  await renderQueueTable(f);
-});
-document.getElementById('btnClear')?.addEventListener('click', async ()=>{
-  ['fCat','fUnidad','fTipo','fGrupo','fEstado','fComent','fBuscar','fDesde','fHasta'].forEach(function(id){
-    var el=document.getElementById(id); if(el) el.value='';
+/* Botones con estado de carga */
+const btnApplyEl   = document.getElementById('btnApply');
+const btnClearEl   = document.getElementById('btnClear');
+const btnRefreshEl = document.getElementById('btnRefresh');
+
+let filtersBusy = false;
+
+async function runFilters(action){
+  if (filtersBusy) return;          // evita clicks repetidos
+  filtersBusy = true;
+
+  // marcar botones como "loading"
+  [btnApplyEl, btnClearEl, btnRefreshEl].forEach(b=>{
+    if (b) {
+      b.disabled = true;
+      b.classList.add('loading');
+    }
   });
+
+  try{
+    await action();
+  }finally{
+    filtersBusy = false;
+    [btnApplyEl, btnClearEl, btnRefreshEl].forEach(b=>{
+      if (b) {
+        b.disabled = false;
+        b.classList.remove('loading');
+      }
+    });
+  }
+}
+
+btnApplyEl?.addEventListener('click', ()=>{
   const f = getFilters();
-  await refreshKpisAndCharts(f);
-  await renderTable(1);
-  await renderQueueTable(f);
+  runFilters(async ()=>{
+    await refreshKpisAndCharts(f);
+    await renderTable(1);
+    await renderQueueTable(f);
+  });
 });
-document.getElementById('btnRefresh')?.addEventListener('click', async ()=>{
+
+btnClearEl?.addEventListener('click', ()=>{
+  runFilters(async ()=>{
+    ['fCat','fUnidad','fTipo','fGrupo','fEstado','fComent','fBuscar','fDesde','fHasta'].forEach(function(id){
+      var el=document.getElementById(id); if(el) el.value='';
+    });
+    const f = getFilters();
+    await refreshKpisAndCharts(f);
+    await renderTable(1);
+    await renderQueueTable(f);
+  });
+});
+
+btnRefreshEl?.addEventListener('click', ()=>{
   const f = getFilters();
-  await refreshKpisAndCharts(f);
-  await renderTable(currentPage);
-  await renderQueueTable(f);
+  runFilters(async ()=>{
+    await refreshKpisAndCharts(f);
+    await renderTable(currentPage);
+    await renderQueueTable(f);
+  });
 });
 
 /* Scroll superior sincronizado */
