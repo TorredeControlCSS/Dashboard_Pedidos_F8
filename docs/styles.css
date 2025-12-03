@@ -198,7 +198,8 @@ h1,h3 { margin: 0; }
 #tabla-queues th,
 #tabla-queues td{
   padding: 2px 4px;
-  white-space: nowrap;
+  white-space: normal;          /* permite varias líneas en header y celdas */
+  line-height: 1.2;
 }
 
 #tabla-queues thead{
@@ -404,4 +405,55 @@ td.fill-low{
 }
 #classicEditorLink:hover{
   color:#ffffff;
+}
+
+/* Limitar ancho de algunas columnas de la tabla de colas para forzar 2 líneas en el header */
+#tabla-queues th:nth-child(1),
+#tabla-queues td:nth-child(1){  /* GRUPO */
+  max-width: 90px;
+}
+
+#tabla-queues th:nth-child(3),
+#tabla-queues td:nth-child(3){  /* λ (llegadas/día) */
+  max-width: 70px;
+}
+
+#tabla-queues th:nth-child(4),
+#tabla-queues td:nth-child(4){  /* μ (salidas/día) */
+  max-width: 70px;
+}
+
+#tabla-queues th:nth-child(6),
+#tabla-queues td:nth-child(6){  /* W_real (días) */
+  max-width: 70px;
+}
+
+#tabla-queues th:nth-child(7),
+#tabla-queues td:nth-child(7){  /* W_model (días) */
+  max-width: 70px;
+}
+
+#tabla-queues th:nth-child(8),
+#tabla-queues td:nth-child(8){  /* Wq (días en cola) */
+  max-width: 80px;
+}
+
+#tabla-queues th:nth-child(9),
+#tabla-queues td:nth-child(9){  /* L (en sistema) */
+  max-width: 70px;
+}
+
+#tabla-queues th:nth-child(10),
+#tabla-queues td:nth-child(10){ /* Lq (en cola) */
+  max-width: 70px;
+}
+
+#tabla-queues th:nth-child(11),
+#tabla-queues td:nth-child(11){ /* # llegadas */
+  max-width: 70px;
+}
+
+#tabla-queues th:nth-child(12),
+#tabla-queues td:nth-child(12){ /* # completados */
+  max-width: 80px;
 }
