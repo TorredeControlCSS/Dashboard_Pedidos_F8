@@ -46,58 +46,57 @@
     <div class="kpi"><div>Promedio días REAL</div><strong id="kpi-t-real">—</strong></div>
     <div class="kpi"><div>Promedio días PROMESA</div><strong id="kpi-t-prom">—</strong></div>
     <div class="kpi"><div>Diferencia (Real − Prom)</div><strong id="kpi-t-diff">—</strong></div>
-    
   </section>
 
-<!-- Filtros -->  
-<section id="filters">
-  <div class="row">
-    <select id="fCat">
-      <option value="">Todas las categorías</option>
-    </select>
+  <!-- Filtros -->
+  <section id="filters">
+    <div class="row">
+      <select id="fCat">
+        <option value="">Todas las categorías</option>
+      </select>
 
-    <select id="fUnidad">
-      <option value="">Todas las unidades</option>
-    </select>
+      <select id="fUnidad">
+        <option value="">Todas las unidades</option>
+      </select>
 
-    <select id="fTipo">
-      <option value="">Todos los tipos</option>
-    </select>
+      <select id="fTipo">
+        <option value="">Todos los tipos</option>
+      </select>
 
-    <select id="fGrupo">
-      <option value="">Todos los grupos</option>
-    </select>
+      <select id="fGrupo">
+        <option value="">Todos los grupos</option>
+      </select>
 
-    <select id="fEstado">
-      <option value="">Todos los estados</option>
-    </select>
+      <select id="fEstado">
+        <option value="">Todos los estados</option>
+      </select>
 
-    <select id="fComent">
-      <option value="">Todos los comentarios</option>
-      <option value="DISCREPANCIA DE INVENTARIO">DISCREPANCIA DE INVENTARIO</option>
-      <option value="FALTA DE PERSONAL">FALTA DE PERSONAL</option>
-      <option value="VIATICOS PARA VIAJES">VIATICOS PARA VIAJES</option>
-      <option value="FALTA MONTACARGA">FALTA MONTACARGA</option>
-      <option value="CONGESTIONAMIENTO EN SALIDAS">CONGESTIONAMIENTO EN SALIDAS</option>
-      <option value="FACTURACION RETRASADA">FACTURACION RETRASADA</option>
-      <option value="FALLAS EN SISTEMA">FALLAS EN SISTEMA</option>
-      <option value="DEMORA EN DOCUMENTACION">DEMORA EN DOCUMENTACION</option>
-      <option value="ERROR DE CAPTACION">ERROR DE CAPTACION</option>
-      <option value="ENTREGADO">ENTREGADO</option>
-    </select>
+      <select id="fComent">
+        <option value="">Todos los comentarios</option>
+        <option value="DISCREPANCIA DE INVENTARIO">DISCREPANCIA DE INVENTARIO</option>
+        <option value="FALTA DE PERSONAL">FALTA DE PERSONAL</option>
+        <option value="VIATICOS PARA VIAJES">VIATICOS PARA VIAJES</option>
+        <option value="FALTA MONTACARGA">FALTA MONTACARGA</option>
+        <option value="CONGESTIONAMIENTO EN SALIDAS">CONGESTIONAMIENTO EN SALIDAS</option>
+        <option value="FACTURACION RETRASADA">FACTURACION RETRASADA</option>
+        <option value="FALLAS EN SISTEMA">FALLAS EN SISTEMA</option>
+        <option value="DEMORA EN DOCUMENTACION">DEMORA EN DOCUMENTACION</option>
+        <option value="ERROR DE CAPTACION">ERROR DE CAPTACION</option>
+        <option value="ENTREGADO">ENTREGADO</option>
+      </select>
 
-    <input id="fBuscar" placeholder="🔎 Buscar F8 SALMI / texto…"/>
+      <input id="fBuscar" placeholder="🔎 Buscar F8 SALMI / texto…"/>
 
-    <input id="fDesde" type="date" placeholder="Desde"/>
-    <span class="filter-sep">a</span>
-    <input id="fHasta" type="date" placeholder="Hasta"/>
+      <input id="fDesde" type="date" placeholder="Desde"/>
+      <span class="filter-sep">a</span>
+      <input id="fHasta" type="date" placeholder="Hasta"/>
 
-    <button id="btnApply">Aplicar filtros</button>
-    <button id="btnClear">Limpiar</button>
-  </div>
-</section>
+      <button id="btnApply">Aplicar filtros</button>
+      <button id="btnClear">Limpiar</button>
+    </div>
+  </section>
   
-  <!-- Gráficos -->
+  <!-- Gráficos + tabla de colas compacta -->
   <section id="charts">
     <div class="card">
       <h3>Evolución de Pedidos</h3>
@@ -111,20 +110,25 @@
       <h3>Estado de Avance por Grupo (% de pedidos)</h3>
       <canvas id="ch-grupos"></canvas>
     </div>
-  </section>
 
-    <section id="queues" class="table-wrap" style="margin-top:16px;">
-    <h3>Análisis de Congestionamiento por Grupo (M/M/s)</h3>
-    <table id="tabla-queues">
-      <thead></thead>
-      <tbody></tbody>
-    </table>
+    <!-- Tabla compacta de Análisis de Congestionamiento (M/M/s) debajo de los gráficos -->
+    <div class="queues-row">
+      <section id="queues-panel">
+        <h3>Análisis de Congestionamiento por Grupo (M/M/s)</h3>
+        <div class="queue-table-wrap">
+          <table id="tabla-queues">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
   </section>
 
   <!-- Scroll superior sincronizado -->
   <div id="top-scroll"></div>
 
-  <!-- Tabla -->
+  <!-- Tabla principal -->
   <section class="table-wrap">
     <table id="tabla">
       <thead></thead>
