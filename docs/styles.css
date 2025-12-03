@@ -109,6 +109,40 @@ h1,h3 { margin: 0; }
   }
 }
 
+/* Estado de carga en botones de filtros */
+#filters button.loading{
+  opacity: 0.7;
+  cursor: wait;
+}
+
+#filters button.loading::after{
+  content: '…';
+  margin-left: 4px;
+}
+
+/* Si quieres un spinner más explícito */
+#filters button.loading::before{
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 4px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.7);
+  border-top-color: transparent;
+  animation: spin 0.6s linear infinite;
+}
+
+/* Para el botón gris (Limpiar) cambiamos el color del borde */
+#btnClear.loading::before{
+  border-color: #6b7280;
+  border-top-color: transparent;
+}
+
+@keyframes spin{
+  to { transform: rotate(360deg); }
+}
+
 /* Gráficos */
 #charts{
   display:grid;
