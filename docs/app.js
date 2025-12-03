@@ -51,7 +51,7 @@ let currentHeaders = [], currentRows = [], currentIdCol = null;
 let currentPage = 1;
 
 // Page size más pequeño para acelerar carga inicial/render de tabla
-const DEFAULT_PAGE_SIZE = 200;
+const DEFAULT_PAGE_SIZE = 100;
 
 /* JSONP helper */
 function jsonp(url){
