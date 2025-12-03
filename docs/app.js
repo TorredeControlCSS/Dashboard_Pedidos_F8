@@ -19,6 +19,16 @@ const N_ID = N(ID_HEADER);
 const DATE_FIELDS = ['ASIGNACIÓN','SALIDA','DESPACHO','FACTURACIÓN','EMPACADO','PROY. ENTREGA','ENTREGA REAL'];
 const INT_FIELDS  = ['CANT. ASIG.','CANT. SOL.','RENGLONES ASI.','RENGLONES SOL.'];
 const TXT_FIELDS  = ['COMENT.'];
+const COMMENT_OPTIONS = [
+  '',
+  'DISCREPANCIA DE INVENTARIO',
+  'FALTA DE PERSONAL',
+  'VIATICOS PARA VIAJES',
+  'FALTA MONTACARGA',
+  'CONGESTIONAMIENTO EN SALIDAS',
+  'FACTURACION RETRASADA',
+  'FALLAS EN SISTEMA'
+];
 const S_DATE = new Set(DATE_FIELDS.map(N));
 const S_INT  = new Set(INT_FIELDS.map(N));
 const S_TXT  = new Set(TXT_FIELDS.map(N));
@@ -438,22 +448,56 @@ document.querySelector('#tabla')?.addEventListener('click', async (ev)=>{
   const isDate = S_DATE.has(kN), isInt = S_INT.has(kN), isTxt = S_TXT.has(kN);
   if (td.querySelector('input')) return;
 
-  const old = td.textContent; td.innerHTML = '';
-  const input = document.createElement('input'); input.style.width='100%'; input.style.boxSizing='border-box';
-  if(isDate){ input.type='date'; }
-  else if(isInt){ input.type='number'; input.step='1'; input.min='0'; const n=parseInt(old,10); if(!isNaN(n)) input.value=String(n); }
-  else { input.type='text'; input.value = old || ''; }
+    const old = td.textContent;
+  td.innerHTML = '';
+
+  let inputEl;
+  const isComent = (col === 'COMENT.');
+
+  if (isComent){
+    // Select con opciones fijas de comentario
+    const select = document.createElement('select');
+    select.style.width = '100%';
+    COMMENT_OPTIONS.forEach(opt => {
+      const o = document.createElement('option');
+      o.value = opt;
+      o.textContent = opt || '— (sin comentario)';
+      if ((old || '').trim() === opt) o.selected = true;
+      select.appendChild(o);
+    });
+    inputEl = select;
+  } else {
+    // Comportamiento original para fechas, enteros y texto libre
+    const input = document.createElement('input');
+    input.style.width='100%';
+    input.style.boxSizing='border-box';
+    if(isDate){ 
+      input.type='date'; 
+    } else if(isInt){ 
+      input.type='number'; 
+      input.step='1'; 
+      input.min='0'; 
+      const n=parseInt(old,10); 
+      if(!isNaN(n)) input.value=String(n); 
+    } else { 
+      input.type='text'; 
+      input.value = old || ''; 
+    }
+    inputEl = input;
+  }
 
   const bS = document.createElement('button'); bS.textContent='Guardar'; bS.style.marginTop='4px';
   const bC = document.createElement('button'); bC.textContent='Cancelar'; bC.style.margin='4px 0 0 6px';
-  const wrap = document.createElement('div'); wrap.appendChild(input);
+  const wrap = document.createElement('div'); wrap.appendChild(inputEl);
   const btns = document.createElement('div'); btns.appendChild(bS); btns.appendChild(bC);
-  td.appendChild(wrap); td.appendChild(btns); input.focus();
+  td.appendChild(wrap); td.appendChild(btns);
+  inputEl.focus();
   bC.onclick = ()=>{ td.innerHTML = old; };
-
+  
   bS.onclick = async ()=>{
     if(!idToken){ alert('Primero haz clic en “Acceder”.'); return; }
-    let value = input.value.trim();
+    // Leer valor según sea input o select
+    let value = (inputEl.value || '').trim();
     if(isDate && !/^\d{4}-\d{2}-\d{2}$/.test(value)){ alert('Fecha inválida (YYYY-MM-DD).'); return; }
     if(isInt && !/^-?\d+$/.test(value)){ alert('Ingresa un entero.'); return; }
     if(isTxt && value.length>500){ alert('Comentario muy largo (≤500).'); return; }
