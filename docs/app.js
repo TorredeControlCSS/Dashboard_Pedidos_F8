@@ -23,7 +23,7 @@ const N = s => String(s||'')
 const N_ID = N(ID_HEADER);
 
 const DATE_FIELDS = ['ASIGNACIÓN','SALIDA','DESPACHO','FACTURACIÓN','EMPACADO','PROY. ENTREGA','ENTREGA REAL'];
-const INT_FIELDS  = ['CANT. ASIG.','CANT. SOL.','RENGLONES ASI.','RENGLONES SOL.'];
+const INT_FIELDS  = ['CANT. ASIG.','CANT. SOL.','RENGLONES ASIG.','RENGLONES SOL.'];
 const TXT_FIELDS  = ['COMENT.'];
 
 // Opciones fijas para comentarios (tanto filtro como edición)
@@ -173,7 +173,7 @@ function getFilters(){
 /* Tabla y paginación */
 function widthMap(){ return {
   'CATEG.':180,'UNIDAD':220,'TIPO':110,'F8 SALMI':120,'F8 SISCONI':120,'GRUPO':110,'SUSTANCIAS':160,
-  'CANT. ASIG.':110,'CANT. SOL.':110,'RENGLONES ASI.':130,'RENGLONES SOL.':130,
+  'CANT. ASIG.':110,'CANT. SOL.':110,'RENGLONES ASIG.':130,'RENGLONES SOL.':130,
   'FECHA F8':110,'RECIBO F8':110,'ASIGNACIÓN':110,'SALIDA':110,'DESPACHO':110,'FACTURACIÓN':120,'EMPACADO':110,
   'PROY. ENTREGA':130,'ENTREGA REAL':130,'INCOTERM':110,'ESTADO':130,'COMENT.':220,
   'TIEMPO':90,'COMPLET':100,'FILL CANT.':110,'FILL RENGL.':120
@@ -186,7 +186,7 @@ function perRowMetrics(row){
   const days = (rec && end) ? Math.max(0, Math.round((end-rec)/86400000)) : '';
   const toNum = v => (typeof v==='number') ? v : parseFloat(String(v||'').replace(',','.')) || 0;
   const asig = toNum(row['CANT. ASIG.']), sol  = toNum(row['CANT. SOL.']);
-  const rasi = toNum(row['RENGLONES ASI.']), rsol = toNum(row['RENGLONES SOL.']);
+  const rasi = toNum(row['RENGLONES ASIG.']), rsol = toNum(row['RENGLONES SOL.']);
   const fillCant = sol>0 ? Math.round((asig/sol)*100) : 0;
   const fillReng = rsol>0 ? Math.round((rasi/rsol)*100) : 0;
   return {
