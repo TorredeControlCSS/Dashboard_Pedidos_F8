@@ -444,24 +444,33 @@ async function renderQueueTable(filters){
   }
 }
 
-/* Edición inline */
-document.querySelector('#tabla')?.addEventListener('click', async (ev)=>{
+/* Edición inline (sin botones, guardado por celda) */
+document.querySelector('#tabla')?.addEventListener('click', (ev)=>{
   // Si el click viene de dentro de un editor ya abierto, no volver a crear el editor
-  if (ev.target.closest('.coment-editor') || ev.target.closest('.cell-editor')) {
-    return;
-  }
+  if (ev.target.closest('.cell-editor')) return;
 
   const td = ev.target.closest && ev.target.closest('td.editable');
   if(!td || !editMode) return;
-  const ri = +td.dataset.ri, col = td.dataset.col, row = currentRows[ri];
-  const idCol = currentIdCol, orderId = idCol ? row[idCol] : null;
-  if(!orderId){ alert(`No se encontró la columna ID (${ID_HEADER}).`); return; }
+
+  const ri  = +td.dataset.ri;
+  const col = td.dataset.col;
+  const row = currentRows[ri];
+  const idCol  = currentIdCol;
+  const orderId = idCol ? row[idCol] : null;
+  if(!orderId){
+    alert(`No se encontró la columna ID (${ID_HEADER}).`);
+    return;
+  }
 
   const kN = N(col);
-  const isDate = S_DATE.has(kN), isInt = S_INT.has(kN), isTxt = S_TXT.has(kN);
+  const isDate = S_DATE.has(kN);
+  const isInt  = S_INT.has(kN);
+  const isTxt  = S_TXT.has(kN);
+
+  // Evitar abrir doble editor en la misma celda
   if (td.querySelector('input') || td.querySelector('select')) return;
 
-  const old = td.textContent;
+  const old = td.textContent || '';
   td.innerHTML = '';
 
   let inputEl;
@@ -474,72 +483,128 @@ document.querySelector('#tabla')?.addEventListener('click', async (ev)=>{
       const o = document.createElement('option');
       o.value = opt;
       o.textContent = opt || '— (sin comentario)';
-      if ((old || '').trim() === opt) o.selected = true;
+      if (old.trim() === opt) o.selected = true;
       select.appendChild(o);
     });
     inputEl = select;
   } else {
     const input = document.createElement('input');
-    input.style.width='100%';
-    input.style.boxSizing='border-box';
-    if(isDate){
-      input.type='date';
-    } else if(isInt){
-      input.type='number';
-      input.step='1';
-      input.min='0';
-      const n=parseInt(old,10);
-      if(!isNaN(n)) input.value=String(n);
+    input.style.width = '100%';
+    input.style.boxSizing = 'border-box';
+    if (isDate){
+      input.type = 'date';
+      // intentar reconstruir YYYY-MM-DD desde el texto dd-mon-yy
+      const m = /^(\d{2})-(\w{3})-(\d{2})$/.exec(old.trim());
+      if (m){
+        const d = m[1];
+        const monTxt = m[2].toLowerCase();
+        const y2 = m[3];
+        const idx = monES.indexOf(monTxt);
+        if (idx >= 0){
+          const yyyy = '20' + y2;
+          const mm = String(idx+1).padStart(2,'0');
+          input.value = `${yyyy}-${mm}-${d}`;
+        }
+      }
+    } else if (isInt){
+      input.type = 'number';
+      input.step = '1';
+      input.min  = '0';
+      const n = parseInt(old,10);
+      if (!isNaN(n)) input.value = String(n);
     } else {
-      input.type='text';
-      input.value = old || '';
+      input.type  = 'text';
+      input.value = old;
     }
     inputEl = input;
   }
 
-  const bS = document.createElement('button'); bS.textContent='Guardar'; bS.style.marginTop='4px';
-  const bC = document.createElement('button'); bC.textContent='Cancelar'; bC.style.margin='4px 0 0 6px';
-
   const wrap = document.createElement('div');
-  wrap.className = 'coment-editor';
+  wrap.className = 'cell-editor';
   wrap.appendChild(inputEl);
-
-  const btns = document.createElement('div');
-  btns.appendChild(bS);
-  btns.appendChild(bC);
-
   td.appendChild(wrap);
-  td.appendChild(btns);
   inputEl.focus();
+  inputEl.select?.();
 
-  bC.onclick = ()=>{ td.innerHTML = old; };
+  async function saveCell(){
+    if(!idToken){
+      alert('Primero haz clic en “Acceder”.');
+      td.textContent = old;
+      return;
+    }
 
-  bS.onclick = async ()=>{
-    if(!idToken){ alert('Primero haz clic en “Acceder”.'); return; }
     let value = (inputEl.value || '').trim();
 
-    if(isDate && !/^\d{4}-\d{2}-\d{2}$/.test(value)){ alert('Fecha inválida (YYYY-MM-DD).'); return; }
-    if(isInt && !/^-?\d+$/.test(value)){ alert('Ingresa un entero.'); return; }
-    if(isTxt && !isComent && value.length>500){ alert('Comentario muy largo (≤500).'); return; }
+    if(isDate && value && !/^\d{4}-\d{2}-\d{2}$/.test(value)){
+      alert('Fecha inválida (YYYY-MM-DD).');
+      inputEl.focus();
+      return;
+    }
+    if(isInt && value && !/^-?\d+$/.test(value)){
+      alert('Ingresa un entero.');
+      inputEl.focus();
+      return;
+    }
+    if(isTxt && !isComent && value.length>500){
+      alert('Comentario muy largo (≤500).');
+      inputEl.focus();
+      return;
+    }
 
-    td.innerHTML = 'Guardando…';
+    // Si no cambió, simplemente restaurar texto
+    if (value === old.trim()){
+      td.textContent = old;
+      return;
+    }
+
+    td.textContent = 'Guardando…';
     try{
-      const res = await jsonp(`${B}?route=orders.update&idToken=${encodeURIComponent(idToken)}&id=${encodeURIComponent(orderId)}&field=${encodeURIComponent(col)}&value=${encodeURIComponent(value)}`);
+      const url = `${B}?route=orders.update`
+        + `&idToken=${encodeURIComponent(idToken)}`
+        + `&id=${encodeURIComponent(orderId)}`
+        + `&field=${encodeURIComponent(col)}`
+        + `&value=${encodeURIComponent(value)}`;
+      const res = await jsonp(url);
       if(res && res.status === 'ok'){
-        td.textContent = (isDate && /^\d{4}-\d{2}-\d{2}$/.test(value))
-          ? (()=>{ const [y,m,d]=value.split('-'); const mon=monES[+m-1]; return `${d}-${mon}-${y.slice(2)}`; })()
-          : value;
+        // Mostrar valor formateado si es fecha
+        if (isDate && value){
+          const [y,m,d] = value.split('-');
+          const mon = monES[+m-1];
+          td.textContent = `${d}-${mon}-${y.slice(2)}`;
+        } else {
+          td.textContent = value;
+        }
         await refreshKpisAndCharts(getFilters());
         await renderTable(currentPage);
       } else {
-        td.innerHTML = old;
+        td.textContent = old;
         alert('Error: ' + (res && res.error ? res.error : 'desconocido'));
       }
     }catch(e){
-      td.innerHTML = old;
+      td.textContent = old;
       alert('Error de red');
     }
-  };
+  }
+
+  // Enter → guardar, Esc → cancelar, Blur → guardar
+  inputEl.addEventListener('keydown', (e)=>{
+    if (e.key === 'Enter'){
+      e.preventDefault();
+      saveCell();
+    } else if (e.key === 'Escape'){
+      e.preventDefault();
+      td.textContent = old;
+    }
+  });
+
+  inputEl.addEventListener('blur', ()=>{
+    // Pequeño delay por si el blur viene de un Enter rápido
+    setTimeout(()=>{
+      if (document.activeElement !== inputEl){
+        saveCell();
+      }
+    }, 50);
+  });
 });
 
 /* Login / Edición UI */
