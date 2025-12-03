@@ -314,3 +314,52 @@ td.fill-low{
   background-color:#fee2e2;  /* rojo claro */
   color:#991b1b;
 }
+/* Barra de acciones en el header (sesión, modo edición, actualizar, editor clásico) */
+.header-actions{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+
+/* Botones principales del header */
+.header-actions button{
+  padding:4px 10px;
+  border-radius:999px;
+  border:1px solid #d1d5db;
+  background:#f9fafb;
+  color:#111827;
+  font-size:13px;
+  cursor:pointer;
+}
+
+.header-actions button:hover{
+  background:#e5e7eb;
+}
+
+/* Botón de modo edición: estilo especial cuando está ON */
+#btnEditMode{
+  border-color:#2563eb;
+  color:#2563eb;
+  background:#eff6ff;
+}
+#btnEditMode.edit-on{
+  background:#2563eb;
+  color:#fff;
+}
+
+/* Botón Actualizar un poco más marcado */
+#btnRefresh{
+  background:#2563eb;
+  color:#fff;
+  border-color:#2563eb;
+}
+
+/* Link de editor clásico como acción secundaria */
+#classicEditorLink{
+  font-size:13px;
+  color:#e5e7eb;
+  text-decoration:underline;
+}
+#classicEditorLink:hover{
+  color:#ffffff;
+}
