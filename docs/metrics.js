@@ -63,27 +63,83 @@ function renderChartsFromStats(stats){
     });
   })();
 
-  // BARRAS POR GRUPO
+  // BARRAS POR GRUPO (apiladas, etiquetas G1..G15)
   (()=>{
     const ctx=_ctx('ch-grupos'); if(!ctx) return;
-    const G=stats.grupos||{};
-    const grupos=Object.keys(G);
-    const estados=['F8 RECIBIDA','EN ASIGNACIÓN','SALIDA DE SALMI','FACTURADO','EMPACADO','ENTREGADA'];
-    const datasets=estados.map(est=>({
+    const G = stats.grupos || {};
+
+    // Ordenamos grupos por nombre para que queden G1..G15 en orden
+    const gruposFull = Object.keys(G).sort();
+
+    // Etiquetas cortas: prefijo antes del primer espacio (G1, G2, G10 MQ -> G10)
+    const gruposShort = gruposFull.map(g => {
+      const parts = String(g).trim().split(' ');
+      return parts[0] || g;
+    });
+
+    const estados = ['F8 RECIBIDA','EN ASIGNACIÓN','SALIDA DE SALMI','FACTURADO','EMPACADO','ENTREGADA'];
+
+    const datasets = estados.map(est => ({
       label: est,
-      data: grupos.map(g=>{
-        const total = G[g]?.total||0;
-        const n = G[g]?.[est]||0;
-        return total>0 ? Math.round((n/total)*100) : 0;
+      data: gruposFull.map(g => {
+        const total = G[g]?.total || 0;
+        const n = G[g]?.[est] || 0;
+        return total > 0 ? Math.round((n/total) * 100) : 0;
       })
     }));
-    if(_chGrupos) _chGrupos.destroy();
-    _chGrupos=new Chart(ctx,{type:'bar',
-      data:{labels:grupos,datasets},
-      options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}, scales:{y:{ticks:{callback:v=>v+'%'}}}}
+
+    if (_chGrupos) _chGrupos.destroy();
+    _chGrupos = new Chart(ctx,{
+      type:'bar',
+      data:{
+        labels: gruposShort,
+        datasets
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{
+          legend:{
+            position:'bottom',
+            labels:{
+              font:{ size:10 },        // leyenda más pequeña
+              boxWidth:10,
+              boxHeight:10
+            }
+          },
+          tooltip:{
+            callbacks:{
+              // Mostrar nombre completo del grupo en tooltip
+              title:(items)=>{
+                const idx = items[0].dataIndex;
+                return gruposFull[idx] || gruposShort[idx];
+              },
+              label:(ctx)=>{
+                const dsLabel = ctx.dataset.label || '';
+                const v = ctx.parsed.y || 0;
+                return `${dsLabel}: ${v}%`;
+              }
+            }
+          }
+        },
+        scales:{
+          x:{
+            stacked:true,
+            ticks:{ font:{ size:11 } }
+          },
+          y:{
+            stacked:true,
+            ticks:{
+              callback:v => v + '%',
+              max:100
+            }
+          }
+        }
+      }
     });
   })();
 }
 
 window.renderChartsFromStats = renderChartsFromStats;
+
 
