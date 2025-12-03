@@ -16,11 +16,12 @@ h1,h3 { margin: 0; }
   box-shadow:0 2px 4px rgba(0,0,0,.08);
 }
 .app-header .brand{display:flex; gap:10px; align-items:center;}
-.app-header .brand img{border-radius:6px; background: transparent;
-                      width: 58px;           /* antes probablemente era 32px */
-                      height: 58px;
-                      object-fit: contain;   /* para que no se deforme */
-                      }
+.app-header .brand img{
+  border-radius:6px; background: transparent;
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+}
 .app-header .header-actions button,
 .app-header .header-actions a{margin-left:8px}
 
@@ -34,9 +35,6 @@ h1,h3 { margin: 0; }
 }
 .kpi{
   min-width: 180px;
-}
-
-.kpi{
   background:#f8fafc;
   border:1px solid #e5e7eb;
   border-radius:8px;
@@ -82,7 +80,7 @@ h1,h3 { margin: 0; }
   font-size: 13px;
 }
 
-/* Botones */
+/* Botones filtros */
 #filters button{
   border-radius: 6px;
   padding: 4px 12px;
@@ -120,7 +118,7 @@ h1,h3 { margin: 0; }
   margin-left: 4px;
 }
 
-/* Si quieres un spinner más explícito */
+/* Spinner en botones de filtros */
 #filters button.loading::before{
   content: '';
   display: inline-block;
@@ -143,10 +141,11 @@ h1,h3 { margin: 0; }
   to { transform: rotate(360deg); }
 }
 
-/* Gráficos */
+/* Gráficos + panel de colas */
 #charts{
   display:grid;
   grid-template-columns: 2fr 1fr 1fr;
+  grid-auto-rows: minmax(0, 1fr);
   gap:12px;
   padding:8px 16px;
 }
@@ -167,6 +166,49 @@ h1,h3 { margin: 0; }
   height:220px !important;
 }
 
+/* Fila debajo de charts para la tabla de colas compacta */
+.queues-row{
+  grid-column: 1 / span 3;    /* ocupar ancho completo bajo los tres charts */
+  margin-top: 4px;
+  display:flex;
+  justify-content:flex-start;
+}
+
+/* Panel compacto de análisis M/M/s */
+#queues-panel{
+  max-width: 620px;
+}
+
+/* Caja de la tabla de colas, con scroll horizontal si hace falta */
+.queue-table-wrap{
+  max-width: 620px;
+  overflow-x: auto;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+/* Tabla de colas compacta */
+#tabla-queues{
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+#tabla-queues th,
+#tabla-queues td{
+  padding: 2px 4px;
+  white-space: nowrap;
+}
+
+#tabla-queues thead{
+  background:#f3f4f6;
+}
+
+#tabla-queues tbody tr:nth-child(even){
+  background:#f9fafb;
+}
+
 /* Scroll superior sincronizado */
 #top-scroll{height:12px; overflow:auto; margin:0 16px;}
 
@@ -177,10 +219,9 @@ h1,h3 { margin: 0; }
   border: 1px solid #e5e7eb;
   border-radius: 4px;
   background: #ffffff;
-  overflow: auto;              /* scroll horizontal/vertical si hace falta */
+  overflow: auto;
 }
 
-/* La tabla ocupa al menos el ancho del contenedor y se expande según contenido */
 .table-wrap table{
   width: 100%;
   border-collapse: collapse;
@@ -192,8 +233,7 @@ h1,h3 { margin: 0; }
 /* Encabezados */
 .table-wrap thead th{
   position: sticky !important;
-  /* Valor fijo: pegado justo debajo de los filtros / gráfica */
-  top: 0px !important;               /* AJUSTABLE: prueba 200–220 según tu pantalla */
+  top: 0px !important;
   z-index: 9999 !important;
 
   background: #e5e7eb !important;
@@ -217,12 +257,12 @@ h1,h3 { margin: 0; }
   vertical-align: top;
 }
 
-/* Zebra para facilitar lectura */
+/* Zebra */
 .table-wrap tbody tr:nth-child(even){
   background-color: #f9fafb;
 }
 
-/* Hover sutil para fila */
+/* Hover fila */
 .table-wrap tbody tr:hover{
   background-color: #eef2ff;
 }
@@ -251,7 +291,7 @@ h1,h3 { margin: 0; }
   text-align: right;
 }
 
-/* Celdas con texto largo permitimos varias líneas */
+/* Texto largo en varias líneas */
 .table-wrap td[data-col="COMENT."],
 .table-wrap td[data-col="SUSTANCIAS"]{
   white-space: normal;
@@ -291,30 +331,32 @@ td.editable {
     white-space: nowrap;
   }
 }
+
 /* Estados de completado y fill-rate */
 td.state-ok{
-  background-color:#dcfce7;  /* verde claro */
+  background-color:#dcfce7;
   color:#166534;
   font-weight:600;
 }
 td.state-bad{
-  background-color:#fee2e2;  /* rojo claro */
+  background-color:#fee2e2;
   color:#991b1b;
   font-weight:600;
 }
 td.fill-high{
-  background-color:#dbeafe;  /* azul claro */
+  background-color:#dbeafe;
   color:#1d4ed8;
 }
 td.fill-medium{
-  background-color:#fef9c3;  /* amarillo claro */
+  background-color:#fef9c3;
   color:#854d0e;
 }
 td.fill-low{
-  background-color:#fee2e2;  /* rojo claro */
+  background-color:#fee2e2;
   color:#991b1b;
 }
-/* Barra de acciones en el header (sesión, modo edición, actualizar, editor clásico) */
+
+/* Barra de acciones en el header */
 .header-actions{
   display:flex;
   gap:8px;
@@ -347,14 +389,14 @@ td.fill-low{
   color:#fff;
 }
 
-/* Botón Actualizar un poco más marcado */
+/* Botón Actualizar más marcado */
 #btnRefresh{
   background:#2563eb;
   color:#fff;
   border-color:#2563eb;
 }
 
-/* Link de editor clásico como acción secundaria */
+/* Link de editor clásico como acción secundaria (si se usa) */
 #classicEditorLink{
   font-size:13px;
   color:#e5e7eb;
