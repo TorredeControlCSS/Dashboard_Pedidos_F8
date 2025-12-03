@@ -246,13 +246,12 @@ async function fetchMeta(){
 async function populateFiltersFromMeta(){
   try{
     const meta = await fetchMeta();
-    const setOptions = (id, items, includeAllLabel) => {
+    const setOptions = (id, items) => {
       const el = document.getElementById(id);
       if(!el) return;
-      const prefix = includeAllLabel
-        ? '<option value="">Todas</option>'
-        : '<option value="">Todos</option>';
-      el.innerHTML = prefix + (items||[]).map(v=>`<option value="${v}">${v}</option>`).join('');
+      const currentFirst = el.options[0]?.outerHTML || '';
+      const rest = (items||[]).map(v=>`<option value="${v}">${v}</option>`).join('');
+      el.innerHTML = currentFirst + rest;
     };
 
     setOptions('fCat',    meta.categorias || [], true);
