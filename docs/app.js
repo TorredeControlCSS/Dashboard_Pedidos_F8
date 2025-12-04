@@ -1,3 +1,4 @@
+```javascript name=docs/app.js url=https://github.com/TorredeControlCSS/Dashboard_Pedidos_F8/blob/main/docs/app.js
 // app.js v2025-12-01 — versión completa y consolidada
 // Contiene: KPIs/Charts desde stats, tabla paginada, login, edición inline,
 // recalculo dinámico de sticky header, filtros desde orders.list y exposición de funciones globales.
@@ -6,7 +7,7 @@ if (window.__APP_LOADED__) {
   console.log('app.js ya cargado, skip');
 } else {
 window.__APP_LOADED__ = true;
-console.log('app.js v2025-12-01 (pageSize=20 + columnas fijas 1-4 + header flotante)');
+console.log('app.js v2025-12-01 (pageSize=20 + columnas fijas 1-4)');
 
 const A = window.APP && window.APP.A_URL;
 const B = window.APP && window.APP.B_URL;
@@ -89,7 +90,6 @@ const parseIsoDate = v => {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v);
   if (!m) return null;
   const y = +m[1], mn = +m[2], d = +m[3];
-  // Fecha local sin UTC; usamos solo año/mes/día para evitar corrimientos
   return new Date(y, mn - 1, d);
 };
 
@@ -197,55 +197,6 @@ function perRowMetrics(row){
     'FILL CANT.': `${fillCant}%`,
     'FILL RENGL.': `${fillReng}%`
   };
-}
-
-/* ================= HEADER FLOTANTE SINCRONIZADO ================= */
-
-function buildFloatingHeader(){
-  const fhWrap = document.getElementById('floating-header');
-  const table = document.querySelector('.table-wrap table');
-  if (!fhWrap || !table) return;
-
-  const thead = table.querySelector('thead');
-  const row = thead && thead.querySelector('tr');
-  if (!row) return;
-
-  const ths = Array.from(row.children);
-  if (!ths.length) return;
-
-  const inner = document.createElement('div');
-  inner.className = 'floating-header-inner';
-
-  const cloneTable = document.createElement('table');
-  const cloneThead = document.createElement('thead');
-  const cloneRow = document.createElement('tr');
-
-  ths.forEach(th => {
-    const cth = document.createElement('th');
-    cth.textContent = th.textContent || '';
-
-    const rect = th.getBoundingClientRect();
-    const width = rect.width;
-    cth.style.width = width + 'px';
-    cth.style.minWidth = width + 'px';
-    cth.style.maxWidth = width + 'px';
-
-    cloneRow.appendChild(cth);
-  });
-
-  cloneThead.appendChild(cloneRow);
-  cloneTable.appendChild(cloneThead);
-  inner.appendChild(cloneTable);
-
-  fhWrap.innerHTML = '';
-  fhWrap.appendChild(inner);
-}
-
-function syncFloatingHeaderScroll(){
-  const fhWrap = document.getElementById('floating-header');
-  const tw = document.querySelector('.table-wrap');
-  if (!fhWrap || !tw) return;
-  fhWrap.scrollLeft = tw.scrollLeft;
 }
 
 /* KPIs de TIEMPO (RECIBO F8 -> PROY. ENTREGA / ENTREGA REAL) */
@@ -365,12 +316,17 @@ async function renderTable(page = 1){
   const thead = document.querySelector('#tabla thead');
   const tbody = document.querySelector('#tabla tbody');
 
-  // Header base (simple, sin sticky vertical)
+  // Header con clases de columnas fijas en las primeras 4
   if (thead) {
     thead.innerHTML = `<tr>${
-      currentHeaders.map(h =>
-        `<th data-col="${h}" style="min-width:${W[h]||100}px">${h}</th>`
-      ).join('')
+      currentHeaders.map((h, idx) => {
+        let cls = '';
+        if (idx === 0) cls = 'col-fix-1';
+        else if (idx === 1) cls = 'col-fix-2';
+        else if (idx === 2) cls = 'col-fix-3';
+        else if (idx === 3) cls = 'col-fix-4';
+        return `<th data-col="${h}" class="${cls}" style="min-width:${W[h]||100}px">${h}</th>`;
+      }).join('')
     }</tr>`;
   }
 
@@ -447,12 +403,6 @@ async function renderTable(page = 1){
   if (window.updateTopScrollWidth){
     setTimeout(window.updateTopScrollWidth, 80);
   }
-
-  // Construir y sincronizar header flotante
-  setTimeout(()=>{
-    buildFloatingHeader();
-    syncFloatingHeaderScroll();
-  }, 120);
 }
 
 /* Tabla de Teoría de Colas por grupo */
@@ -465,7 +415,6 @@ async function renderQueueTable(filters){
     const tbody = document.querySelector('#tabla-queues tbody');
     if (!thead || !tbody) return;
 
-    // Sin la columna "s"
     thead.innerHTML = `<tr>
       <th>GRUPO</th>
       <th>λ (llegadas/día)</th>
@@ -485,17 +434,14 @@ async function renderQueueTable(filters){
       return (+v).toFixed(dec);
     };
 
-    // Función para acortar nombre de grupo solo en la vista
     const shortGroup = (name) => {
       if (!name) return '';
       let s = String(name);
-
       s = s.replace('LABORATORIO', 'LAB');
       s = s.replace('ODONTOLOGÍA', 'ODO');
-      s = s.replace('ODONTOLOGIA', 'ODO');   // sin tilde por si acaso
+      s = s.replace('ODONTOLOGIA', 'ODO');
       s = s.replace('RADIOLOGIA', 'RAD');
       s = s.replace('RADIOLOGÍA', 'RAD');
-
       return s;
     };
 
@@ -533,7 +479,6 @@ async function renderQueueTable(filters){
 
 /* Edición inline (sin botones, guardado por celda) */
 document.querySelector('#tabla')?.addEventListener('click', (ev)=>{
-  // Si el click viene de dentro de un editor ya abierto, no volver a crear el editor
   if (ev.target.closest('.cell-editor')) return;
 
   const td = ev.target.closest && ev.target.closest('td.editable');
@@ -554,7 +499,6 @@ document.querySelector('#tabla')?.addEventListener('click', (ev)=>{
   const isInt  = S_INT.has(kN);
   const isTxt  = S_TXT.has(kN);
 
-  // Evitar abrir doble editor en la misma celda
   if (td.querySelector('input') || td.querySelector('select')) return;
 
   const old = td.textContent || '';
@@ -580,7 +524,6 @@ document.querySelector('#tabla')?.addEventListener('click', (ev)=>{
     input.style.boxSizing = 'border-box';
     if (isDate){
       input.type = 'date';
-      // intentar reconstruir YYYY-MM-DD desde el texto dd-mon-yy
       const m = /^(\d{2})-(\w{3})-(\d{2})$/.exec(old.trim());
       if (m){
         const d = m[1];
@@ -638,7 +581,6 @@ document.querySelector('#tabla')?.addEventListener('click', (ev)=>{
       return;
     }
 
-    // Si no cambió, simplemente restaurar texto
     if (value === old.trim()){
       td.textContent = old;
       return;
@@ -653,7 +595,6 @@ document.querySelector('#tabla')?.addEventListener('click', (ev)=>{
         + `&value=${encodeURIComponent(value)}`;
       const res = await jsonp(url);
       if(res && res.status === 'ok'){
-        // Mostrar valor formateado si es fecha
         if (isDate && value){
           const [y,m,d] = value.split('-');
           const mon = monES[+m-1];
@@ -673,7 +614,6 @@ document.querySelector('#tabla')?.addEventListener('click', (ev)=>{
     }
   }
 
-  // Enter → guardar, Esc → cancelar, Blur → guardar
   inputEl.addEventListener('keydown', (e)=>{
     if (e.key === 'Enter'){
       e.preventDefault();
@@ -685,7 +625,6 @@ document.querySelector('#tabla')?.addEventListener('click', (ev)=>{
   });
 
   inputEl.addEventListener('blur', ()=>{
-    // Pequeño delay por si el blur viene de un Enter rápido
     setTimeout(()=>{
       if (document.activeElement !== inputEl){
         saveCell();
@@ -721,7 +660,7 @@ btnLogin?.addEventListener('click', ()=>{
 btnEditMode?.addEventListener('click', ()=>{
   editMode = !editMode;
   btnEditMode.textContent = `Modo edición: ${editMode ? 'ON' : 'OFF'}`;
-  btnEditMode.classList.toggle('edit-on', editMode); // <- para el color azul ON
+  btnEditMode.classList.toggle('edit-on', editMode);
   renderTable(currentPage);
 });
 
@@ -798,10 +737,7 @@ btnRefreshEl?.addEventListener('click', ()=>{
     topBar.innerHTML = `<div style="width:${w}px;height:1px"></div>`;
   }
 
-  // Hacemos accesible la función desde fuera
   window.updateTopScrollWidth = updateTopWidth;
-
-  // Inicial (por si ya hay algo pintado)
   updateTopWidth();
 
   let lock = false;
@@ -809,22 +745,15 @@ btnRefreshEl?.addEventListener('click', ()=>{
     if(lock) return; lock=true;
     tw.scrollLeft = topBar.scrollLeft;
     lock=false;
-    syncFloatingHeaderScroll();
   });
   tw.addEventListener('scroll', ()=>{
     if(lock) return; lock=true;
     topBar.scrollLeft = tw.scrollLeft;
     lock=false;
-    syncFloatingHeaderScroll();
   });
 
-  // Recalcular si cambia el tamaño de la ventana
   window.addEventListener('resize', ()=>{
     setTimeout(updateTopWidth, 100);
-    setTimeout(()=>{
-      buildFloatingHeader();
-      syncFloatingHeaderScroll();
-    }, 150);
   });
 })();
 
