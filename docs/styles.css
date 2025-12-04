@@ -316,13 +316,13 @@ h1,h3 { margin: 0; }
   font-size: 12px;
 }
 
-/* Encabezados */
+/* Encabezados (NO sticky) */
 .table-wrap thead th{
-  position: sticky !important;
-  top: 0px !important;
-  z-index: 9999 !important;
+  position: static;
+  top: auto;
+  z-index: 0;
 
-  background: #e5e7eb !important;
+  background: #e5e7eb;
   color: #111827;
   font-weight: 600;
   padding: 6px 8px;
@@ -535,11 +535,3 @@ td.fill-low{
 .table-wrap tbody td[class^="col-fix-"]{
   background: #ffffff;
 }
-
-/* Forzar que los encabezados de la tabla principal NO sean sticky */
-.table-wrap thead th {
-  position: static !important;
-  z-index: 0 !important;
-}
-
-
