@@ -718,8 +718,17 @@ btnRefreshEl?.addEventListener('click', ()=>{
 (function syncHScroll(){
   const topBar = document.getElementById('top-scroll');
   const tw = document.querySelector('.table-wrap');
-  if(!topBar || !tw) return;
-  topBar.innerHTML = `<div style="width:${Math.max(tw.scrollWidth, tw.clientWidth)}px;height:1px"></div>`;
+  const table = document.querySelector('.table-wrap table');
+  if(!topBar || !tw || !table) return;
+
+  function updateTopWidth(){
+    const w = Math.max(table.scrollWidth, tw.clientWidth);
+    topBar.innerHTML = `<div style="width:${w}px;height:1px"></div>`;
+  }
+
+  // Inicial
+  updateTopWidth();
+
   let lock = false;
   topBar.addEventListener('scroll', ()=>{
     if(lock) return; lock=true;
@@ -730,6 +739,11 @@ btnRefreshEl?.addEventListener('click', ()=>{
     if(lock) return; lock=true;
     topBar.scrollLeft = tw.scrollLeft;
     lock=false;
+  });
+
+  // Recalcular si cambia el tamaño de la ventana (por si cambia el ancho visible)
+  window.addEventListener('resize', ()=>{
+    setTimeout(updateTopWidth, 100);
   });
 })();
 
