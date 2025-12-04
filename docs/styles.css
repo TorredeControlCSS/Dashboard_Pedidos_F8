@@ -292,7 +292,11 @@ h1,h3 { margin: 0; }
 }
 
 /* Scroll superior sincronizado */
-#top-scroll{height:12px; overflow:auto; margin:0 16px;}
+#top-scroll{
+  height:12px; 
+  overflow:auto; 
+  margin:0 16px;
+}
 
 /* ================== TABLA PRINCIPAL ================== */
 
