@@ -492,53 +492,46 @@ td.fill-low{
   color:#ffffff;
 }
 
-/* Columnas fijas: primeras 5 (según widthMap)
-   Anchos:
+/* Columnas fijas: primeras 5 (solo celdas de datos, no headers)
+   widthMap:
    CATEG.    = 180px
    UNIDAD    = 220px
    TIPO      = 110px
    F8 SALMI  = 120px
    F8 SISCONI= 120px
 */
-.table-wrap thead th.col-fix-1,
+
 .table-wrap tbody td.col-fix-1{
   position: sticky;
   left: 0;
-  z-index: 3;
+  z-index: 1;
 }
 
-.table-wrap thead th.col-fix-2,
 .table-wrap tbody td.col-fix-2{
   position: sticky;
-  left: 180px; /* 1ª col */
-  z-index: 3;
+  left: 180px; /* ancho de CATEG. */
+  z-index: 1;
 }
 
-.table-wrap thead th.col-fix-3,
 .table-wrap tbody td.col-fix-3{
   position: sticky;
   left: 400px; /* 180 + 220 */
-  z-index: 3;
+  z-index: 1;
 }
 
-.table-wrap thead th.col-fix-4,
 .table-wrap tbody td.col-fix-4{
   position: sticky;
   left: 510px; /* 180 + 220 + 110 */
-  z-index: 3;
+  z-index: 1;
 }
 
-.table-wrap thead th.col-fix-5,
 .table-wrap tbody td.col-fix-5{
   position: sticky;
   left: 630px; /* 180 + 220 + 110 + 120 */
-  z-index: 3;
+  z-index: 1;
 }
 
-/* Fondos coherentes para que no haya solapes visuales raros */
-.table-wrap thead th[class^="col-fix-"]{
-  background: #e5e7eb;
-}
+/* Fondo de las columnas fijas para que no se vean "huecos" al hacer scroll */
 .table-wrap tbody td[class^="col-fix-"]{
   background: #ffffff;
 }
