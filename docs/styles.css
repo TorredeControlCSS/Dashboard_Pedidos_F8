@@ -1,3 +1,4 @@
+```css name=docs/styles.css url=https://github.com/TorredeControlCSS/Dashboard_Pedidos_F8/blob/main/docs/styles.css
 :root { --stickyTop: 64px; }
 
 * { box-sizing: border-box; }
@@ -211,7 +212,7 @@ h1,h3 { margin: 0; }
 /* Panel de colas dentro de la tercera tarjeta */
 .card-queues .queue-table-wrap{
   width:100%;
-  height: calc(100% - 24px);  /* ocupar casi toda la tarjeta debajo del título */
+  height: calc(100% - 24px);
   overflow:auto;
   border-radius:4px;
   border:1px solid #e5e7eb;
@@ -228,7 +229,7 @@ h1,h3 { margin: 0; }
 #tabla-queues th,
 #tabla-queues td{
   padding: 2px 4px;
-  white-space: normal;          /* permite varias líneas en header y celdas */
+  white-space: normal;
   line-height: 1.2;
 }
 
@@ -240,54 +241,54 @@ h1,h3 { margin: 0; }
   background:#f9fafb;
 }
 
-/* Limitar ancho de algunas columnas de la tabla de colas para forzar 2 líneas en el header */
+/* Limitar ancho de algunas columnas de la tabla de colas */
 #tabla-queues th:nth-child(1),
-#tabla-queues td:nth-child(1){  /* GRUPO */
+#tabla-queues td:nth-child(1){
   max-width: 90px;
 }
 
 #tabla-queues th:nth-child(2),
-#tabla-queues td:nth-child(2){  /* λ (llegadas/día) */
+#tabla-queues td:nth-child(2){
   max-width: 70px;
 }
 
 #tabla-queues th:nth-child(3),
-#tabla-queues td:nth-child(3){  /* μ (salidas/día) */
+#tabla-queues td:nth-child(3){
   max-width: 70px;
 }
 
 #tabla-queues th:nth-child(5),
-#tabla-queues td:nth-child(5){  /* W_real (días) */
+#tabla-queues td:nth-child(5){
   max-width: 70px;
 }
 
 #tabla-queues th:nth-child(6),
-#tabla-queues td:nth-child(6){  /* W_model (días) */
+#tabla-queues td:nth-child(6){
   max-width: 70px;
 }
 
 #tabla-queues th:nth-child(7),
-#tabla-queues td:nth-child(7){  /* Wq (días en cola) */
+#tabla-queues td:nth-child(7){
   max-width: 80px;
 }
 
 #tabla-queues th:nth-child(8),
-#tabla-queues td:nth-child(8){  /* L (en sistema) */
+#tabla-queues td:nth-child(8){
   max-width: 70px;
 }
 
 #tabla-queues th:nth-child(9),
-#tabla-queues td:nth-child(9){ /* Lq (en cola) */
+#tabla-queues td:nth-child(9){
   max-width: 70px;
 }
 
 #tabla-queues th:nth-child(10),
-#tabla-queues td:nth-child(10){ /* # llegadas */
+#tabla-queues td:nth-child(10){
   max-width: 70px;
 }
 
 #tabla-queues th:nth-child(11),
-#tabla-queues td:nth-child(11){ /* # completados */
+#tabla-queues td:nth-child(11){
   max-width: 80px;
 }
 
@@ -316,12 +317,10 @@ h1,h3 { margin: 0; }
   font-size: 12px;
 }
 
-/* Encabezados (NO sticky) */
+/* Encabezados */
 .table-wrap thead th{
-  position: static;
-  top: auto;
-  z-index: 0;
-
+  position: sticky;
+  top: 0;
   background: #e5e7eb;
   color: #111827;
   font-weight: 600;
@@ -330,6 +329,7 @@ h1,h3 { margin: 0; }
   border-right: 1px solid #d1d5db;
   white-space: nowrap;
   text-align: left;
+  z-index: 5; /* por encima de los td */
 }
 
 /* Celdas */
@@ -492,87 +492,40 @@ td.fill-low{
   color:#ffffff;
 }
 
-/* Columnas fijas: primeras 5 (solo celdas de datos, no headers)
-   widthMap:
-   CATEG.    = 180px
-   UNIDAD    = 220px
-   TIPO      = 110px
-   F8 SALMI  = 120px
-   F8 SISCONI= 120px
-*/
+/* Columnas fijas: primeras 4 (th y td) */
 
+.table-wrap thead th.col-fix-1,
 .table-wrap tbody td.col-fix-1{
   position: sticky;
   left: 0;
-  z-index: 1;
+  z-index: 6;
 }
 
+.table-wrap thead th.col-fix-2,
 .table-wrap tbody td.col-fix-2{
   position: sticky;
-  left: 180px; /* ancho de CATEG. */
-  z-index: 1;
+  left: 180px; /* ancho de 1ª col */
+  z-index: 6;
 }
 
+.table-wrap thead th.col-fix-3,
 .table-wrap tbody td.col-fix-3{
   position: sticky;
   left: 400px; /* 180 + 220 */
-  z-index: 1;
+  z-index: 6;
 }
 
+.table-wrap thead th.col-fix-4,
 .table-wrap tbody td.col-fix-4{
   position: sticky;
   left: 510px; /* 180 + 220 + 110 */
-  z-index: 1;
+  z-index: 6;
 }
 
-.table-wrap tbody td.col-fix-5{
-  position: sticky;
-  left: 630px; /* 180 + 220 + 110 + 120 */
-  z-index: 1;
+/* Fondo de las columnas fijas */
+.table-wrap thead th[class^="col-fix-"]{
+  background: #e5e7eb;
 }
-
-/* Fondo de las columnas fijas para que no se vean "huecos" al hacer scroll */
 .table-wrap tbody td[class^="col-fix-"]{
   background: #ffffff;
-}
-
-/* ================== HEADER FLOTANTE PARA LA TABLA PRINCIPAL ================== */
-
-.floating-header-wrap{
-  margin: 0;
-  overflow: hidden;           /* sólo mostramos lo que quepa en ancho */
-}
-
-.floating-header-inner{
-  width: max-content;         /* se ajusta al contenido clonado */
-}
-
-.floating-header-inner table{
-  border-collapse: collapse;
-  table-layout: fixed;
-  font-size: 12px;
-}
-
-.floating-header-inner th{
-  background: #e5e7eb;
-  color: #111827;
-  font-weight: 600;
-  padding: 6px 8px;
-  border-bottom: 1px solid #9ca3af;
-  border-right: 1px solid #d1d5db;
-  white-space: nowrap;
-  text-align: left;
-}
-/* Ocultar el thead original de la tabla principal (usamos header flotante) */
-.table-wrap thead {
-  visibility: hidden;
-  height: 0;
-}
-
-.table-block{
-  margin: 8px 16px 40px;  /* el margen que antes tenía .table-wrap */
-}
-
-.table-wrap{
-  margin: 0;              /* ya no necesita margen propio */
 }
