@@ -316,6 +316,7 @@ async function renderTable(page = 1){
   const thead = document.querySelector('#tabla thead');
   const tbody = document.querySelector('#tabla tbody');
 
+  // ----- HEADER CON 5 COLUMNAS FIJAS -----
   if (thead) {
     thead.innerHTML = `<tr>${
       currentHeaders.map((h, idx) => {
@@ -329,6 +330,8 @@ async function renderTable(page = 1){
       }).join('')
     }</tr>`;
   }
+
+  // ----- FILAS CON 5 COLUMNAS FIJAS -----
   if (tbody) {
     tbody.innerHTML = currentRows.map((r,ri)=>`<tr>${
       currentHeaders.map(k=>{
@@ -360,6 +363,7 @@ async function renderTable(page = 1){
           }
         }
 
+        // Marcar 5 primeras columnas como fijas por índice
         const colIndex = currentHeaders.indexOf(k);
         if (colIndex === 0) classes.push('col-fix-1');
         if (colIndex === 1) classes.push('col-fix-2');
