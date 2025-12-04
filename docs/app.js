@@ -6,7 +6,7 @@ if (window.__APP_LOADED__) {
   console.log('app.js ya cargado, skip');
 } else {
 window.__APP_LOADED__ = true;
-console.log('app.js v2025-12-01 (pageSize=20 + columnas fijas)');
+console.log('app.js v2025-12-01 (pageSize=20 + columnas fijas 1-4)');
 
 const A = window.APP && window.APP.A_URL;
 const B = window.APP && window.APP.B_URL;
@@ -316,22 +316,16 @@ async function renderTable(page = 1){
   const thead = document.querySelector('#tabla thead');
   const tbody = document.querySelector('#tabla tbody');
 
-  // ----- HEADER CON 5 COLUMNAS FIJAS -----
+  // Header (sin sticky especial, solo estilos visuales)
   if (thead) {
     thead.innerHTML = `<tr>${
-      currentHeaders.map((h, idx) => {
-        let extraClass = '';
-        if (idx === 0) extraClass = 'col-fix-1';
-        else if (idx === 1) extraClass = 'col-fix-2';
-        else if (idx === 2) extraClass = 'col-fix-3';
-        else if (idx === 3) extraClass = 'col-fix-4';
-        else if (idx === 4) extraClass = 'col-fix-5';
-        return `<th data-col="${h}" class="${extraClass}" style="min-width:${W[h]||100}px">${h}</th>`;
-      }).join('')
+      currentHeaders.map(h =>
+        `<th data-col="${h}" style="min-width:${W[h]||100}px">${h}</th>`
+      ).join('')
     }</tr>`;
   }
 
-  // ----- FILAS CON 5 COLUMNAS FIJAS -----
+  // Filas con 4 primeras columnas fijas por índice
   if (tbody) {
     tbody.innerHTML = currentRows.map((r,ri)=>`<tr>${
       currentHeaders.map(k=>{
@@ -363,13 +357,12 @@ async function renderTable(page = 1){
           }
         }
 
-        // Marcar 5 primeras columnas como fijas por índice
+        // Marcar 4 primeras columnas como fijas por índice
         const colIndex = currentHeaders.indexOf(k);
         if (colIndex === 0) classes.push('col-fix-1');
         if (colIndex === 1) classes.push('col-fix-2');
         if (colIndex === 2) classes.push('col-fix-3');
         if (colIndex === 3) classes.push('col-fix-4');
-        if (colIndex === 4) classes.push('col-fix-5');
 
         const clsAttr = classes.length ? ` class="${classes.join(' ')}"` : '';
         const styleAttr = style ? ` style="${style}"` : '';
@@ -774,7 +767,7 @@ btnRefreshEl?.addEventListener('click', ()=>{
   });
 })();
 
-/* Sticky header dynamic calculation */
+/* Sticky header dynamic calculation (para charts/kpis, no la tabla) */
 function updateStickyTop(){
   try{
     const headerEl = document.querySelector('.app-header');
