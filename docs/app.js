@@ -381,6 +381,11 @@ async function renderTable(page = 1){
   }
 
   setTimeout(updateStickyTop, 60);
+
+  // Recalcular ancho del scroll superior después de pintar la tabla
+  if (window.updateTopScrollWidth){
+    setTimeout(window.updateTopScrollWidth, 80);
+  }
 }
 
 /* Tabla de Teoría de Colas por grupo */
@@ -726,7 +731,10 @@ btnRefreshEl?.addEventListener('click', ()=>{
     topBar.innerHTML = `<div style="width:${w}px;height:1px"></div>`;
   }
 
-  // Inicial
+  // Hacemos accesible la función desde fuera
+  window.updateTopScrollWidth = updateTopWidth;
+
+  // Inicial (por si ya hay algo pintado)
   updateTopWidth();
 
   let lock = false;
@@ -741,7 +749,7 @@ btnRefreshEl?.addEventListener('click', ()=>{
     lock=false;
   });
 
-  // Recalcular si cambia el tamaño de la ventana (por si cambia el ancho visible)
+  // Recalcular si cambia el tamaño de la ventana
   window.addEventListener('resize', ()=>{
     setTimeout(updateTopWidth, 100);
   });
