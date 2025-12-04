@@ -539,7 +539,7 @@ td.fill-low{
 /* ================== HEADER FLOTANTE PARA LA TABLA PRINCIPAL ================== */
 
 .floating-header-wrap{
-  margin: 0 16px;
+  margin: 0;
   overflow: hidden;           /* sólo mostramos lo que quepa en ancho */
 }
 
