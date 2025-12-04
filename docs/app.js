@@ -6,7 +6,7 @@ if (window.__APP_LOADED__) {
   console.log('app.js ya cargado, skip');
 } else {
 window.__APP_LOADED__ = true;
-console.log('app.js v2025-12-01 (pageSize=20 + columnas fijas 1-4)');
+console.log('app.js v2025-12-01 (pageSize=20 + columnas fijas 1-4 + header flotante)');
 
 const A = window.APP && window.APP.A_URL;
 const B = window.APP && window.APP.B_URL;
@@ -199,6 +199,55 @@ function perRowMetrics(row){
   };
 }
 
+/* ================= HEADER FLOTANTE SINCRONIZADO ================= */
+
+function buildFloatingHeader(){
+  const fhWrap = document.getElementById('floating-header');
+  const table = document.querySelector('.table-wrap table');
+  if (!fhWrap || !table) return;
+
+  const thead = table.querySelector('thead');
+  const row = thead && thead.querySelector('tr');
+  if (!row) return;
+
+  const ths = Array.from(row.children);
+  if (!ths.length) return;
+
+  const inner = document.createElement('div');
+  inner.className = 'floating-header-inner';
+
+  const cloneTable = document.createElement('table');
+  const cloneThead = document.createElement('thead');
+  const cloneRow = document.createElement('tr');
+
+  ths.forEach(th => {
+    const cth = document.createElement('th');
+    cth.textContent = th.textContent || '';
+
+    const rect = th.getBoundingClientRect();
+    const width = rect.width;
+    cth.style.width = width + 'px';
+    cth.style.minWidth = width + 'px';
+    cth.style.maxWidth = width + 'px';
+
+    cloneRow.appendChild(cth);
+  });
+
+  cloneThead.appendChild(cloneRow);
+  cloneTable.appendChild(cloneThead);
+  inner.appendChild(cloneTable);
+
+  fhWrap.innerHTML = '';
+  fhWrap.appendChild(inner);
+}
+
+function syncFloatingHeaderScroll(){
+  const fhWrap = document.getElementById('floating-header');
+  const tw = document.querySelector('.table-wrap');
+  if (!fhWrap || !tw) return;
+  fhWrap.scrollLeft = tw.scrollLeft;
+}
+
 /* KPIs de TIEMPO (RECIBO F8 -> PROY. ENTREGA / ENTREGA REAL) */
 function computeTimeKpisFromRows(rows){
   const toDate = (v) => parseIsoDate(v);
@@ -316,7 +365,7 @@ async function renderTable(page = 1){
   const thead = document.querySelector('#tabla thead');
   const tbody = document.querySelector('#tabla tbody');
 
-  // Header (sin sticky especial, solo estilos visuales)
+  // Header base (simple, sin sticky vertical)
   if (thead) {
     thead.innerHTML = `<tr>${
       currentHeaders.map(h =>
@@ -398,6 +447,12 @@ async function renderTable(page = 1){
   if (window.updateTopScrollWidth){
     setTimeout(window.updateTopScrollWidth, 80);
   }
+
+  // Construir y sincronizar header flotante
+  setTimeout(()=>{
+    buildFloatingHeader();
+    syncFloatingHeaderScroll();
+  }, 120);
 }
 
 /* Tabla de Teoría de Colas por grupo */
@@ -754,16 +809,22 @@ btnRefreshEl?.addEventListener('click', ()=>{
     if(lock) return; lock=true;
     tw.scrollLeft = topBar.scrollLeft;
     lock=false;
+    syncFloatingHeaderScroll();
   });
   tw.addEventListener('scroll', ()=>{
     if(lock) return; lock=true;
     topBar.scrollLeft = tw.scrollLeft;
     lock=false;
+    syncFloatingHeaderScroll();
   });
 
   // Recalcular si cambia el tamaño de la ventana
   window.addEventListener('resize', ()=>{
     setTimeout(updateTopWidth, 100);
+    setTimeout(()=>{
+      buildFloatingHeader();
+      syncFloatingHeaderScroll();
+    }, 150);
   });
 })();
 
