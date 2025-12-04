@@ -1,3 +1,4 @@
+```html name=docs/index.html url=https://github.com/TorredeControlCSS/Dashboard_Pedidos_F8/blob/main/docs/index.html
 <!doctype html>
 <html lang="es">
 <head>
@@ -12,7 +13,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-  <link rel="stylesheet" href="styles.css?v=2025-12-01a"/>
+  <link rel="stylesheet" href="styles.css?v=2025-12-01b"/>
   <link rel="manifest" href="manifest.json"/>
 </head>
 <body>
@@ -96,46 +97,43 @@
     </div>
   </section>
   
-<!-- Bloque único de gráficos + análisis -->
-<section id="charts">
-  <!-- Fila 1: Evolución ancho completo -->
-  <div class="charts-row-top">
-    <div class="card card-evol">
-      <h3>Evolución de Pedidos</h3>
-      <canvas id="ch-evol"></canvas>
-    </div>
-  </div>
-
-  <!-- Fila 2: 3 columnas -->
-  <div class="charts-row-bottom">
-    <div class="card card-coment">
-      <h3>Comentarios (conteo de pedidos)</h3>
-      <canvas id="ch-donut"></canvas>
-    </div>
-
-    <div class="card card-grupos">
-      <h3>Estado de Avance por Grupo (% de pedidos)</h3>
-      <canvas id="ch-grupos"></canvas>
-    </div>
-
-    <div class="card card-queues">
-      <h3>Análisis de Congestionamiento por Grupo (M/M/s)</h3>
-      <div class="queue-table-wrap">
-        <table id="tabla-queues">
-          <thead></thead>
-          <tbody></tbody>
-        </table>
+  <!-- Bloque único de gráficos + análisis -->
+  <section id="charts">
+    <!-- Fila 1: Evolución ancho completo -->
+    <div class="charts-row-top">
+      <div class="card card-evol">
+        <h3>Evolución de Pedidos</h3>
+        <canvas id="ch-evol"></canvas>
       </div>
     </div>
-  </div>
-</section>
+
+    <!-- Fila 2: 3 columnas -->
+    <div class="charts-row-bottom">
+      <div class="card card-coment">
+        <h3>Comentarios (conteo de pedidos)</h3>
+        <canvas id="ch-donut"></canvas>
+      </div>
+
+      <div class="card card-grupos">
+        <h3>Estado de Avance por Grupo (% de pedidos)</h3>
+        <canvas id="ch-grupos"></canvas>
+      </div>
+
+      <div class="card card-queues">
+        <h3>Análisis de Congestionamiento por Grupo (M/M/s)</h3>
+        <div class="queue-table-wrap">
+          <table id="tabla-queues">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- Scroll superior sincronizado -->
   <div id="top-scroll"></div>
 
-  <!-- Header flotante sincronizado con la tabla principal -->
-  <div id="floating-header" class="floating-header-wrap"></div>
-  
   <!-- Tabla principal -->
   <section class="table-wrap">
     <table id="tabla">
@@ -158,10 +156,6 @@
 
   <!-- App -->
   <script src="metrics.js?v=2025-12-01a"></script>
-  <!-- Parche de stats desactivado -->
-  <!-- <script src="app_fetchstats_patch.js?v=2025-12-01a"></script> -->
-  <!-- Parche de filtros desactivado -->
-  <!-- <script src="app_filters_patch.js?v=2025-12-01a"></script> -->
-  <script src="app.js?v=2025-12-01a"></script>
+  <script src="app.js?v=2025-12-01b"></script>
 </body>
 </html>
