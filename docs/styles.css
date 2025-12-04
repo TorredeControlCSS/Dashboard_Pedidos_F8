@@ -568,3 +568,11 @@ td.fill-low{
   visibility: hidden;
   height: 0;
 }
+
+.table-block{
+  margin: 8px 16px 40px;  /* el margen que antes tenía .table-wrap */
+}
+
+.table-wrap{
+  margin: 0;              /* ya no necesita margen propio */
+}
