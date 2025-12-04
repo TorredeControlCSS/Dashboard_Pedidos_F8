@@ -563,3 +563,8 @@ td.fill-low{
   white-space: nowrap;
   text-align: left;
 }
+/* Ocultar el thead original de la tabla principal (usamos header flotante) */
+.table-wrap thead {
+  visibility: hidden;
+  height: 0;
+}
