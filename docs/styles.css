@@ -491,3 +491,53 @@ td.fill-low{
 #classicEditorLink:hover{
   color:#ffffff;
 }
+
+/* Columnas fijas (primeras 5) basadas en widthMap
+   widthMap:
+   CATEG.   = 180px
+   UNIDAD   = 220px
+   TIPO     = 110px
+   F8 SALMI = 120px
+*/
+.table-wrap thead th.col-fix-1,
+.table-wrap tbody td.col-fix-1{
+  position: sticky;
+  left: 0;
+  z-index: 3;
+}
+
+.table-wrap thead th.col-fix-2,
+.table-wrap tbody td.col-fix-2{
+  position: sticky;
+  left: 180px;                 /* 1ª col (CATEG.) */
+  z-index: 3;
+}
+
+.table-wrap thead th.col-fix-3,
+.table-wrap tbody td.col-fix-3{
+  position: sticky;
+  left: calc(180px + 220px);   /* 180 + 220 = 400 */
+  z-index: 3;
+}
+
+.table-wrap thead th.col-fix-4,
+.table-wrap tbody td.col-fix-4{
+  position: sticky;
+  left: calc(180px + 220px + 110px); /* 510 */
+  z-index: 3;
+}
+
+.table-wrap thead th.col-fix-5,
+.table-wrap tbody td.col-fix-5{
+  position: sticky;
+  left: calc(180px + 220px + 110px + 120px); /* 630 */
+  z-index: 3;
+}
+
+/* Fondos para evitar traslapes visuales */
+.table-wrap thead th[class^="col-fix-"]{
+  background: #e5e7eb;  /* mismo fondo que header */
+}
+.table-wrap tbody td[class^="col-fix-"]{
+  background: #ffffff;  /* mismo fondo que filas normales */
+}
