@@ -1,10 +1,10 @@
-// app.js v2025-12-01j — FILTROS CORREGIDOS (Limpiar funciona) y OPTIMIZADOS (Debounce)
+// app.js v2025-12-01k — CARGA PROGRESIVA Y CORRECCIONES
 
 if (window.__APP_LOADED__) {
   console.log('app.js ya cargado, omitiendo.');
 } else {
 window.__APP_LOADED__ = true;
-console.log('app.js v2025-12-01j');
+console.log('app.js v2025-12-01k'); // Verás esto en la consola si se actualizó bien
 
 const A = window.APP.A_URL;
 const B = window.APP.B_URL;
@@ -30,42 +30,10 @@ function widthMap(){return{'F8 SALMI':120,'UNIDAD':232,'TIPO':110,'GRUPO':110,'C
 function perRowMetrics(row){const c=!!row['ENTREGA REAL'],rec=parseIsoDate(row['RECIBO F8']),end=row['ENTREGA REAL']?parseIsoDate(row['ENTREGA REAL']):new Date(),days=(rec&&end)?Math.max(0,Math.round((end-rec)/864e5)):''
 const toNum=v=>(typeof v==='number')?v:parseFloat(String(v||'').replace(',','.'))||0,a=toNum(row['CANT. ASIG.']),s=toNum(row['CANT. SOL.']),ra=toNum(row['RENGLONES ASIG.']),rs=toNum(row['RENGLONES SOL.']),fc=s>0?Math.round((a/s)*100):0,fr=rs>0?Math.round((ra/rs)*100):0;return{TIEMPO:days?`${days}d`:'',COMPLET:c?'SI':'NO','FILL CANT.':`${fc}%`,'FILL RENGL.':`${fr}%`};}
 
-// --- Lógica de Filtros en Cascada (CORREGIDA Y OPTIMIZADA) ---
-const filterIdToDataKey = { fCat: 'categorias', fUnidad: 'unidades', fTipo: 'tipos', fGrupo: 'grupos', fEstado: 'estados' };
-let isUpdatingFilters = false;
-let debounceTimer;
-
-function updateFilterOptions(newOptionsData) {
-    Object.entries(filterIdToDataKey).forEach(([elId, dataKey]) => {
-        const selectEl = document.getElementById(elId);
-        if (!selectEl) return;
-        const currentValue = selectEl.value;
-        const firstOptionHTML = `<option value="">${selectEl.options[0]?.textContent || 'Todos'}</option>`;
-        const newOptions = newOptionsData[dataKey] || [];
-        selectEl.innerHTML = firstOptionHTML + newOptions.map(opt => `<option value="${opt}"${opt === currentValue ? ' selected' : ''}>${opt}</option>`).join('');
-        selectEl.value = newOptions.includes(currentValue) ? currentValue : "";
-    });
-}
-
-function handleFilterChange() {
-    clearTimeout(debounceTimer); // Cancela el timer anterior
-    debounceTimer = setTimeout(async () => { // Inicia un nuevo timer
-        if (isUpdatingFilters) return;
-        isUpdatingFilters = true;
-        try {
-            const filters = getFilters();
-            const url = `${A}?route=filters.update&${new URLSearchParams(filters).toString()}`;
-            const res = await jsonp(url);
-            if (res && res.status === 'ok') {
-                updateFilterOptions(res.data);
-            }
-        } catch (e) {
-            console.warn("Error actualizando filtros dependientes:", e);
-        } finally {
-            isUpdatingFilters = false;
-        }
-    }, 500); // 500ms de espera
-}
+// --- Lógica de Filtros en Cascada ---
+const filterIdToDataKey={fCat:'categorias',fUnidad:'unidades',fTipo:'tipos',fGrupo:'grupos',fEstado:'estados'};let isUpdatingFilters=false;let debounceTimer;
+function updateFilterOptions(newOptionsData){Object.entries(filterIdToDataKey).forEach(([elId,dataKey])=>{const selectEl=document.getElementById(elId);if(!selectEl)return;const currentValue=selectEl.value;const firstOptionHTML=`<option value="">${selectEl.options[0]?.textContent||'Todos'}</option>`;const newOptions=newOptionsData[dataKey]||[];selectEl.innerHTML=firstOptionHTML+newOptions.map(opt=>`<option value="${opt}"${opt===currentValue?' selected':''}>${opt}</option>`).join('');selectEl.value=newOptions.includes(currentValue)?currentValue:"";});}
+function handleFilterChange(){clearTimeout(debounceTimer);debounceTimer=setTimeout(async()=>{if(isUpdatingFilters)return;isUpdatingFilters=true;try{const filters=getFilters();const url=`${A}?route=filters.update&${new URLSearchParams(filters).toString()}`;const res=await jsonp(url);if(res&&res.status==='ok'){updateFilterOptions(res.data);}}catch(e){console.warn("Error actualizando filtros dependientes:",e);}finally{isUpdatingFilters=false;}},500);}
 
 // --- Funciones de Renderizado ---
 function populateFiltersFromData(meta){Object.entries(filterIdToDataKey).forEach(([elId,dataKey])=>{const el=document.getElementById(elId);if(el){const f=el.options[0]?.outerHTML||'';el.innerHTML=f+(meta[dataKey]||[]).map(v=>`<option value="${v}">${v}</option>`).join('');}});}
@@ -74,11 +42,50 @@ function renderQueueTableFromData(data){const grupos=data.grupos||[];const thead
 function setTimeKpisFromRows(rows){let sumR=0,nR=0,sumP=0,nP=0;(rows||[]).forEach(r=>{const rec=parseIsoDate(r['RECIBO F8']);if(!rec)return;if(r['ENTREGA REAL']){const end=parseIsoDate(r['ENTREGA REAL']);if(end&&end>=rec){sumR+=(end-rec)/864e5;nR++;}}if(r['PROY. ENTREGA']){const pro=parseIsoDate(r['PROY. ENTREGA']);if(pro&&pro>=rec){sumP+=(pro-rec)/864e5;nP++;}}});const avgR=nR?(sumR/nR):null,avgP=nP?(sumP/nP):null,diff=(avgR!=null&&avgP!=null)?(avgR-avgP):null;const set=(id,v)=>{const el=document.getElementById(id);if(!el)return;el.textContent=(v==null||isNaN(v))?'—':v.toFixed(1);};set('kpi-t-real',avgR);set('kpi-t-prom',avgP);set('kpi-t-diff',diff);}
 
 async function renderTable(data,page=1){currentPage=page;const pgnEl=document.getElementById('paginacion');if(!data){if(pgnEl)pgnEl.innerHTML=`<span>Cargando pág ${page}...</span>`;const params=new URLSearchParams(getFilters());const url=`${A}?route=orders.list&page=${page}&pageSize=${DEFAULT_PAGE_SIZE}&${params.toString()}`;const res=await jsonp(url);data=res.data;}const rawRows=data.rows||[];const W=widthMap();currentHeaders=Array.from(new Set([ ...(data.header||[]),'TIEMPO','COMPLET','FILL CANT.','FILL RENGL.']));currentRows=rawRows.map(r=>{const o={...r};Object.keys(o).forEach(k=>{if(isIsoZ(o[k]))o[k]=toDDMonYY(o[k])});Object.assign(o,perRowMetrics(r));return o;});currentIdCol=data.header.find(h=>N(h)===N_ID)||null;const thead=document.querySelector('#tabla thead'),tbody=document.querySelector('#tabla tbody');if(thead){thead.innerHTML=`<tr>${currentHeaders.map((h,i)=>`<th data-col="${h}" class="${i<4?`col-fix-${i+1}`:''}" style="min-width:${W[h]||100}px">${h}</th>`).join('')}</tr>`;}if(tbody){tbody.innerHTML=currentRows.map((r,ri)=>`<tr>${currentHeaders.map((k,i)=>{const kN=N(k),ed=editMode&&(S_DATE.has(kN)||S_INT.has(kN)||S_TXT.has(kN)),cs=[i<4?`col-fix-${i+1}`:''];if(ed)cs.push('editable');if(k==='COMPLET')cs.push(String(r[k]||'').toUpperCase()==='SI'?'state-ok':'state-bad');if(k==='FILL CANT.'||k==='FILL RENGL.'){const v=parseFloat(String(r[k]||'').replace('%',''));if(!isNaN(v)){if(v>=95)cs.push('fill-high');else if(v>=80)cs.push('fill-medium');else cs.push('fill-low');}}return`<td class="${cs.join(' ')}" data-ri="${ri}" data-col="${k}">${r[k]??''}</td>`}).join('')}</tr>`).join('');}const totalPages=Math.ceil((data.total||0)/DEFAULT_PAGE_SIZE);const prev=Math.max(1,page-1),next=Math.min(totalPages,page+1);if(pgnEl)pgnEl.innerHTML=`<button onclick="renderTable(null,${prev})"${page===1?' disabled':''}>« Ant</button><span>Pág ${page}/${totalPages}</span><button onclick="renderTable(null,${next})"${page===totalPages?' disabled':''}>Sig »</button>`;setTimeKpisFromRows(rawRows);if(window.updateTopScrollWidth)setTimeout(window.updateTopScrollWidth,80);}
-window.renderTable = renderTable; // ¡¡¡AQUÍ ESTÁ LA CORRECCIÓN!!!
-  
-async function renderDataUpdates(data){renderKpisAndChartsFromData(data.stats);renderQueueTableFromData(data.queueMetrics);await renderTable(data.table,1);}
-async function fetchAndRenderAll(filters){const loadingEl=document.getElementById('paginacion');if(loadingEl)loadingEl.innerHTML=`<span>Cargando datos...</span>`;try{const params=new URLSearchParams(filters);const url=`${A}?route=dashboard.init&pageSize=${DEFAULT_PAGE_SIZE}&${params.toString()}`;const res=await jsonp(url);if(!res||res.status!=='ok')throw new Error(res.error||'Error en la carga');await renderDataUpdates(res.data);}catch(e){console.warn('fetchAndRenderAll error',e);if(loadingEl)loadingEl.innerHTML=`<span style="color:red;">Error: ${e.message}</span>`;}}
-async function init(){updateStickyTop();const loadingEl=document.getElementById('paginacion');if(loadingEl)loadingEl.innerHTML=`<span>Cargando datos iniciales...</span>`;try{const res=await jsonp(`${A}?route=dashboard.init&pageSize=${DEFAULT_PAGE_SIZE}`);if(!res||res.status!=='ok')throw new Error(res.error||'Error en la carga inicial');const data=res.data;populateFiltersFromData(data.meta);await renderDataUpdates(data);Object.keys(filterIdToDataKey).forEach(elId=>document.getElementById(elId)?.addEventListener('change',handleFilterChange));}catch(e){console.warn('init error',e);if(loadingEl)loadingEl.innerHTML=`<span style="color:red;">Error: ${e.message}</span>`;}setTimeout(updateStickyTop,200);}
+
+// ESTA LÍNEA ARREGLA EL ERROR "ReferenceError: renderTable is not defined"
+window.renderTable = renderTable;
+
+async function fetchAndRenderAll(filters, isInitialLoad = false) {
+    const loadingEl = document.getElementById('paginacion');
+    if (loadingEl) loadingEl.innerHTML = `<span>Cargando datos...</span>`;
+    
+    try {
+        const params = new URLSearchParams(filters);
+        
+        let litePromise;
+        if (isInitialLoad) {
+             // ESTO LLAMA A LA NUEVA RUTA RÁPIDA DEL SCRIPT A
+             litePromise = jsonp(`${A}?route=init.lite&pageSize=${DEFAULT_PAGE_SIZE}&${params.toString()}`);
+        } else {
+             litePromise = Promise.all([
+                 jsonp(`${A}?route=orders.list&pageSize=${DEFAULT_PAGE_SIZE}&${params.toString()}`),
+                 jsonp(`${A}?route=filters.update&${params.toString()}`)
+             ]).then(([tableRes, metaRes]) => {
+                 return { data: { table: tableRes.data, meta: metaRes.data } };
+             });
+        }
+
+        const liteRes = await litePromise;
+        if (isInitialLoad) populateFiltersFromData(liteRes.data.meta);
+        
+        await renderTable(liteRes.data.table, 1);
+        
+        Promise.all([
+            jsonp(`${A}?route=stats&${params.toString()}`),
+            jsonp(`${A}?route=queue.metrics&${params.toString()}`)
+        ]).then(([statsRes, queueRes]) => {
+            if(statsRes.status === 'ok') renderKpisAndChartsFromData(statsRes.data);
+            if(queueRes.status === 'ok') renderQueueTableFromData(queueRes.data);
+        }).catch(e => console.warn('Error cargando métricas secundarias', e));
+
+    } catch (e) {
+        console.warn('fetchAndRenderAll error', e);
+        if (loadingEl) loadingEl.innerHTML = `<span style="color:red;">Error: ${e.message}</span>`;
+    }
+}
+
+async function init(){updateStickyTop();await fetchAndRenderAll({}, true);Object.keys(filterIdToDataKey).forEach(elId=>document.getElementById(elId)?.addEventListener('change',handleFilterChange));setTimeout(updateStickyTop,200);}
 function updateStickyTop(){try{const h=document.querySelector('.app-header')?.offsetHeight||64,k=document.getElementById('kpis')?.offsetHeight||0,f=document.getElementById('filters')?.offsetHeight||0;document.documentElement.style.setProperty('--stickyTop',h+k+f+12+'px');}catch(e){}}
 window.addEventListener('resize',()=>{setTimeout(updateStickyTop,120);});
 (function syncHScroll(){const t=document.getElementById('top-scroll'),w=document.querySelector('.table-wrap'),b=w?.querySelector('table');if(!t||!w||!b)return;window.updateTopScrollWidth=()=>{const s=Math.max(b.scrollWidth,w.clientWidth);t.innerHTML=`<div style="width:${s}px;height:1px"></div>`;};window.updateTopScrollWidth();let l=!1;t.addEventListener('scroll',()=>{if(l)return;l=!0;w.scrollLeft=t.scrollLeft;l=!1;});w.addEventListener('scroll',()=>{if(l)return;l=!0;t.scrollLeft=w.scrollLeft;l=!1;});window.addEventListener('resize',()=>{setTimeout(window.updateTopScrollWidth,100);});})();
@@ -87,8 +94,6 @@ const btnLogin=document.getElementById('btnLogin'),btnEditMode=document.getEleme
 if(btnLogin)btnLogin.addEventListener('click',()=>{if(window.google?.accounts?.id){google.accounts.id.initialize({client_id:CLIENT_ID,callback:r=>{idToken=r.credential;if(btnEditMode)btnEditMode.disabled=false;btnLogin.textContent='Sesión iniciada';alert('Sesión iniciada. Activa “Modo edición”.');}});google.accounts.id.prompt();}else{alert('Falta librería de Google Identity');}});
 if(btnEditMode)btnEditMode.addEventListener('click',()=>{editMode=!editMode;btnEditMode.textContent=`Modo edición: ${editMode?'ON':'OFF'}`;btnEditMode.classList.toggle('edit-on',editMode);renderTable(null,currentPage);});
 async function runFilters(action){if(filtersBusy)return;filtersBusy=true;[btnApplyEl,btnClearEl,btnRefreshEl].forEach(b=>{if(b){b.disabled=true;b.classList.add('loading');}});try{await action();}finally{filtersBusy=false;[btnApplyEl,btnClearEl,btnRefreshEl].forEach(b=>{if(b){b.disabled=false;b.classList.remove('loading');}});}}
-
-// --- Lógica de Botones (CORREGIDA Y OPTIMIZADA) ---
 if(btnApplyEl)btnApplyEl.addEventListener('click',()=>{runFilters(async()=>{await fetchAndRenderAll(getFilters());});});
 if(btnClearEl)btnClearEl.addEventListener('click',()=>{runFilters(async()=>{['fCat','fUnidad','fTipo','fGrupo','fEstado','fComent','fBuscar','fDesde','fHasta'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});const filters={};await fetchAndRenderAll(filters);const url=`${A}?route=filters.update&${new URLSearchParams(filters).toString()}`;const res=await jsonp(url);if(res&&res.status==='ok'){updateFilterOptions(res.data);}});});
 if(btnRefreshEl)btnRefreshEl.addEventListener('click',()=>{runFilters(async()=>{await fetchAndRenderAll(getFilters());});});
