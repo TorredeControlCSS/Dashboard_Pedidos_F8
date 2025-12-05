@@ -1,10 +1,10 @@
-// app.js v2025-12-01i — FILTROS EN CASCADA
+// app.js v2025-12-01j — FILTROS CORREGIDOS (Limpiar funciona) y OPTIMIZADOS (Debounce)
 
 if (window.__APP_LOADED__) {
   console.log('app.js ya cargado, omitiendo.');
 } else {
 window.__APP_LOADED__ = true;
-console.log('app.js v2025-12-01i');
+console.log('app.js v2025-12-01j');
 
 const A = window.APP.A_URL;
 const B = window.APP.B_URL;
@@ -27,53 +27,48 @@ const toDDMonYY=v=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(v);if(!m)return v;re
 const parseIsoDate=v=>{if(!v)return null;const m=/^(\d{4}[-]\d{2}[-]\d{2})/.exec(v);if(!m)return null;return new Date(m[1]+'T00:00:00Z');};
 function getFilters(){return{cat:document.getElementById('fCat')?.value||'',unidad:document.getElementById('fUnidad')?.value||'',tipo:document.getElementById('fTipo')?.value||'',grupo:document.getElementById('fGrupo')?.value||'',estado:document.getElementById('fEstado')?.value||'',coment:document.getElementById('fComent')?.value||'',text:document.getElementById('fBuscar')?.value||'',desde:document.getElementById('fDesde')?.value||'',hasta:document.getElementById('fHasta')?.value||''};}
 function widthMap(){return{'F8 SALMI':120,'UNIDAD':232,'TIPO':110,'GRUPO':110,'CATEG.':180,'F8 SISCONI':120,'SUSTANCIAS':100,'CANT. ASIG.':50,'CANT. SOL.':50,'RENGLONES ASIG.':90,'RENGLONES SOL.':90,'FECHA F8':80,'RECIBO F8':80,'ASIGNACIÓN':80,'SALIDA':80,'DESPACHO':80,'FACTURACIÓN':90,'EMPACADO':80,'PROY. ENTREGA':80,'ENTREGA REAL':80,'INCOTERM':80,'ESTADO':80,'COMENT.':180,'TIEMPO':80,'COMPLET':80,'FILL CANT.':80,'FILL RENGL.':80};}
-function perRowMetrics(row){const c=!!row['ENTREGA REAL'],rec=parseIsoDate(row['RECIBO F8']),end=row['ENTREGA REAL']?parseIsoDate(row['ENTREGA REAL']):new Date(),days=(rec&&end)?Math.max(0,Math.round((end-rec)/864e5)):'',toNum=v=>(typeof v==='number')?v:parseFloat(String(v||'').replace(',','.'))||0,a=toNum(row['CANT. ASIG.']),s=toNum(row['CANT. SOL.']),ra=toNum(row['RENGLONES ASIG.']),rs=toNum(row['RENGLONES SOL.']),fc=s>0?Math.round((a/s)*100):0,fr=rs>0?Math.round((ra/rs)*100):0;return{TIEMPO:days?`${days}d`:'',COMPLET:c?'SI':'NO','FILL CANT.':`${fc}%`,'FILL RENGL.':`${fr}%`};}
+function perRowMetrics(row){const c=!!row['ENTREGA REAL'],rec=parseIsoDate(row['RECIBO F8']),end=row['ENTREGA REAL']?parseIsoDate(row['ENTREGA REAL']):new Date(),days=(rec&&end)?Math.max(0,Math.round((end-rec)/864e5)):''
+const toNum=v=>(typeof v==='number')?v:parseFloat(String(v||'').replace(',','.'))||0,a=toNum(row['CANT. ASIG.']),s=toNum(row['CANT. SOL.']),ra=toNum(row['RENGLONES ASIG.']),rs=toNum(row['RENGLONES SOL.']),fc=s>0?Math.round((a/s)*100):0,fr=rs>0?Math.round((ra/rs)*100):0;return{TIEMPO:days?`${days}d`:'',COMPLET:c?'SI':'NO','FILL CANT.':`${fc}%`,'FILL RENGL.':`${fr}%`};}
 
-// --- Lógica de Filtros en Cascada ---
+// --- Lógica de Filtros en Cascada (CORREGIDA Y OPTIMIZADA) ---
 const filterIdToDataKey = { fCat: 'categorias', fUnidad: 'unidades', fTipo: 'tipos', fGrupo: 'grupos', fEstado: 'estados' };
 let isUpdatingFilters = false;
+let debounceTimer;
 
 function updateFilterOptions(newOptionsData) {
     Object.entries(filterIdToDataKey).forEach(([elId, dataKey]) => {
         const selectEl = document.getElementById(elId);
         if (!selectEl) return;
-
-        const newOptions = newOptionsData[dataKey] || [];
         const currentValue = selectEl.value;
-        const firstOptionHTML = selectEl.options[0]?.outerHTML || `<option value="">${selectEl.options[0]?.textContent || 'Todos'}</option>`;
-        
-        selectEl.innerHTML = firstOptionHTML + newOptions.map(opt => {
-            const isSelected = (opt === currentValue);
-            return `<option value="${opt}"${isSelected ? ' selected' : ''}>${opt}</option>`;
-        }).join('');
-
-        if (newOptions.includes(currentValue)) {
-            selectEl.value = currentValue;
-        } else {
-            selectEl.value = "";
-        }
+        const firstOptionHTML = `<option value="">${selectEl.options[0]?.textContent || 'Todos'}</option>`;
+        const newOptions = newOptionsData[dataKey] || [];
+        selectEl.innerHTML = firstOptionHTML + newOptions.map(opt => `<option value="${opt}"${opt === currentValue ? ' selected' : ''}>${opt}</option>`).join('');
+        selectEl.value = newOptions.includes(currentValue) ? currentValue : "";
     });
 }
 
-async function handleFilterChange() {
-    if (isUpdatingFilters) return;
-    isUpdatingFilters = true;
-    try {
-        const filters = getFilters();
-        const url = `${A}?route=filters.update&${new URLSearchParams(filters).toString()}`;
-        const res = await jsonp(url);
-        if (res && res.status === 'ok') {
-            updateFilterOptions(res.data);
+function handleFilterChange() {
+    clearTimeout(debounceTimer); // Cancela el timer anterior
+    debounceTimer = setTimeout(async () => { // Inicia un nuevo timer
+        if (isUpdatingFilters) return;
+        isUpdatingFilters = true;
+        try {
+            const filters = getFilters();
+            const url = `${A}?route=filters.update&${new URLSearchParams(filters).toString()}`;
+            const res = await jsonp(url);
+            if (res && res.status === 'ok') {
+                updateFilterOptions(res.data);
+            }
+        } catch (e) {
+            console.warn("Error actualizando filtros dependientes:", e);
+        } finally {
+            isUpdatingFilters = false;
         }
-    } catch (e) {
-        console.warn("Error actualizando filtros dependientes:", e);
-    } finally {
-        isUpdatingFilters = false;
-    }
+    }, 500); // 500ms de espera
 }
 
 // --- Funciones de Renderizado ---
-function populateFiltersFromData(meta){const setOptions=(id,items)=>{const el=document.getElementById(id);if(!el)return;const f=el.options[0]?.outerHTML||'';el.innerHTML=f+(items||[]).map(v=>`<option value="${v}">${v}</option>`).join('');};setOptions('fCat',meta.categorias);setOptions('fUnidad',meta.unidades);setOptions('fTipo',meta.tipos);setOptions('fGrupo',meta.grupos);setOptions('fEstado',meta.estados);}
+function populateFiltersFromData(meta){Object.entries(filterIdToDataKey).forEach(([elId,dataKey])=>{const el=document.getElementById(elId);if(el){const f=el.options[0]?.outerHTML||'';el.innerHTML=f+(meta[dataKey]||[]).map(v=>`<option value="${v}">${v}</option>`).join('');}});}
 function renderKpisAndChartsFromData(stats){const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=(v==null?'—':(+v).toLocaleString());};set('kpi-total',stats.kpis.total);set('kpi-asignado',stats.kpis.asignado);set('kpi-solicitado',stats.kpis.solicitado);set('kpi-reng-asig',stats.kpis.rengAsig);set('kpi-reng-sol',stats.kpis.rengSol);set('kpi-urg',stats.kpis.urg);set('kpi-men',stats.kpis.mens);if(window.renderChartsFromStats)try{window.renderChartsFromStats(stats);}catch(e){console.warn('renderChartsFromStats failed',e);}}
 function renderQueueTableFromData(data){const grupos=data.grupos||[];const thead=document.querySelector('#tabla-queues thead'),tbody=document.querySelector('#tabla-queues tbody');if(!thead||!tbody)return;thead.innerHTML=`<tr><th>GRUPO</th><th>λ (llegadas/día)</th><th>μ (salidas/día)</th><th>ρ (utilización)</th><th>W_real (días)</th><th>W_model (días)</th><th>Wq (días en cola)</th><th>L (en sistema)</th><th>Lq (en cola)</th><th># llegadas</th><th># completados</th></tr>`;const shortGroup=(name)=>{if(!name)return'';let s=String(name);s=s.replace('LABORATORIO','LAB').replace('ODONTOLOGÍA','ODO').replace('ODONTOLOGIA','ODO').replace('RADIOLOGIA','RAD').replace('RADIOLOGÍA','RAD');return s;};const fmt=(v,d=2)=>(v==null||isNaN(v))?'—':(+v).toFixed(d);tbody.innerHTML=grupos.map(g=>{const sat=(g.mu===0||(g.rho!=null&&g.rho>=1));const rho=(g.rho==null||isNaN(g.rho))?'—':(g.rho*100).toFixed(1)+'%';return`<tr${sat?' style="background-color: #fee2e2;"':''}><td>${shortGroup(g.grupo)}</td><td style="text-align: right;">${fmt(g.lambda,3)}</td><td style="text-align: right;">${fmt(g.mu,3)}</td><td style="text-align: right;">${rho}</td><td style="text-align: right;">${fmt(g.W_real,2)}</td><td style="text-align: right;">${sat?'—':fmt(g.W_model,2)}</td><td style="text-align: right;">${sat?'—':fmt(g.Wq,2)}</td><td style="text-align: right;">${sat?'—':fmt(g.L,2)}</td><td style="text-align: right;">${sat?'—':fmt(g.Lq,2)}</td><td style="text-align: right;">${g.llegadas}</td><td style="text-align: right;">${g.completados}</td></tr>`;}).join('');}
 function setTimeKpisFromRows(rows){let sumR=0,nR=0,sumP=0,nP=0;(rows||[]).forEach(r=>{const rec=parseIsoDate(r['RECIBO F8']);if(!rec)return;if(r['ENTREGA REAL']){const end=parseIsoDate(r['ENTREGA REAL']);if(end&&end>=rec){sumR+=(end-rec)/864e5;nR++;}}if(r['PROY. ENTREGA']){const pro=parseIsoDate(r['PROY. ENTREGA']);if(pro&&pro>=rec){sumP+=(pro-rec)/864e5;nP++;}}});const avgR=nR?(sumR/nR):null,avgP=nP?(sumP/nP):null,diff=(avgR!=null&&avgP!=null)?(avgR-avgP):null;const set=(id,v)=>{const el=document.getElementById(id);if(!el)return;el.textContent=(v==null||isNaN(v))?'—':v.toFixed(1);};set('kpi-t-real',avgR);set('kpi-t-prom',avgP);set('kpi-t-diff',diff);}
@@ -89,8 +84,10 @@ const btnLogin=document.getElementById('btnLogin'),btnEditMode=document.getEleme
 if(btnLogin)btnLogin.addEventListener('click',()=>{if(window.google?.accounts?.id){google.accounts.id.initialize({client_id:CLIENT_ID,callback:r=>{idToken=r.credential;if(btnEditMode)btnEditMode.disabled=false;btnLogin.textContent='Sesión iniciada';alert('Sesión iniciada. Activa “Modo edición”.');}});google.accounts.id.prompt();}else{alert('Falta librería de Google Identity');}});
 if(btnEditMode)btnEditMode.addEventListener('click',()=>{editMode=!editMode;btnEditMode.textContent=`Modo edición: ${editMode?'ON':'OFF'}`;btnEditMode.classList.toggle('edit-on',editMode);renderTable(null,currentPage);});
 async function runFilters(action){if(filtersBusy)return;filtersBusy=true;[btnApplyEl,btnClearEl,btnRefreshEl].forEach(b=>{if(b){b.disabled=true;b.classList.add('loading');}});try{await action();}finally{filtersBusy=false;[btnApplyEl,btnClearEl,btnRefreshEl].forEach(b=>{if(b){b.disabled=false;b.classList.remove('loading');}});}}
+
+// --- Lógica de Botones (CORREGIDA Y OPTIMIZADA) ---
 if(btnApplyEl)btnApplyEl.addEventListener('click',()=>{runFilters(async()=>{await fetchAndRenderAll(getFilters());});});
-if(btnClearEl)btnClearEl.addEventListener('click',()=>{runFilters(async()=>{['fCat','fUnidad','fTipo','fGrupo','fEstado','fComent','fBuscar','fDesde','fHasta'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});await fetchAndRenderAll({});});});
+if(btnClearEl)btnClearEl.addEventListener('click',()=>{runFilters(async()=>{['fCat','fUnidad','fTipo','fGrupo','fEstado','fComent','fBuscar','fDesde','fHasta'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});const filters={};await fetchAndRenderAll(filters);const url=`${A}?route=filters.update&${new URLSearchParams(filters).toString()}`;const res=await jsonp(url);if(res&&res.status==='ok'){updateFilterOptions(res.data);}});});
 if(btnRefreshEl)btnRefreshEl.addEventListener('click',()=>{runFilters(async()=>{await fetchAndRenderAll(getFilters());});});
 
 init();
