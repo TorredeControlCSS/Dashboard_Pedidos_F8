@@ -45,7 +45,7 @@ function getFilters(){
 
 function widthMap() {
     return {
-        'F8 SALMI': 120, 'UNIDAD': 232, 'TIPO': 110, 'GRUPO': 110, 'CATEG.': 180, 'F8 SISCONI': 120, 'SUSTANCIAS': 160,
+        'F8 SALMI': 120, 'UNIDAD': 232, 'TIPO': 110, 'GRUPO': 110, 'CATEG.': 180, 'F8 SISCONI': 120, 'SUSTANCIAS': 100,
         'CANT. ASIG.': 50, 'CANT. SOL.': 50, 'RENGLONES ASIG.': 90, 'RENGLONES SOL.': 90, 'FECHA F8': 80,
         'RECIBO F8': 80, 'ASIGNACIÓN': 80, 'SALIDA': 80, 'DESPACHO': 80, 'FACTURACIÓN': 90, 'EMPACADO': 80,
         'PROY. ENTREGA': 80, 'ENTREGA REAL': 80, 'INCOTERM': 80, 'ESTADO': 80, 'COMENT.': 180,
