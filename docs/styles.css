@@ -528,3 +528,8 @@ td.fill-low{
 .table-wrap tbody td[class^="col-fix-"]{
   background: #ffffff;
 }
+
+left col-fix-1: 0;
+left col-fix-2: 184px;
+left col-fix-3: 184 + 232 = 416px;
+left col-fix-4: 416 + 114 = 530px;
