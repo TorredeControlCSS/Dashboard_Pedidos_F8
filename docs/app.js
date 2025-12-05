@@ -58,11 +58,52 @@ function renderKpisAndChartsFromData(stats){
   set('kpi-reng-asig',stats.kpis.rengAsig);set('kpi-reng-sol',stats.kpis.rengSol);set('kpi-urg',stats.kpis.urg);set('kpi-men',stats.kpis.mens);
   if(window.renderChartsFromStats)try{window.renderChartsFromStats(stats);}catch(e){console.warn('renderChartsFromStats failed',e);}
 }
-function renderQueueTableFromData(data){
-  const g=data.grupos||[],th=document.querySelector('#tabla-queues thead'),tb=document.querySelector('#tabla-queues tbody');if(!th||!tb)return;
-  th.innerHTML=`<tr><th>GRUPO</th><th>λ</th><th>μ</th><th>ρ</th><th>W_real</th><th>W_model</th><th>Wq</th><th>L</th><th>Lq</th><th>#In</th><th>#Out</th></tr>`;
-  const f=(v,d=2)=>(v==null||isNaN(v))?'—':(+v).toFixed(d);
-  tb.innerHTML=g.map(i=>{const sat=(i.mu===0||(i.rho!=null&&i.rho>=1)),rho=(i.rho==null||isNaN(i.rho))?'—':(i.rho*100).toFixed(1)+'%',W_m=sat?'—':f(i.W_model,2),Wq=sat?'—':f(i.Wq,2),L=sat?'—':f(i.L,2),Lq=sat?'—':f(i.Lq,2);return`<tr${sat?' style="background:#fef2f2"':''}><td>${i.grupo}</td><td class="num">${f(i.lambda,3)}</td><td class="num">${f(i.mu,3)}</td><td class="num">${rho}</td><td class="num">${f(i.W_real,2)}</td><td class="num">${W_m}</td><td class="num">${Wq}</td><td class="num">${L}</td><td class="num">${Lq}</td><td class="num">${i.llegadas}</td><td class="num">${i.completados}</td></tr>`;}).join('');
+function renderQueueTableFromData(data) {
+    const grupos = data.grupos || [];
+    const thead = document.querySelector('#tabla-queues thead');
+    const tbody = document.querySelector('#tabla-queues tbody');
+    if (!thead || !tbody) return;
+
+    // ESTA ES LA LÍNEA QUE RESTAURAMOS A LA VERSIÓN ORIGINAL
+    thead.innerHTML = `<tr>
+      <th>GRUPO</th>
+      <th>λ (llegadas/día)</th>
+      <th>μ (salidas/día)</th>
+      <th>ρ (utilización)</th>
+      <th>W_real (días)</th>
+      <th>W_model (días)</th>
+      <th>Wq (días en cola)</th>
+      <th>L (en sistema)</th>
+      <th>Lq (en cola)</th>
+      <th># llegadas</th>
+      <th># completados</th>
+    </tr>`;
+
+    const fmt = (v, d = 2) => (v == null || isNaN(v)) ? '—' : (+v).toFixed(d);
+    
+    tbody.innerHTML = grupos.map(i => {
+        const sat = (i.mu === 0 || (i.rho != null && i.rho >= 1));
+        const rho = (i.rho == null || isNaN(i.rho)) ? '—' : (i.rho * 100).toFixed(1) + '%';
+        const W_model_str = sat ? '—' : fmt(i.W_model, 2);
+        const Wq_str = sat ? '—' : fmt(i.Wq, 2);
+        const L_str = sat ? '—' : fmt(i.L, 2);
+        const Lq_str = sat ? '—' : fmt(i.Lq, 2);
+
+        // También restauro el color de fondo rojo/rosado para las filas saturadas
+        return `<tr${sat ? ' style="background-color: #fee2e2;"' : ''}>
+            <td>${i.grupo}</td>
+            <td style="text-align: right;">${fmt(i.lambda, 3)}</td>
+            <td style="text-align: right;">${fmt(i.mu, 3)}</td>
+            <td style="text-align: right;">${rho}</td>
+            <td style="text-align: right;">${fmt(i.W_real, 2)}</td>
+            <td style="text-align: right;">${W_model_str}</td>
+            <td style="text-align: right;">${Wq_str}</td>
+            <td style="text-align: right;">${L_str}</td>
+            <td style="text-align: right;">${Lq_str}</td>
+            <td style="text-align: right;">${i.llegadas}</td>
+            <td style="text-align: right;">${i.completados}</td>
+        </tr>`;
+    }).join('');
 }
 function setTimeKpisFromRows(rows){
   let sumR=0,nR=0,sumP=0,nP=0;(rows||[]).forEach(r=>{const rec=parseIsoDate(r['RECIBO F8']);if(!rec)return;if(r['ENTREGA REAL']){const end=parseIsoDate(r['ENTREGA REAL']);if(end&&end>=rec){sumR+=(end-rec)/864e5;nR++;}}if(r['PROY. ENTREGA']){const pro=parseIsoDate(r['PROY. ENTREGA']);if(pro&&pro>=rec){sumP+=(pro-rec)/864e5;nP++;}}});
