@@ -510,14 +510,14 @@ td.fill-low{
 .table-wrap thead th.col-fix-3,
 .table-wrap tbody td.col-fix-3{
   position: sticky;
-  left: 350px; /* 120 + 232 */
+  left: 348px; /* 120 + 232 */
   z-index: 6;
 }
 
 .table-wrap thead th.col-fix-4,
 .table-wrap tbody td.col-fix-4{
   position: sticky;
-  left: 460px; /* 120 + 232 + 110 */
+  left: 452px; /* 120 + 232 + 110 */
   z-index: 6;
 }
 
