@@ -1,10 +1,10 @@
-// app.js v2025-12-01g — FILTROS OPTIMIZADOS (carga unificada al filtrar)
+// app.js v2025-12-01h — CORRECCIÓN DE FILTROS (recuerdan el valor)
 
 if (window.__APP_LOADED__) {
   console.log('app.js ya cargado, omitiendo.');
 } else {
 window.__APP_LOADED__ = true;
-console.log('app.js v2025-12-01g');
+console.log('app.js v2025-12-01h');
 
 const A = window.APP.A_URL;
 const B = window.APP.B_URL;
@@ -115,25 +115,26 @@ async function renderTable(data, page = 1) {
   if (window.updateTopScrollWidth) setTimeout(window.updateTopScrollWidth, 80);
 }
 
-// --- Nueva función unificada para cargar o filtrar datos ---
+// --- Lógica de Carga y Filtrado (CORREGIDA) ---
+
+// Esta función ahora SOLO actualiza las visualizaciones, NO los filtros.
+async function renderDataUpdates(data) {
+    renderKpisAndChartsFromData(data.stats);
+    renderQueueTableFromData(data.queueMetrics);
+    await renderTable(data.table, 1);
+}
+
 async function fetchAndRenderAll(filters) {
     const loadingEl = document.getElementById('paginacion');
     if (loadingEl) loadingEl.innerHTML = `<span>Cargando datos...</span>`;
-    
     try {
         const params = new URLSearchParams(filters);
         const url = `${A}?route=dashboard.init&pageSize=${DEFAULT_PAGE_SIZE}&${params.toString()}`;
         const res = await jsonp(url);
         if (!res || res.status !== 'ok') throw new Error(res.error || 'Error en la carga');
-        const data = res.data;
         
-        // El meta-data para filtros solo se debería popular la primera vez.
-        // Si no, cada vez que filtras, se resetean los filtros.
-        // Lo dejamos aquí por ahora, pero podría mejorarse.
-        populateFiltersFromData(data.meta);
-        renderKpisAndChartsFromData(data.stats);
-        renderQueueTableFromData(data.queueMetrics);
-        await renderTable(data.table, 1);
+        // Al filtrar, solo renderizamos los datos, NO los filtros.
+        await renderDataUpdates(res.data);
         
     } catch (e) {
         console.warn('fetchAndRenderAll error', e);
@@ -141,48 +142,41 @@ async function fetchAndRenderAll(filters) {
     }
 }
 
-// init() ahora solo llama a la función unificada sin filtros
 async function init() {
   updateStickyTop();
-  await fetchAndRenderAll({}); // Carga inicial sin filtros
+  const loadingEl = document.getElementById('paginacion');
+  if (loadingEl) loadingEl.innerHTML = `<span>Cargando datos iniciales...</span>`;
+  try {
+    const res = await jsonp(`${A}?route=dashboard.init&pageSize=${DEFAULT_PAGE_SIZE}`);
+    if (!res || res.status !== 'ok') throw new Error(res.error || 'Error en la carga inicial');
+    const data = res.data;
+
+    // ¡CLAVE! Los filtros se populan UNA SOLA VEZ, aquí en el inicio.
+    populateFiltersFromData(data.meta);
+    
+    // El resto de los datos se renderiza normalmente.
+    await renderDataUpdates(data);
+
+  } catch(e) {
+    console.warn('init error', e);
+    if (loadingEl) loadingEl.innerHTML = `<span style="color:red;">Error: ${e.message}</span>`;
+  }
   setTimeout(updateStickyTop, 200);
 }
 
-// --- Lógica de UI ---
+// --- Lógica de UI (sin cambios) ---
 function updateStickyTop() { try { const h = document.querySelector('.app-header')?.offsetHeight || 64, k = document.getElementById('kpis')?.offsetHeight || 0, f = document.getElementById('filters')?.offsetHeight || 0; document.documentElement.style.setProperty('--stickyTop', h + k + f + 12 + 'px'); } catch (e) {} }
 window.addEventListener('resize', () => { setTimeout(updateStickyTop, 120); });
 (function syncHScroll(){const t=document.getElementById('top-scroll'),w=document.querySelector('.table-wrap'),b=w?.querySelector('table');if(!t||!w||!b)return;window.updateTopScrollWidth=()=>{const s=Math.max(b.scrollWidth,w.clientWidth);t.innerHTML=`<div style="width:${s}px;height:1px"></div>`;};window.updateTopScrollWidth();let l=!1;t.addEventListener('scroll',()=>{if(l)return;l=!0;w.scrollLeft=t.scrollLeft;l=!1;});w.addEventListener('scroll',()=>{if(l)return;l=!0;t.scrollLeft=w.scrollLeft;l=!1;});window.addEventListener('resize',()=>{setTimeout(window.updateTopScrollWidth,100);});})();
 document.querySelector('#tabla')?.addEventListener('click', (ev) => { if (ev.target.closest('.cell-editor')) return; const td = ev.target.closest('td.editable'); if (!td || !editMode) return; const ri = +td.dataset.ri, col = td.dataset.col, row = currentRows[ri], id = currentIdCol ? row[currentIdCol] : null; if (!id) { alert(`No se encontró ID (${ID_HEADER})`); return; } const kN = N(col), isDate = S_DATE.has(kN), isInt = S_INT.has(kN); if (td.querySelector('input,select')) return; const old = td.textContent || ''; td.innerHTML = ''; let inp; if (col === 'COMENT.') { inp = document.createElement('select'); inp.style.width = '100%'; COMMENT_OPTIONS.forEach(o => { const opt = document.createElement('option'); opt.value = o; opt.textContent = o || '—'; if (old.trim() === o) opt.selected = true; inp.appendChild(opt); }); } else { inp = document.createElement('input'); inp.style.width = '100%'; inp.style.boxSizing = 'border-box'; if (isDate) { inp.type = 'date'; const m = /^(\d{2})-(\w{3})-(\d{2})$/.exec(old.trim()); if (m) { const i = monES.indexOf(m[2].toLowerCase()); if (i >= 0) inp.value = `20${m[3]}-${String(i + 1).padStart(2, '0')}-${m[1]}`; } } else if (isInt) { inp.type = 'number'; inp.step = '1'; inp.min = '0'; const n = parseInt(old, 10); if (!isNaN(n)) inp.value = String(n); } else { inp.type = 'text'; inp.value = old; } } const w = document.createElement('div'); w.className = 'cell-editor'; w.appendChild(inp); td.appendChild(w); inp.focus(); inp.select?.(); async function save() { if (!idToken) { alert('Accede primero'); td.textContent = old; return; } let v = (inp.value || '').trim(); if (v === old.trim()) { td.textContent = old; return; } td.textContent = 'Guardando…'; try { const res = await jsonp(`${B}?route=orders.update&idToken=${encodeURIComponent(idToken)}&id=${encodeURIComponent(id)}&field=${encodeURIComponent(col)}&value=${encodeURIComponent(v)}`); if (res && res.status === 'ok') { if (isDate && v) { const [y, m, d] = v.split('-'); td.textContent = `${d}-${monES[+m - 1]}-${y.slice(2)}`; } else { td.textContent = v; } await fetchAndRenderAll(getFilters()); } else { td.textContent = old; alert('Error: ' + (res?.error || 'unknown')); } } catch (e) { td.textContent = old; alert('Error de red'); } } inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } else if (e.key === 'Escape') { e.preventDefault(); td.textContent = old; } }); inp.addEventListener('blur', () => { setTimeout(() => { if (document.activeElement !== inp) save(); }, 50); }); });
 const btnLogin = document.getElementById('btnLogin'), btnEditMode = document.getElementById('btnEditMode'), btnApplyEl = document.getElementById('btnApply'), btnClearEl = document.getElementById('btnClear'), btnRefreshEl = document.getElementById('btnRefresh');
 let filtersBusy = false;
-
 if(btnLogin)btnLogin.addEventListener('click',()=>{if(window.google?.accounts?.id){google.accounts.id.initialize({client_id:CLIENT_ID,callback:r=>{idToken=r.credential;if(btnEditMode)btnEditMode.disabled=false;btnLogin.textContent='Sesión iniciada';alert('Sesión iniciada. Activa “Modo edición”.');}});google.accounts.id.prompt();}else{alert('Falta librería de Google Identity');}});
 if(btnEditMode)btnEditMode.addEventListener('click',()=>{editMode=!editMode;btnEditMode.textContent=`Modo edición: ${editMode?'ON':'OFF'}`;btnEditMode.classList.toggle('edit-on',editMode);renderTable(null,currentPage);});
-
 async function runFilters(action) { if (filtersBusy) return; filtersBusy = true; [btnApplyEl, btnClearEl, btnRefreshEl].forEach(b => { if (b) { b.disabled = true; b.classList.add('loading'); } }); try { await action(); } finally { filtersBusy = false; [btnApplyEl, btnClearEl, btnRefreshEl].forEach(b => { if (b) { b.disabled = false; b.classList.remove('loading'); } }); } }
-
-// --- ¡LÓGICA DE FILTROS ACTUALIZADA! ---
-if(btnApplyEl)btnApplyEl.addEventListener('click', () => {
-    runFilters(async () => {
-        await fetchAndRenderAll(getFilters());
-    });
-});
-
-if(btnClearEl)btnClearEl.addEventListener('click', () => {
-    runFilters(async () => {
-        // Limpia los campos de filtro en la UI
-        ['fCat','fUnidad','fTipo','fGrupo','fEstado','fComent','fBuscar','fDesde','fHasta'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-        // Llama a la función unificada con los filtros ahora vacíos
-        await fetchAndRenderAll({});
-    });
-});
-
-if(btnRefreshEl)btnRefreshEl.addEventListener('click', () => {
-    runFilters(async () => {
-        // Vuelve a cargar los datos con los filtros que estén actualmente seleccionados
-        await fetchAndRenderAll(getFilters());
-    });
-});
+if(btnApplyEl)btnApplyEl.addEventListener('click', () => { runFilters(async () => { await fetchAndRenderAll(getFilters()); }); });
+if(btnClearEl)btnClearEl.addEventListener('click', () => { runFilters(async () => { ['fCat','fUnidad','fTipo','fGrupo','fEstado','fComent','fBuscar','fDesde','fHasta'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';}); await fetchAndRenderAll({}); }); });
+if(btnRefreshEl)btnRefreshEl.addEventListener('click', () => { runFilters(async () => { await fetchAndRenderAll(getFilters()); }); });
 
 init();
 }
