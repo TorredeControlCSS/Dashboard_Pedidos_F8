@@ -533,3 +533,21 @@ left col-fix-1: 0;
 left col-fix-2: 184px;
 left col-fix-3: 184 + 232 = 416px;
 left col-fix-4: 416 + 114 = 530px;
+
+/* Centrar texto por defecto en las columnas que no tienen alineación especial */
+.table-wrap tbody td{
+  text-align: center;
+}
+
+/* Mantener override para numéricas (ya lo tienes) */
+.table-wrap td[data-col="CANT. ASIG."],
+.table-wrap td[data-col="CANT. SOL."],
+.table-wrap td[data-col="RENGLONES ASI."],
+.table-wrap td[data-col="RENGLONES SOL."],
+.table-wrap td[data-col="TIEMPO"],
+.table-wrap td[data-col="FILL CANT."],
+.table-wrap td[data-col="FILL RENGL."]{
+  text-align: right;
+}
+
+/* Las de fecha ya las tienes centradas y seguirán así */
