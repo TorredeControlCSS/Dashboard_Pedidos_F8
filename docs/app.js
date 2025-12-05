@@ -1,4 +1,3 @@
-```javascript name=docs/app.js url=https://github.com/TorredeControlCSS/Dashboard_Pedidos_F8/blob/main/docs/app.js
 // app.js v2025-12-01 — versión completa y consolidada
 // Contiene: KPIs/Charts desde stats, tabla paginada, login, edición inline,
 // recalculo dinámico de sticky header, filtros desde orders.list y exposición de funciones globales.
