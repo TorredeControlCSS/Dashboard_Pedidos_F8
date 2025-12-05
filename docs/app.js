@@ -64,7 +64,7 @@ function renderQueueTableFromData(data) {
     const tbody = document.querySelector('#tabla-queues tbody');
     if (!thead || !tbody) return;
 
-    // ESTA ES LA LÍNEA QUE RESTAURAMOS A LA VERSIÓN ORIGINAL
+    // Restauramos el encabezado descriptivo original
     thead.innerHTML = `<tr>
       <th>GRUPO</th>
       <th>λ (llegadas/día)</th>
@@ -79,29 +79,42 @@ function renderQueueTableFromData(data) {
       <th># completados</th>
     </tr>`;
 
+    // Reintroducimos la función para acortar los nombres de grupo
+    const shortGroup = (name) => {
+        if (!name) return '';
+        let s = String(name);
+        s = s.replace('LABORATORIO', 'LAB');
+        s = s.replace('ODONTOLOGÍA', 'ODO');
+        s = s.replace('ODONTOLOGIA', 'ODO'); // sin tilde
+        s = s.replace('RADIOLOGIA', 'RAD');
+        s = s.replace('RADIOLOGÍA', 'RAD');
+        // Puedes añadir más reemplazos aquí si es necesario
+        return s;
+    };
+
     const fmt = (v, d = 2) => (v == null || isNaN(v)) ? '—' : (+v).toFixed(d);
     
-    tbody.innerHTML = grupos.map(i => {
-        const sat = (i.mu === 0 || (i.rho != null && i.rho >= 1));
-        const rho = (i.rho == null || isNaN(i.rho)) ? '—' : (i.rho * 100).toFixed(1) + '%';
-        const W_model_str = sat ? '—' : fmt(i.W_model, 2);
-        const Wq_str = sat ? '—' : fmt(i.Wq, 2);
-        const L_str = sat ? '—' : fmt(i.L, 2);
-        const Lq_str = sat ? '—' : fmt(i.Lq, 2);
+    tbody.innerHTML = grupos.map(g => {
+        const sat = (g.mu === 0 || (g.rho != null && g.rho >= 1));
+        const rho = (g.rho == null || isNaN(g.rho)) ? '—' : (g.rho * 100).toFixed(1) + '%';
+        const W_model_str = sat ? '—' : fmt(g.W_model, 2);
+        const Wq_str = sat ? '—' : fmt(g.Wq, 2);
+        const L_str = sat ? '—' : fmt(g.L, 2);
+        const Lq_str = sat ? '—' : fmt(g.Lq, 2);
 
-        // También restauro el color de fondo rojo/rosado para las filas saturadas
+        // Usamos shortGroup(g.grupo) para mostrar el nombre acortado
         return `<tr${sat ? ' style="background-color: #fee2e2;"' : ''}>
-            <td>${i.grupo}</td>
-            <td style="text-align: right;">${fmt(i.lambda, 3)}</td>
-            <td style="text-align: right;">${fmt(i.mu, 3)}</td>
+            <td>${shortGroup(g.grupo)}</td>
+            <td style="text-align: right;">${fmt(g.lambda, 3)}</td>
+            <td style="text-align: right;">${fmt(g.mu, 3)}</td>
             <td style="text-align: right;">${rho}</td>
-            <td style="text-align: right;">${fmt(i.W_real, 2)}</td>
+            <td style="text-align: right;">${fmt(g.W_real, 2)}</td>
             <td style="text-align: right;">${W_model_str}</td>
             <td style="text-align: right;">${Wq_str}</td>
             <td style="text-align: right;">${L_str}</td>
             <td style="text-align: right;">${Lq_str}</td>
-            <td style="text-align: right;">${i.llegadas}</td>
-            <td style="text-align: right;">${i.completados}</td>
+            <td style="text-align: right;">${g.llegadas}</td>
+            <td style="text-align: right;">${g.completados}</td>
         </tr>`;
     }).join('');
 }
