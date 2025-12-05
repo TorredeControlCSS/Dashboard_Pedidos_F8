@@ -503,21 +503,21 @@ td.fill-low{
 .table-wrap thead th.col-fix-2,
 .table-wrap tbody td.col-fix-2{
   position: sticky;
-  left: 180px; /* ancho de 1ª col */
+  left: 120px; /* ancho de 1ª col */
   z-index: 6;
 }
 
 .table-wrap thead th.col-fix-3,
 .table-wrap tbody td.col-fix-3{
   position: sticky;
-  left: 180px + 220px; /* 400 */
+  left: 352px; /* 120 + 232 */
   z-index: 6;
 }
 
 .table-wrap thead th.col-fix-4,
 .table-wrap tbody td.col-fix-4{
   position: sticky;
-  left: 180px + 220px + 110px; /* 180 + 220 + 110 */
+  left: 462px; /* 120 + 232 + 110 */
   z-index: 6;
 }
 
