@@ -106,17 +106,14 @@
       </div>
     </div>
 
-    <!-- Fila 2: 3 columnas -->
+    <!-- Fila 2: AHORA SOLO 2 COLUMNAS (Comentarios y Colas) -->
     <div class="charts-row-bottom">
       <div class="card card-coment">
         <h3>Comentarios (conteo de pedidos)</h3>
         <canvas id="ch-donut"></canvas>
       </div>
 
-      <div class="card card-grupos">
-        <h3>Estado de Avance por Grupo (% de pedidos)</h3>
-        <canvas id="ch-grupos"></canvas>
-      </div>
+      <!-- ELIMINADO: card-grupos (Gráfico de barras apiladas) -->
 
       <div class="card card-queues">
         <h3>Análisis de Congestionamiento por Grupo (M/M/s)</h3>
@@ -154,7 +151,8 @@
   </script>
 
   <!-- App -->
+  <!-- Importante: Asegúrate de que las versiones coincidan con tus últimos cambios -->
   <script src="metrics.js?v=2025-12-01a"></script>
-  <script src="app.js?v=2025-12-01b"></script>
+  <script src="app.js?v=2025-12-01-FINAL-FIX"></script>
 </body>
 </html>
