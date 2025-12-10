@@ -1,4 +1,4 @@
-// flow-app.js v1.2 — Flow dashboard con Chart opcional (no rompe si falla el CDN)
+// flow-app.js v1.2 — Flow dashboard con KPIs dinámicos, calendario y filtros por bloque
 console.log('flow-app.js v1.2');
 
 if (window.__FLOW_APP_LOADED__) {
@@ -10,6 +10,7 @@ if (window.__FLOW_APP_LOADED__) {
   const B = window.APP.B_URL;
   const CLIENT_ID = window.APP.CLIENT_ID;
 
+  // Orden canónico de etapas, alineado con deriveStage_ del backend
   const STAGES_ORDER = [
     'F8 RECIBIDA',
     'EN ASIGNACIÓN',
@@ -22,6 +23,9 @@ if (window.__FLOW_APP_LOADED__) {
   let idToken = null;
   let editMode = false;
 
+  // ============================
+  //  HELPERS BÁSICOS
+  // ============================
   function jsonp(url) {
     return new Promise((resolve, reject) => {
       const cb = 'cb_' + Math.random().toString(36).slice(2);
@@ -56,6 +60,26 @@ if (window.__FLOW_APP_LOADED__) {
     return (d2.getTime() - d1.getTime()) / 86400000;
   }
 
+  function toDateKey(d) {
+    if (!d) return '';
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth()+1).padStart(2,'0');
+    const day = String(d.getUTCDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function formatDateShort(v) {
+    const d = parseIsoDate(v);
+    if (!d) return '—';
+    const dd = String(d.getUTCDate()).padStart(2,'0');
+    const mm = String(d.getUTCMonth()+1).padStart(2,'0');
+    const yy = String(d.getUTCFullYear()).slice(-2);
+    return dd + '/' + mm + '/' + yy;
+  }
+
+  // ============================
+  //  LISTA IZQUIERDA
+  // ============================
   function renderOrdersList(rows) {
     const container = document.getElementById('ordersList');
     if (!container) return;
@@ -79,6 +103,7 @@ if (window.__FLOW_APP_LOADED__) {
       const realD = parseIsoDate(r['ENTREGA REAL']);
       const teor  = (recD && proyD) ? Math.round(daysBetween(recD, proyD)) : null;
       const realT = (recD && realD) ? Math.round(daysBetween(recD, realD)) : null;
+
       let deltaHtml = '<span class="date-delta zero">—</span>';
       if (teor != null && realT != null) {
         const d = realT - teor;
@@ -121,16 +146,12 @@ if (window.__FLOW_APP_LOADED__) {
     container.innerHTML = html;
   }
 
-  function formatDateShort(v) {
-    const d = parseIsoDate(v);
-    if (!d) return '—';
-    const dd = String(d.getUTCDate()).padStart(2,'0');
-    const mm = String(d.getUTCMonth()+1).padStart(2,'0');
-    const yy = String(d.getUTCFullYear()).slice(-2);
-    return dd + '/' + mm + '/' + yy;
-  }
-
+  // ============================
+  //  QUICK STATS (tarjetas)
+  // ============================
   function updateQuickStatsFromRows(rows) {
+    window.__DEBUG_LAST_ROWS = rows; // para inspección en consola
+
     const totalEl = document.getElementById('stat-total');
     const procEl  = document.getElementById('stat-proceso');
     const compEl  = document.getElementById('stat-completados');
@@ -141,6 +162,7 @@ if (window.__FLOW_APP_LOADED__) {
       if (procEl)  procEl.textContent  = '0';
       if (compEl)  compEl.textContent  = '0';
       if (retrEl)  retrEl.textContent  = '0';
+      console.log('[QS] 0 filas');
       return;
     }
 
@@ -157,12 +179,17 @@ if (window.__FLOW_APP_LOADED__) {
       if (realD && proyD && realD > proyD) retraso++;
     });
 
+    console.log('[QS] total:', total, 'comp:', completados, 'proc:', enProceso, 'retr:', retraso);
+
     if (totalEl) totalEl.textContent = total;
     if (procEl)  procEl.textContent  = enProceso;
     if (compEl)  compEl.textContent  = completados;
     if (retrEl)  retrEl.textContent  = retraso;
   }
 
+  // ============================
+  //  GAP ANALYSIS & TIME KPIS
+  // ============================
   let _gapChart, _stageDeltasChart;
 
   function updateGapAndTimeKpisFromRows(rows) {
@@ -223,7 +250,7 @@ if (window.__FLOW_APP_LOADED__) {
     if (kDelta) kDelta.textContent = (avgDelta!=null) ? avgDelta.toFixed(1) : '—';
     if (kAcum)  kAcum.textContent  = sumDelta ? sumDelta.toFixed(1) : '0.0';
 
-    // Si Chart.js no está disponible, salimos aquí: KPIs sí, gráficos no.
+    // Si Chart.js no está disponible, no dibujamos gráficos pero KPIs siguen funcionando
     if (typeof Chart === 'undefined') {
       console.warn('Chart.js no está cargado; se omite dibujo de gráficos.');
       return;
@@ -286,14 +313,9 @@ if (window.__FLOW_APP_LOADED__) {
     }
   }
 
-  function toDateKey(d) {
-    if (!d) return '';
-    const y = d.getUTCFullYear();
-    const m = String(d.getUTCMonth()+1).padStart(2,'0');
-    const day = String(d.getUTCDate()).padStart(2,'0');
-    return `${y}-${m}-${day}`;
-  }
-
+  // ============================
+  //  CALENDARIO
+  // ============================
   let currentCalYear, currentCalMonth;
   let currentCalData = {};
 
@@ -398,7 +420,11 @@ if (window.__FLOW_APP_LOADED__) {
     if (btnClear) btnClear.style.display = 'inline-block';
   }
 
+  // ============================
+  //  FLOW BLOCKS
+  // ============================
   async function onFlowBlockClick(stageKey) {
+    // Mapear data-stage HTML a etiqueta de etapa del backend
     const map = {
       'RECIBO':'F8 RECIBIDA',
       'ASIGNACION':'EN ASIGNACIÓN',
@@ -425,7 +451,7 @@ if (window.__FLOW_APP_LOADED__) {
     allRows.sort((a,b) => {
       const sa = stageIndexFromRow(a);
       const sb = stageIndexFromRow(b);
-      return sb - sa;
+      return sb - sa; // más futuras primero
     });
 
     const title = document.getElementById('panel-title');
@@ -443,6 +469,35 @@ if (window.__FLOW_APP_LOADED__) {
     const st = r['ESTADO'] || '';
     const idx = STAGES_ORDER.indexOf(st);
     return idx >= 0 ? idx : -1;
+  }
+
+  // ============================
+  //  INICIALIZACIÓN
+  // ============================
+  async function loadInitialData() {
+    const listEl = document.getElementById('ordersList');
+    if (listEl) listEl.innerHTML = '<p class="loading-message">Cargando requisiciones...</p>';
+
+    try {
+      const res = await jsonp(`${A}?route=init.lite&pageSize=200`);
+      if (!res || res.status !== 'ok') {
+        console.warn('init.lite error', res && res.error);
+        if (listEl) listEl.innerHTML = '<p class="loading-message">Error al cargar datos iniciales.</p>';
+        return;
+      }
+      const data = res.data;
+      const rows = data.table?.rows || [];
+
+      const title = document.getElementById('panel-title');
+      if (title) title.textContent = 'Todas las requisiciones';
+
+      renderOrdersList(rows);
+      updateQuickStatsFromRows(rows);
+      updateGapAndTimeKpisFromRows(rows);
+    } catch(e) {
+      console.warn('loadInitialData error', e);
+      if (listEl) listEl.innerHTML = '<p class="loading-message">Error de red al cargar datos.</p>';
+    }
   }
 
   async function initFlowDashboard() {
@@ -526,32 +581,6 @@ if (window.__FLOW_APP_LOADED__) {
 
     const now = new Date();
     await loadCalendarMonth(now.getUTCFullYear(), now.getUTCMonth()+1);
-  }
-
-  async function loadInitialData() {
-    const listEl = document.getElementById('ordersList');
-    if (listEl) listEl.innerHTML = '<p class="loading-message">Cargando requisiciones...</p>';
-
-    try {
-      const res = await jsonp(`${A}?route=init.lite&pageSize=200`);
-      if (!res || res.status !== 'ok') {
-        console.warn('init.lite error', res && res.error);
-        if (listEl) listEl.innerHTML = '<p class="loading-message">Error al cargar datos iniciales.</p>';
-        return;
-      }
-      const data = res.data;
-      const rows = data.table?.rows || [];
-
-      const title = document.getElementById('panel-title');
-      if (title) title.textContent = 'Todas las requisiciones';
-
-      renderOrdersList(rows);
-      updateQuickStatsFromRows(rows);
-      updateGapAndTimeKpisFromRows(rows);
-    } catch(e) {
-      console.warn('loadInitialData error', e);
-      if (listEl) listEl.innerHTML = '<p class="loading-message">Error de red al cargar datos.</p>';
-    }
   }
 
   document.addEventListener('DOMContentLoaded', initFlowDashboard);
