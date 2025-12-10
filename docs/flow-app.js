@@ -1,5 +1,5 @@
-// flow-app.js v1.1 — Flow dashboard con KPIs dinámicos, calendario y filtros por bloque
-console.log('flow-app.js v1.1');
+// flow-app.js v1.2 — Flow dashboard con Chart opcional (no rompe si falla el CDN)
+console.log('flow-app.js v1.2');
 
 if (window.__FLOW_APP_LOADED__) {
   console.log('flow-app.js ya cargado, omitiendo.');
@@ -10,7 +10,6 @@ if (window.__FLOW_APP_LOADED__) {
   const B = window.APP.B_URL;
   const CLIENT_ID = window.APP.CLIENT_ID;
 
-  // Orden canónico de etapas, alineado con deriveStage_ del backend
   const STAGES_ORDER = [
     'F8 RECIBIDA',
     'EN ASIGNACIÓN',
@@ -23,7 +22,6 @@ if (window.__FLOW_APP_LOADED__) {
   let idToken = null;
   let editMode = false;
 
-  // Helpers básicos
   function jsonp(url) {
     return new Promise((resolve, reject) => {
       const cb = 'cb_' + Math.random().toString(36).slice(2);
@@ -48,7 +46,6 @@ if (window.__FLOW_APP_LOADED__) {
   function parseIsoDate(v) {
     if (!v) return null;
     if (v instanceof Date) return v;
-    // Esperamos formato 'YYYY-MM-DD' o 'YYYY-MM-DDT00:00:00.000Z'
     const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v));
     if (!m) return null;
     return new Date(m[1] + '-' + m[2] + '-' + m[3] + 'T00:00:00Z');
@@ -56,14 +53,9 @@ if (window.__FLOW_APP_LOADED__) {
 
   function daysBetween(d1, d2) {
     if (!d1 || !d2) return null;
-    const t1 = d1.getTime();
-    const t2 = d2.getTime();
-    return (t2 - t1) / 86400000;
+    return (d2.getTime() - d1.getTime()) / 86400000;
   }
 
-  // ============================
-  //  RENDER DE LISTA IZQUIERDA
-  // ============================
   function renderOrdersList(rows) {
     const container = document.getElementById('ordersList');
     if (!container) return;
@@ -138,9 +130,6 @@ if (window.__FLOW_APP_LOADED__) {
     return dd + '/' + mm + '/' + yy;
   }
 
-  // ============================
-  //  QUICK STATS (tarjetas arriba)
-  // ============================
   function updateQuickStatsFromRows(rows) {
     const totalEl = document.getElementById('stat-total');
     const procEl  = document.getElementById('stat-proceso');
@@ -165,7 +154,6 @@ if (window.__FLOW_APP_LOADED__) {
       const proyD = parseIsoDate(r['PROY. ENTREGA']);
       if (realD) completados++;
       else enProceso++;
-
       if (realD && proyD && realD > proyD) retraso++;
     });
 
@@ -175,9 +163,6 @@ if (window.__FLOW_APP_LOADED__) {
     if (retrEl)  retrEl.textContent  = retraso;
   }
 
-  // ============================
-  //  GAP ANALYSIS (deltas)
-  // ============================
   let _gapChart, _stageDeltasChart;
 
   function updateGapAndTimeKpisFromRows(rows) {
@@ -200,8 +185,7 @@ if (window.__FLOW_APP_LOADED__) {
     let sumReal=0, nReal=0;
     let sumDelta=0;
 
-    // Para chart de deltas por fecha, agrupamos por fecha PROY
-    const deltaByProjDate = {}; // key YYYY-MM-DD -> { deltaSum, count }
+    const deltaByProjDate = {};
 
     rows.forEach(r => {
       const recD  = parseIsoDate(r['RECIBO F8']);
@@ -239,14 +223,19 @@ if (window.__FLOW_APP_LOADED__) {
     if (kDelta) kDelta.textContent = (avgDelta!=null) ? avgDelta.toFixed(1) : '—';
     if (kAcum)  kAcum.textContent  = sumDelta ? sumDelta.toFixed(1) : '0.0';
 
-    // Chart de Gap (delta acumulado por fecha proy)
+    // Si Chart.js no está disponible, salimos aquí: KPIs sí, gráficos no.
+    if (typeof Chart === 'undefined') {
+      console.warn('Chart.js no está cargado; se omite dibujo de gráficos.');
+      return;
+    }
+
     const ctxGap = document.getElementById('gapChart');
     if (ctxGap) {
       const labels = Object.keys(deltaByProjDate).sort();
       let acumulado = 0;
       const dataAcum = labels.map(d => {
         const obj = deltaByProjDate[d];
-        acumulado += obj.sum; // sumas brutas por día
+        acumulado += obj.sum;
         return acumulado;
       });
       if (_gapChart) _gapChart.destroy();
@@ -265,22 +254,15 @@ if (window.__FLOW_APP_LOADED__) {
         options:{
           responsive:true,
           maintainAspectRatio:false,
-          plugins:{
-            legend:{ position:'bottom' }
-          },
-          scales:{
-            y:{ ticks:{ callback:v=>v+' d' } }
-          }
+          plugins:{ legend:{ position:'bottom' } },
+          scales:{ y:{ ticks:{ callback:v=>v+' d' } } }
         }
       });
     }
 
-    // (Opcional) Stage deltas chart: aquí podríamos hacer un breakdown por etapa,
-    // pero como no definimos fórmula específica de "delta por etapa", lo dejamos vacío o simple.
     const ctxStage = document.getElementById('stageDeltas');
     if (ctxStage) {
       if (_stageDeltasChart) _stageDeltasChart.destroy();
-      // Por ahora mostramos promedio real y teórico como barras, para no dejar vacío.
       _stageDeltasChart = new Chart(ctxStage.getContext('2d'),{
         type:'bar',
         data:{
@@ -298,12 +280,7 @@ if (window.__FLOW_APP_LOADED__) {
           responsive:true,
           maintainAspectRatio:false,
           plugins:{ legend:{ display:false } },
-          scales:{
-            y:{
-              beginAtZero:true,
-              ticks:{ callback:v=>v+' d' }
-            }
-          }
+          scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>v+' d' } } }
         }
       });
     }
@@ -317,11 +294,8 @@ if (window.__FLOW_APP_LOADED__) {
     return `${y}-${m}-${day}`;
   }
 
-  // ============================
-  //  CALENDARIO
-  // ============================
-  let currentCalYear, currentCalMonth; // month: 1..12
-  let currentCalData = {}; // { 'YYYY-MM-DD': { total, byStage: {...} } }
+  let currentCalYear, currentCalMonth;
+  let currentCalData = {};
 
   async function loadCalendarMonth(year, month) {
     currentCalYear = year;
@@ -345,7 +319,7 @@ if (window.__FLOW_APP_LOADED__) {
     const month = currentCalMonth;
 
     const firstDay = new Date(Date.UTC(year, month-1, 1));
-    const startDow = firstDay.getUTCDay(); // 0=Sunday
+    const startDow = firstDay.getUTCDay();
     const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
 
     const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -361,7 +335,7 @@ if (window.__FLOW_APP_LOADED__) {
       calEl.appendChild(div);
     });
 
-    let dow = (startDow + 6) % 7; // queremos Lunes=0 .. Domingo=6
+    let dow = (startDow + 6) % 7;
     for (let i=0; i<dow; i++) {
       const empty = document.createElement('div');
       empty.className = 'calendar-day other-month';
@@ -378,33 +352,25 @@ if (window.__FLOW_APP_LOADED__) {
 
       const cell = document.createElement('div');
       cell.className = 'calendar-day';
-      if (key === todayKey) {
-        cell.classList.add('today');
-      }
-      if (total > 0) {
-        const count = document.createElement('div');
-        count.className = 'calendar-day-number';
-        count.textContent = day;
-        cell.appendChild(count);
+      if (key === todayKey) cell.classList.add('today');
 
+      const num = document.createElement('div');
+      num.className = 'calendar-day-number';
+      num.textContent = day;
+      cell.appendChild(num);
+
+      if (total > 0) {
         const big = document.createElement('div');
-        big.className = 'calendar-day-badge'; // Reusamos estilo, pero lo hacemos más visible
+        big.className = 'calendar-day-badge';
         big.textContent = total;
         cell.appendChild(big);
 
-        // Tooltip con breakdown
         let tooltip = `Total: ${total}\n`;
         const bySt = info.byStage || {};
         Object.keys(bySt).sort().forEach(st => {
           tooltip += `${st}: ${bySt[st]}\n`;
         });
         cell.title = tooltip.trim();
-
-      } else {
-        const count = document.createElement('div');
-        count.className = 'calendar-day-number';
-        count.textContent = day;
-        cell.appendChild(count);
       }
 
       cell.addEventListener('click', () => onCalendarDayClick(key));
@@ -432,17 +398,12 @@ if (window.__FLOW_APP_LOADED__) {
     if (btnClear) btnClear.style.display = 'inline-block';
   }
 
-  // ============================
-  //  CLICK EN BLOCKS DEL FLUJO
-  // ============================
-
   async function onFlowBlockClick(stageKey) {
-    // Mapear data-stage HTML a etiqueta de etapa del backend
     const map = {
       'RECIBO':'F8 RECIBIDA',
       'ASIGNACION':'EN ASIGNACIÓN',
       'SALIDA':'SALIDA DE SALMI',
-      'DESPACHO':'SALIDA DE SALMI',   // si quieres diferenciar, podemos cambiarlo
+      'DESPACHO':'SALIDA DE SALMI',
       'FACTURACION':'FACTURADO',
       'EMPACADO':'EMPACADO',
       'ENTREGA':'ENTREGADA'
@@ -461,11 +422,10 @@ if (window.__FLOW_APP_LOADED__) {
       }
     }
 
-    // Ordenar de más futuro (etapa más alta) a más pasado
     allRows.sort((a,b) => {
       const sa = stageIndexFromRow(a);
       const sb = stageIndexFromRow(b);
-      return sb - sa; // descendente
+      return sb - sa;
     });
 
     const title = document.getElementById('panel-title');
@@ -485,12 +445,7 @@ if (window.__FLOW_APP_LOADED__) {
     return idx >= 0 ? idx : -1;
   }
 
-  // ============================
-  //  INICIALIZACIÓN
-  // ============================
-
   async function initFlowDashboard() {
-    // Login y modo edición (mismos IDs que en flow-dashboard.html)
     const btnLogin    = document.getElementById('btnLogin');
     const btnEditMode = document.getElementById('btnEditMode');
     const btnRefresh  = document.getElementById('btnRefresh');
@@ -534,11 +489,10 @@ if (window.__FLOW_APP_LOADED__) {
         btnClear.style.display = 'none';
         const title = document.getElementById('panel-title');
         if (title) title.textContent = 'Todas las requisiciones';
-        loadInitialData(); // recarga general
+        loadInitialData();
       });
     }
 
-    // Navegación de calendario
     const btnPrevMonth = document.getElementById('btnPrevMonth');
     const btnNextMonth = document.getElementById('btnNextMonth');
 
@@ -559,20 +513,17 @@ if (window.__FLOW_APP_LOADED__) {
       });
     }
 
-    // Clicks en bloques del flujo
     document.querySelectorAll('.flow-block[data-stage]').forEach(el => {
       el.addEventListener('click', () => {
         document.querySelectorAll('.flow-block').forEach(b => b.classList.remove('active'));
         el.classList.add('active');
-        const stageKey = el.getAttribute('data-stage'); // RECIBO, ASIGNACION, etc.
+        const stageKey = el.getAttribute('data-stage');
         onFlowBlockClick(stageKey);
       });
     });
 
-    // Carga inicial
     await loadInitialData();
 
-    // Calendario: mes actual
     const now = new Date();
     await loadCalendarMonth(now.getUTCFullYear(), now.getUTCMonth()+1);
   }
@@ -603,6 +554,5 @@ if (window.__FLOW_APP_LOADED__) {
     }
   }
 
-  // Iniciar
   document.addEventListener('DOMContentLoaded', initFlowDashboard);
 }
