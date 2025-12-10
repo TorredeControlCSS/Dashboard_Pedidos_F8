@@ -551,6 +551,24 @@ h1, h2, h3 { margin: 0; }
 }
 
 /* =============== RESPONSIVE =============== */
+
+/* Tablets and medium screens */
+@media (max-width: 1024px) {
+  #process-flow {
+    gap: 6px;
+  }
+  
+  .flow-block {
+    min-width: 100px;
+    padding: 10px 6px;
+  }
+  
+  .flow-block-count {
+    font-size: 24px;
+  }
+}
+
+/* Mobile devices */
 @media (max-width: 768px) {
   #process-flow {
     padding: 12px 8px;
@@ -573,5 +591,15 @@ h1, h2, h3 { margin: 0; }
   
   .time-kpis {
     grid-template-columns: 1fr;
+  }
+  
+  .header-actions {
+    flex-wrap: wrap;
+  }
+  
+  .header-actions button,
+  .header-actions .btn-link {
+    font-size: 11px;
+    padding: 4px 8px;
   }
 }

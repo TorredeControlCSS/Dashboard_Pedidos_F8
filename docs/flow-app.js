@@ -346,7 +346,24 @@ async function handleDateEdit(dateEl) {
   async function save() {
     const newValue = input.value.trim();
     
-    if (!newValue || newValue === oldValue) {
+    // Check if value changed - compare by converting newValue to same format
+    let hasChanged = true;
+    if (!newValue) {
+      dateEl.textContent = oldValue;
+      return;
+    }
+    
+    if (oldValue !== '—') {
+      // Convert newValue (YYYY-MM-DD) to DD-mon-YY format for comparison
+      const [y, m, d] = newValue.split('-');
+      const monthIdx = parseInt(m, 10) - 1;
+      const convertedNew = `${d}-${monES[monthIdx]}-${y.slice(-2)}`;
+      if (convertedNew === oldValue) {
+        hasChanged = false;
+      }
+    }
+    
+    if (!hasChanged) {
       dateEl.textContent = oldValue;
       return;
     }
