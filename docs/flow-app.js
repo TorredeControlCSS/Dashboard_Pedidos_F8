@@ -204,6 +204,7 @@ function renderOrdersList(orders) {
   const html = orders.map(order => {
     const f8 = order['F8 SALMI'] || '—';
     const unidad = order['UNIDAD'] || '—';
+    const grupo = order['GRUPO'] || '—';
     const recibo = order['RECIBO F8'] ? formatDateDDMonYY(parseIsoDate(order['RECIBO F8'])) : '—';
     const currentStage = STAGES[order.currentStage];
     
@@ -229,22 +230,37 @@ function renderOrdersList(orders) {
       deltaHtml = `<span class="date-delta ${deltaClass}">${deltaSign}${delta}d</span>`;
     }
     
+    // Calculate total progress
+    let completedStages = 0;
+    Object.keys(STAGES).forEach(stageKey => {
+      const stage = STAGES[stageKey];
+      if (order[stage.field]) {
+        completedStages++;
+      }
+    });
+    const totalStages = Object.keys(STAGES).length;
+    const progressPercent = Math.round((completedStages / totalStages) * 100);
+    
     return `
       <div class="order-card" data-order-id="${f8}">
         <div class="order-card-header">
           <div class="order-id">${f8}</div>
           <div class="order-stage">${currentStage ? currentStage.name : '—'}</div>
         </div>
-        <div class="order-info">Unidad: ${unidad}</div>
-        <div class="order-info">Recibido: ${recibo}</div>
+        <div class="order-info"><strong>Unidad:</strong> ${unidad}</div>
+        <div class="order-info"><strong>Grupo:</strong> ${grupo}</div>
+        <div class="order-info"><strong>Recibido:</strong> ${recibo}</div>
+        <div class="order-info" style="margin-top:4px;">
+          <strong>Progreso:</strong> ${completedStages}/${totalStages} etapas (${progressPercent}%)
+        </div>
         <div class="order-dates">
           <div class="date-item">
-            <div class="date-label">Fecha teórica</div>
+            <div class="date-label">Fecha teórica (${currentStage ? currentStage.name : '—'})</div>
             <div class="date-value">${theoDate}</div>
           </div>
           <div class="date-item">
-            <div class="date-label">Fecha real</div>
-            <div class="date-value ${editMode ? 'editable' : ''}">${realDate}</div>
+            <div class="date-label">Fecha real (${currentStage ? currentStage.name : '—'})</div>
+            <div class="date-value ${editMode ? 'editable' : ''}" data-stage="${order.currentStage}">${realDate}</div>
             ${deltaHtml}
           </div>
         </div>
@@ -253,6 +269,117 @@ function renderOrdersList(orders) {
   }).join('');
   
   listEl.innerHTML = html;
+  
+  // Add click handlers for editable dates
+  if (editMode) {
+    listEl.querySelectorAll('.date-value.editable').forEach(dateEl => {
+      dateEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handleDateEdit(dateEl);
+      });
+    });
+  }
+}
+
+async function handleDateEdit(dateEl) {
+  if (!idToken) {
+    alert('Debes iniciar sesión primero');
+    return;
+  }
+  
+  const orderCard = dateEl.closest('.order-card');
+  if (!orderCard) return;
+  
+  const orderId = orderCard.dataset.orderId;
+  const order = allOrders.find(o => o['F8 SALMI'] === orderId);
+  if (!order) return;
+  
+  const currentStage = STAGES[order.currentStage];
+  if (!currentStage) return;
+  
+  const field = currentStage.field;
+  const oldValue = dateEl.textContent.trim();
+  
+  // Create input
+  const input = document.createElement('input');
+  input.type = 'date';
+  input.style.width = '100%';
+  input.style.fontSize = '12px';
+  
+  // Parse existing date (format: DD-mon-YY)
+  if (oldValue !== '—') {
+    const m = /^(\d{2})-(\w{3})-(\d{2})$/.exec(oldValue);
+    if (m) {
+      const day = m[1];
+      const month = m[2].toLowerCase();
+      const year = m[3];
+      const monthIdx = monES.indexOf(month);
+      if (monthIdx >= 0) {
+        input.value = `20${year}-${String(monthIdx + 1).padStart(2, '0')}-${day}`;
+      }
+    }
+  }
+  
+  dateEl.textContent = '';
+  dateEl.appendChild(input);
+  input.focus();
+  
+  async function save() {
+    const newValue = input.value.trim();
+    
+    if (!newValue || newValue === oldValue) {
+      dateEl.textContent = oldValue;
+      return;
+    }
+    
+    dateEl.textContent = 'Guardando...';
+    
+    try {
+      const url = `${B}?route=orders.update&idToken=${encodeURIComponent(idToken)}&id=${encodeURIComponent(orderId)}&field=${encodeURIComponent(field)}&value=${encodeURIComponent(newValue)}`;
+      const res = await jsonp(url);
+      
+      if (res && res.status === 'ok') {
+        // Update local data
+        order[field] = newValue + 'T00:00:00Z';
+        
+        // Recalculate
+        const theoretical = calculateTheoreticalDates(order);
+        const deltas = calculateDeltas(order, theoretical);
+        order.theoretical = theoretical;
+        order.deltas = deltas;
+        
+        // Re-render
+        await init();
+        
+        alert('Fecha actualizada correctamente');
+      } else {
+        dateEl.textContent = oldValue;
+        alert('Error al actualizar: ' + (res?.error || 'desconocido'));
+      }
+    } catch (e) {
+      dateEl.textContent = oldValue;
+      alert('Error de red al actualizar');
+      console.error(e);
+    }
+  }
+  
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      save();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      dateEl.textContent = oldValue;
+    }
+  });
+  
+  input.addEventListener('blur', () => {
+    setTimeout(() => {
+      if (document.activeElement !== input) {
+        save();
+      }
+    }, 100);
+  });
 }
 
 function filterOrdersByStage(stageKey) {
