@@ -122,7 +122,7 @@ function calculateDeltas(order, theoretical) {
 }
 
 function getCurrentStage(order, theoretical, referenceDate = null) {
-  const refDate = referenceDate || new Date();
+  const refDate = referenceDate ? new Date(referenceDate) : new Date();
   refDate.setHours(0, 0, 0, 0);
   
   // Find which stage should be happening on referenceDate based on theoretical dates
