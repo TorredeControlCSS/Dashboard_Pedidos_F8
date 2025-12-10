@@ -174,11 +174,14 @@ async function fetchAllOrders() {
 
 // ============= UI RENDERING =============
 
-function updateFlowBlocks() {
+function updateFlowBlocks(ordersToCount = null) {
+  // If ordersToCount is not provided, use allOrders
+  const orders = ordersToCount || allOrders;
+  
   const stageCounts = {};
   Object.keys(STAGES).forEach(key => stageCounts[key] = 0);
   
-  allOrders.forEach(order => {
+  orders.forEach(order => {
     if (order.currentStage) {
       stageCounts[order.currentStage]++;
     }
@@ -216,7 +219,7 @@ function renderOrdersList(orders) {
   if (!listEl) return;
   
   if (!orders || orders.length === 0) {
-    listEl.innerHTML = '<p class="loading-message">No hay pedidos para mostrar</p>';
+    listEl.innerHTML = '<p class="loading-message">No hay requisiciones para mostrar</p>';
     return;
   }
   
@@ -432,7 +435,7 @@ function filterOrdersByStage(stageKey) {
   
   // Update title
   const stage = STAGES[stageKey];
-  document.getElementById('panel-title').textContent = `${stage.name} (${filtered.length} pedidos)`;
+  document.getElementById('panel-title').textContent = `${stage.name} (${filtered.length} requisiciones)`;
   document.getElementById('btnClearFilter').style.display = 'inline-block';
   
   renderOrdersList(filtered);
@@ -443,24 +446,30 @@ function filterOrdersByDate(dateStr) {
   
   const targetDate = new Date(dateStr + 'T00:00:00Z');
   
-  // Filter orders that have any theoretical date matching the selected date
+  // Filter orders that have the selected date in ANY stage (theoretical or real)
   const filtered = allOrders.filter(order => {
-    return Object.values(order.theoretical).some(theoDate => {
+    // Check theoretical dates
+    const hasTheoDate = Object.values(order.theoretical).some(theoDate => {
       if (!theoDate) return false;
       return formatDateISO(theoDate) === dateStr;
     });
+    
+    // Check real dates
+    const hasRealDate = Object.keys(STAGES).some(stageKey => {
+      const stage = STAGES[stageKey];
+      const realDate = parseIsoDate(order[stage.field]);
+      if (!realDate) return false;
+      return formatDateISO(realDate) === dateStr;
+    });
+    
+    return hasTheoDate || hasRealDate;
   });
   
-  // Group by stage
-  const byStage = {};
-  filtered.forEach(order => {
-    const stageKey = order.currentStage;
-    if (!byStage[stageKey]) byStage[stageKey] = [];
-    byStage[stageKey].push(order);
-  });
+  // Update flow blocks to show counts for this date
+  updateFlowBlocks(filtered);
   
   // Update title
-  document.getElementById('panel-title').textContent = `Pedidos del ${formatDateDDMonYY(targetDate)} (${filtered.length} pedidos)`;
+  document.getElementById('panel-title').textContent = `Requisiciones del ${formatDateDDMonYY(targetDate)} (${filtered.length} requisiciones)`;
   document.getElementById('btnClearFilter').style.display = 'inline-block';
   
   renderOrdersList(filtered);
@@ -479,7 +488,10 @@ function clearFilter() {
     day.classList.remove('selected');
   });
   
-  document.getElementById('panel-title').textContent = 'Todos los pedidos';
+  // Reset flow blocks to show all orders
+  updateFlowBlocks(allOrders);
+  
+  document.getElementById('panel-title').textContent = 'Todas las requisiciones';
   document.getElementById('btnClearFilter').style.display = 'none';
   
   renderOrdersList(allOrders);
@@ -836,7 +848,7 @@ function exportData() {
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
   link.setAttribute('href', url);
-  link.setAttribute('download', `pedidos_flujo_${new Date().toISOString().slice(0,10)}.csv`);
+  link.setAttribute('download', `requisiciones_flujo_${new Date().toISOString().slice(0,10)}.csv`);
   link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();
@@ -909,7 +921,7 @@ async function init() {
   console.log('Initializing Flow Dashboard...');
   
   // Show loading
-  document.getElementById('ordersList').innerHTML = '<p class="loading-message">Cargando pedidos...</p>';
+  document.getElementById('ordersList').innerHTML = '<p class="loading-message">Cargando requisiciones...</p>';
   
   // Fetch data
   await fetchAllOrders();

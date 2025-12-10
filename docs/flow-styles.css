@@ -101,6 +101,42 @@ h1, h2, h3 { margin: 0; }
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
+/* Gradient colors from red to green (pastel) */
+.flow-block[data-stage="RECIBO"] {
+  background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+  border-color: #f87171;
+}
+
+.flow-block[data-stage="ASIGNACION"] {
+  background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
+  border-color: #fb923c;
+}
+
+.flow-block[data-stage="SALIDA"] {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde047 100%);
+  border-color: #facc15;
+}
+
+.flow-block[data-stage="DESPACHO"] {
+  background: linear-gradient(135deg, #d9f99d 0%, #bef264 100%);
+  border-color: #a3e635;
+}
+
+.flow-block[data-stage="FACTURACION"] {
+  background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%);
+  border-color: #4ade80;
+}
+
+.flow-block[data-stage="EMPACADO"] {
+  background: linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%);
+  border-color: #34d399;
+}
+
+.flow-block[data-stage="ENTREGA"] {
+  background: linear-gradient(135deg, #99f6e4 0%, #5eead4 100%);
+  border-color: #2dd4bf;
+}
+
 .flow-block:hover {
   transform: translateY(-4px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
@@ -108,9 +144,10 @@ h1, h2, h3 { margin: 0; }
 }
 
 .flow-block.active {
-  background: var(--secondary-color);
+  background: var(--secondary-color) !important;
   color: white;
-  border-color: var(--secondary-color);
+  border-color: var(--secondary-color) !important;
+  transform: scale(1.05);
 }
 
 .flow-block-header {
@@ -199,7 +236,7 @@ h1, h2, h3 { margin: 0; }
 /* =============== MAIN CONTAINER =============== */
 .main-container {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 400px 1fr;
   gap: 16px;
   padding: 16px;
   min-height: calc(100vh - 200px);
@@ -266,8 +303,8 @@ h1, h2, h3 { margin: 0; }
   background: var(--bg-light);
   border: 1px solid var(--border-color);
   border-radius: 6px;
-  padding: 12px;
-  margin-bottom: 12px;
+  padding: 8px;
+  margin-bottom: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -281,38 +318,38 @@ h1, h2, h3 { margin: 0; }
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .order-id {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-dark);
 }
 
 .order-stage {
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 12px;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 10px;
   background: var(--secondary-color);
   color: white;
   font-weight: 600;
 }
 
 .order-info {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-light);
-  margin: 4px 0;
+  margin: 2px 0;
 }
 
 .order-dates {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: 8px;
-  padding-top: 8px;
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 6px;
   border-top: 1px solid var(--border-color);
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .date-item {
