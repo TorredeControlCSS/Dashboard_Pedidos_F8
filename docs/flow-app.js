@@ -1,959 +1,608 @@
-// flow-app.js v1.0 - Dashboard de Flujo de Procesos
+// flow-app.js v1.1 — Flow dashboard con KPIs dinámicos, calendario y filtros por bloque
+console.log('flow-app.js v1.1');
 
-console.log('flow-app.js v1.0 - Dashboard de Flujo de Procesos');
-
-// ============= CONFIGURATION =============
-const A = window.APP.A_URL;
-const B = window.APP.B_URL;
-const CLIENT_ID = window.APP.CLIENT_ID;
-
-// Stage configuration with day offsets from RECIBO F8
-const STAGES = {
-  'RECIBO': { name: 'RECIBO F8', field: 'RECIBO F8', offset: 0 },
-  'ASIGNACION': { name: 'ASIGNACIÓN', field: 'ASIGNACIÓN', offset: 1 },
-  'SALIDA': { name: 'SALIDA', field: 'SALIDA', offset: 2 },
-  'DESPACHO': { name: 'DESPACHO', field: 'DESPACHO', offset: 3 },
-  'FACTURACION': { name: 'FACTURACIÓN', field: 'FACTURACIÓN', offset: 4 },
-  'EMPACADO': { name: 'EMPACADO', field: 'EMPACADO', offset: 7 },
-  'ENTREGA': { name: 'PROY. ENTREGA', field: 'PROY. ENTREGA', offset: 8 }
-};
-
-// ============= STATE =============
-let idToken = null;
-let editMode = false;
-let allOrders = [];
-let currentFilter = null; // { type: 'stage', value: 'RECIBO' } or { type: 'date', value: '2025-12-10' }
-let currentMonth = new Date();
-let gapChart = null;
-let stageChart = null;
-
-// ============= UTILITY FUNCTIONS =============
-
-// JSONP helper
-function jsonp(url) {
-  return new Promise((resolve, reject) => {
-    const cb = 'cb_' + Math.random().toString(36).slice(2);
-    const s = document.createElement('script');
-    window[cb] = (payload) => {
-      try {
-        resolve(payload);
-      } finally {
-        try { delete window[cb]; } catch(e) {}
-        s.remove();
-      }
-    };
-    s.onerror = () => {
-      try { delete window[cb]; } catch(e) {}
-      s.remove();
-      reject(new Error('network'));
-    };
-    s.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cb + '&_=' + Date.now();
-    document.body.appendChild(s);
-  });
-}
-
-// Date parsing and formatting
-const monES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-
-function parseIsoDate(v) {
-  if (!v) return null;
-  const m = /^(\d{4}[-]\d{2}[-]\d{2})/.exec(v);
-  if (!m) return null;
-  return new Date(m[1] + 'T00:00:00Z');
-}
-
-function formatDateDDMonYY(date) {
-  if (!date) return '—';
-  const d = date.getUTCDate();
-  const m = date.getUTCMonth();
-  const y = date.getUTCFullYear();
-  return `${String(d).padStart(2, '0')}-${monES[m]}-${String(y).slice(-2)}`;
-}
-
-function formatDateISO(date) {
-  if (!date) return '';
-  const y = date.getUTCFullYear();
-  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const d = String(date.getUTCDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
-
-function addDays(date, days) {
-  if (!date) return null;
-  const result = new Date(date);
-  result.setUTCDate(result.getUTCDate() + days);
-  return result;
-}
-
-function daysDiff(date1, date2) {
-  if (!date1 || !date2) return null;
-  return Math.round((date2 - date1) / (1000 * 60 * 60 * 24));
-}
-
-// ============= DATA PROCESSING =============
-
-function calculateTheoreticalDates(order) {
-  const recibo = parseIsoDate(order['RECIBO F8']);
-  if (!recibo) return {};
-  
-  const theoretical = {};
-  Object.keys(STAGES).forEach(stageKey => {
-    const stage = STAGES[stageKey];
-    theoretical[stage.field] = addDays(recibo, stage.offset);
-  });
-  
-  return theoretical;
-}
-
-function calculateDeltas(order, theoretical) {
-  const deltas = {};
-  
-  Object.keys(STAGES).forEach(stageKey => {
-    const stage = STAGES[stageKey];
-    const realDate = parseIsoDate(order[stage.field]);
-    const theoDate = theoretical[stage.field];
-    
-    if (realDate && theoDate) {
-      deltas[stage.field] = daysDiff(theoDate, realDate);
-    }
-  });
-  
-  return deltas;
-}
-
-function getCurrentStage(order, theoretical, referenceDate = null) {
-  const refDate = referenceDate 
-    ? (referenceDate instanceof Date ? new Date(referenceDate.getTime()) : new Date(referenceDate))
-    : new Date();
-  refDate.setHours(0, 0, 0, 0);
-  
-  // Find which stage should be happening on referenceDate based on theoretical dates
-  const stageKeys = Object.keys(STAGES);
-  for (let i = stageKeys.length - 1; i >= 0; i--) {
-    const stage = STAGES[stageKeys[i]];
-    const theoDate = theoretical[stage.field];
-    if (theoDate && theoDate <= refDate) {
-      return stageKeys[i];
-    }
-  }
-  
-  return 'RECIBO';
-}
-
-function processOrders(rawOrders) {
-  return rawOrders.map(order => {
-    const theoretical = calculateTheoreticalDates(order);
-    const deltas = calculateDeltas(order, theoretical);
-    const currentStage = getCurrentStage(order, theoretical);
-    
-    return {
-      ...order,
-      theoretical,
-      deltas,
-      currentStage
-    };
-  });
-}
-
-// ============= DATA FETCHING =============
-
-async function fetchAllOrders() {
-  try {
-    const url = `${A}?route=orders.list&pageSize=1000`;
-    const res = await jsonp(url);
-    
-    if (res && res.status === 'ok' && res.data && res.data.rows) {
-      allOrders = processOrders(res.data.rows);
-      return allOrders;
-    }
-    
-    return [];
-  } catch (e) {
-    console.error('Error fetching orders:', e);
-    return [];
-  }
-}
-
-// ============= UI RENDERING =============
-
-function updateFlowBlocks(ordersToCount = null, referenceDate = null) {
-  // If ordersToCount is not provided, use allOrders
-  const orders = ordersToCount || allOrders;
-  
-  const stageCounts = {};
-  Object.keys(STAGES).forEach(key => stageCounts[key] = 0);
-  
-  orders.forEach(order => {
-    // If a reference date is provided, recalculate the stage for that date
-    let stageToCount;
-    if (referenceDate && order.theoretical) {
-      stageToCount = getCurrentStage(order, order.theoretical, referenceDate);
-    } else {
-      stageToCount = order.currentStage;
-    }
-    
-    if (stageToCount) {
-      stageCounts[stageToCount]++;
-    }
-  });
-  
-  Object.keys(STAGES).forEach(stageKey => {
-    const countEl = document.getElementById(`count-${stageKey.toLowerCase()}`);
-    if (countEl) {
-      countEl.textContent = stageCounts[stageKey] || 0;
-    }
-  });
-}
-
-function updateQuickStats() {
-  const total = allOrders.length;
-  
-  // Count orders with ENTREGA REAL (completed)
-  const completados = allOrders.filter(order => order['ENTREGA REAL']).length;
-  const enProceso = total - completados;
-  
-  // Count orders with positive deltas (delayed)
-  const conRetraso = allOrders.filter(order => {
-    return Object.values(order.deltas).some(delta => delta > 0);
-  }).length;
-  
-  // Update UI
-  document.getElementById('stat-total').textContent = total;
-  document.getElementById('stat-proceso').textContent = enProceso;
-  document.getElementById('stat-completados').textContent = completados;
-  document.getElementById('stat-retraso').textContent = conRetraso;
-}
-
-function renderOrdersList(orders) {
-  const listEl = document.getElementById('ordersList');
-  if (!listEl) return;
-  
-  if (!orders || orders.length === 0) {
-    listEl.innerHTML = '<p class="loading-message">No hay requisiciones para mostrar</p>';
-    return;
-  }
-  
-  const html = orders.map(order => {
-    const f8 = order['F8 SALMI'] || '—';
-    const unidad = order['UNIDAD'] || '—';
-    const grupo = order['GRUPO'] || '—';
-    const recibo = order['RECIBO F8'] ? formatDateDDMonYY(parseIsoDate(order['RECIBO F8'])) : '—';
-    const currentStage = STAGES[order.currentStage];
-    
-    // Get current stage theoretical and real dates
-    let theoDate = '—';
-    let realDate = '—';
-    let delta = null;
-    
-    if (currentStage) {
-      if (order.theoretical[currentStage.field]) {
-        theoDate = formatDateDDMonYY(order.theoretical[currentStage.field]);
-      }
-      if (order[currentStage.field]) {
-        realDate = formatDateDDMonYY(parseIsoDate(order[currentStage.field]));
-      }
-      delta = order.deltas[currentStage.field];
-    }
-    
-    let deltaHtml = '';
-    if (delta !== null && delta !== undefined) {
-      const deltaClass = delta > 0 ? 'positive' : delta < 0 ? 'negative' : 'zero';
-      const deltaSign = delta > 0 ? '+' : '';
-      deltaHtml = `<span class="date-delta ${deltaClass}">${deltaSign}${delta}d</span>`;
-    }
-    
-    // Calculate total progress
-    let completedStages = 0;
-    Object.keys(STAGES).forEach(stageKey => {
-      const stage = STAGES[stageKey];
-      if (order[stage.field]) {
-        completedStages++;
-      }
-    });
-    const totalStages = Object.keys(STAGES).length;
-    const progressPercent = Math.round((completedStages / totalStages) * 100);
-    
-    return `
-      <div class="order-card" data-order-id="${f8}" title="Click para ver detalles">
-        <div class="order-card-header">
-          <div class="order-id">${f8}</div>
-          <div class="order-stage">${currentStage ? currentStage.name : '—'}</div>
-        </div>
-        <div class="order-info"><strong>Unidad:</strong> ${unidad}</div>
-        <div class="order-info"><strong>Grupo:</strong> ${grupo}</div>
-        <div class="order-info"><strong>Recibido:</strong> ${recibo}</div>
-        <div class="order-info" style="margin-top:4px;">
-          <strong>Progreso:</strong> ${completedStages}/${totalStages} etapas (${progressPercent}%)
-        </div>
-        <div class="order-dates">
-          <div class="date-item">
-            <div class="date-label">Fecha teórica (${currentStage ? currentStage.name : '—'})</div>
-            <div class="date-value">${theoDate}</div>
-          </div>
-          <div class="date-item">
-            <div class="date-label">Fecha real (${currentStage ? currentStage.name : '—'})</div>
-            <div class="date-value ${editMode ? 'editable' : ''}" data-stage="${order.currentStage}" title="${editMode ? 'Click para editar' : ''}">${realDate}</div>
-            ${deltaHtml}
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('');
-  
-  listEl.innerHTML = html;
-  
-  // Add click handlers for editable dates
-  if (editMode) {
-    listEl.querySelectorAll('.date-value.editable').forEach(dateEl => {
-      dateEl.addEventListener('click', (e) => {
-        e.stopPropagation();
-        handleDateEdit(dateEl);
-      });
-    });
-  }
-}
-
-async function handleDateEdit(dateEl) {
-  if (!idToken) {
-    alert('Debes iniciar sesión primero');
-    return;
-  }
-  
-  const orderCard = dateEl.closest('.order-card');
-  if (!orderCard) return;
-  
-  const orderId = orderCard.dataset.orderId;
-  const order = allOrders.find(o => o['F8 SALMI'] === orderId);
-  if (!order) return;
-  
-  const currentStage = STAGES[order.currentStage];
-  if (!currentStage) return;
-  
-  const field = currentStage.field;
-  const oldValue = dateEl.textContent.trim();
-  
-  // Create input
-  const input = document.createElement('input');
-  input.type = 'date';
-  input.style.width = '100%';
-  input.style.fontSize = '12px';
-  
-  // Parse existing date (format: DD-mon-YY)
-  if (oldValue !== '—') {
-    const m = /^(\d{2})-(\w{3})-(\d{2})$/.exec(oldValue);
-    if (m) {
-      const day = m[1];
-      const month = m[2].toLowerCase();
-      const year = m[3];
-      const monthIdx = monES.indexOf(month);
-      if (monthIdx >= 0) {
-        input.value = `20${year}-${String(monthIdx + 1).padStart(2, '0')}-${day}`;
-      }
-    }
-  }
-  
-  dateEl.textContent = '';
-  dateEl.appendChild(input);
-  input.focus();
-  
-  async function save() {
-    const newValue = input.value.trim();
-    
-    // Check if value changed - compare by converting newValue to same format
-    let hasChanged = true;
-    if (!newValue) {
-      dateEl.textContent = oldValue;
-      return;
-    }
-    
-    if (oldValue !== '—') {
-      // Convert newValue (YYYY-MM-DD) to DD-mon-YY format for comparison
-      const [y, m, d] = newValue.split('-');
-      const monthIdx = parseInt(m, 10) - 1;
-      const convertedNew = `${d}-${monES[monthIdx]}-${y.slice(-2)}`;
-      if (convertedNew === oldValue) {
-        hasChanged = false;
-      }
-    }
-    
-    if (!hasChanged) {
-      dateEl.textContent = oldValue;
-      return;
-    }
-    
-    dateEl.textContent = 'Guardando...';
-    
-    try {
-      const url = `${B}?route=orders.update&idToken=${encodeURIComponent(idToken)}&id=${encodeURIComponent(orderId)}&field=${encodeURIComponent(field)}&value=${encodeURIComponent(newValue)}`;
-      const res = await jsonp(url);
-      
-      if (res && res.status === 'ok') {
-        // Update local data
-        order[field] = newValue + 'T00:00:00Z';
-        
-        // Recalculate
-        const theoretical = calculateTheoreticalDates(order);
-        const deltas = calculateDeltas(order, theoretical);
-        order.theoretical = theoretical;
-        order.deltas = deltas;
-        
-        // Re-render
-        await init();
-        
-        alert('Fecha actualizada correctamente');
-      } else {
-        dateEl.textContent = oldValue;
-        alert('Error al actualizar: ' + (res?.error || 'desconocido'));
-      }
-    } catch (e) {
-      dateEl.textContent = oldValue;
-      alert('Error de red al actualizar');
-      console.error(e);
-    }
-  }
-  
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      save();
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      dateEl.textContent = oldValue;
-    }
-  });
-  
-  input.addEventListener('blur', () => {
-    setTimeout(() => {
-      if (document.activeElement !== input) {
-        save();
-      }
-    }, 100);
-  });
-}
-
-function filterOrdersByStage(stageKey) {
-  currentFilter = { type: 'stage', value: stageKey };
-  
-  // Update block styling
-  document.querySelectorAll('.flow-block').forEach(block => {
-    block.classList.remove('active');
-  });
-  document.querySelector(`.flow-block[data-stage="${stageKey}"]`)?.classList.add('active');
-  
-  // Filter orders
-  const filtered = allOrders.filter(order => order.currentStage === stageKey);
-  
-  // Update title
-  const stage = STAGES[stageKey];
-  document.getElementById('panel-title').textContent = `${stage.name} (${filtered.length} requisiciones)`;
-  document.getElementById('btnClearFilter').style.display = 'inline-block';
-  
-  renderOrdersList(filtered);
-}
-
-function filterOrdersByDate(dateStr) {
-  currentFilter = { type: 'date', value: dateStr };
-  
-  const targetDate = new Date(dateStr + 'T00:00:00Z');
-  
-  // Filter orders that have the selected date in ANY stage (theoretical or real)
-  const filtered = allOrders.filter(order => {
-    // Check theoretical dates
-    const hasTheoDate = Object.values(order.theoretical).some(theoDate => {
-      if (!theoDate) return false;
-      return formatDateISO(theoDate) === dateStr;
-    });
-    
-    // Check real dates
-    const hasRealDate = Object.keys(STAGES).some(stageKey => {
-      const stage = STAGES[stageKey];
-      const realDate = parseIsoDate(order[stage.field]);
-      if (!realDate) return false;
-      return formatDateISO(realDate) === dateStr;
-    });
-    
-    return hasTheoDate || hasRealDate;
-  });
-  
-  // Update flow blocks to show counts for this date, using the selected date as reference
-  updateFlowBlocks(filtered, targetDate);
-  
-  // Update title
-  document.getElementById('panel-title').textContent = `Requisiciones del ${formatDateDDMonYY(targetDate)} (${filtered.length} requisiciones)`;
-  document.getElementById('btnClearFilter').style.display = 'inline-block';
-  
-  renderOrdersList(filtered);
-}
-
-function clearFilter() {
-  currentFilter = null;
-  
-  // Clear block styling
-  document.querySelectorAll('.flow-block').forEach(block => {
-    block.classList.remove('active');
-  });
-  
-  // Clear calendar selection
-  document.querySelectorAll('.calendar-day').forEach(day => {
-    day.classList.remove('selected');
-  });
-  
-  // Reset flow blocks to show all orders
-  updateFlowBlocks(allOrders);
-  
-  document.getElementById('panel-title').textContent = 'Todas las requisiciones';
-  document.getElementById('btnClearFilter').style.display = 'none';
-  
-  renderOrdersList(allOrders);
-}
-
-// ============= CALENDAR =============
-
-function renderCalendar() {
-  const calendarEl = document.getElementById('calendar');
-  if (!calendarEl) return;
-  
-  const year = currentMonth.getFullYear();
-  const month = currentMonth.getMonth();
-  
-  // Update title
-  document.getElementById('calendarTitle').textContent = 
-    `${monES[month]} ${year}`;
-  
-  // Get first day of month and number of days
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const daysInMonth = lastDay.getDate();
-  const startDay = firstDay.getDay(); // 0 = Sunday
-  
-  // Get days from previous month
-  const prevMonth = new Date(year, month, 0);
-  const daysInPrevMonth = prevMonth.getDate();
-  
-  // Build calendar grid
-  let html = '';
-  
-  // Day headers
-  ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].forEach(day => {
-    html += `<div class="calendar-day-header">${day}</div>`;
-  });
-  
-  // Count orders per day
-  const ordersByDate = {};
-  allOrders.forEach(order => {
-    Object.values(order.theoretical).forEach(theoDate => {
-      if (theoDate) {
-        const dateStr = formatDateISO(theoDate);
-        ordersByDate[dateStr] = (ordersByDate[dateStr] || 0) + 1;
-      }
-    });
-  });
-  
-  // Previous month days
-  for (let i = startDay - 1; i >= 0; i--) {
-    const day = daysInPrevMonth - i;
-    html += `<div class="calendar-day other-month">${day}</div>`;
-  }
-  
-  // Current month days
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  for (let day = 1; day <= daysInMonth; day++) {
-    const date = new Date(year, month, day);
-    const dateStr = formatDateISO(new Date(Date.UTC(year, month, day)));
-    const count = ordersByDate[dateStr] || 0;
-    
-    const classes = ['calendar-day'];
-    if (date.toDateString() === today.toDateString()) {
-      classes.push('today');
-    } else if (date < today) {
-      classes.push('past');
-    }
-    if (currentFilter?.type === 'date' && currentFilter.value === dateStr) {
-      classes.push('selected');
-    }
-    
-    const badge = count > 0 ? `<div class="calendar-day-badge">${count}</div>` : '';
-    html += `<div class="${classes.join(' ')}" data-date="${dateStr}">
-      <div class="calendar-day-number">${day}</div>
-      ${badge}
-    </div>`;
-  }
-  
-  // Next month days
-  const totalCells = Math.ceil((startDay + daysInMonth) / 7) * 7;
-  const nextMonthDays = totalCells - (startDay + daysInMonth);
-  for (let day = 1; day <= nextMonthDays; day++) {
-    html += `<div class="calendar-day other-month">${day}</div>`;
-  }
-  
-  calendarEl.innerHTML = html;
-  
-  // Add click handlers
-  calendarEl.querySelectorAll('.calendar-day:not(.other-month)').forEach(dayEl => {
-    dayEl.addEventListener('click', () => {
-      const dateStr = dayEl.dataset.date;
-      if (dateStr) {
-        filterOrdersByDate(dateStr);
-      }
-    });
-  });
-}
-
-function changeMonth(offset) {
-  currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + offset, 1);
-  renderCalendar();
-}
-
-// ============= CHARTS =============
-
-function renderGapChart() {
-  const ctx = document.getElementById('gapChart')?.getContext('2d');
-  if (!ctx) return;
-  
-  // Aggregate deltas over time
-  const deltasByDate = {};
-  
-  allOrders.forEach(order => {
-    const recibo = order['RECIBO F8'];
-    if (!recibo) return;
-    
-    const reciboDate = parseIsoDate(recibo);
-    if (!reciboDate) return;
-    
-    const dateStr = formatDateISO(reciboDate);
-    
-    if (!deltasByDate[dateStr]) {
-      deltasByDate[dateStr] = { sum: 0, count: 0 };
-    }
-    
-    // Sum all stage deltas for this order
-    let orderDelta = 0;
-    let deltaCount = 0;
-    Object.values(order.deltas).forEach(delta => {
-      if (delta !== null && delta !== undefined) {
-        orderDelta += delta;
-        deltaCount++;
-      }
-    });
-    
-    if (deltaCount > 0) {
-      deltasByDate[dateStr].sum += orderDelta;
-      deltasByDate[dateStr].count++;
-    }
-  });
-  
-  // Sort by date and calculate averages
-  const dates = Object.keys(deltasByDate).sort();
-  const avgDeltas = dates.map(date => {
-    const data = deltasByDate[date];
-    return data.count > 0 ? data.sum / data.count : 0;
-  });
-  
-  // Calculate cumulative
-  const cumulative = [];
-  let sum = 0;
-  avgDeltas.forEach(avg => {
-    sum += avg;
-    cumulative.push(sum);
-  });
-  
-  if (gapChart) gapChart.destroy();
-  
-  gapChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: dates.map(d => formatDateDDMonYY(parseIsoDate(d))),
-      datasets: [
-        {
-          label: 'Delta promedio',
-          data: avgDeltas,
-          borderColor: '#ef4444',
-          backgroundColor: 'rgba(239, 68, 68, 0.1)',
-          tension: 0.3
-        },
-        {
-          label: 'Delta acumulado',
-          data: cumulative,
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          tension: 0.3
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'bottom' }
-      },
-      scales: {
-        y: {
-          title: { display: true, text: 'Días' }
-        }
-      }
-    }
-  });
-}
-
-function renderStageDeltas() {
-  const ctx = document.getElementById('stageDeltas')?.getContext('2d');
-  if (!ctx) return;
-  
-  // Calculate average delta per stage
-  const stageDeltas = {};
-  const stageCounts = {};
-  
-  Object.keys(STAGES).forEach(stageKey => {
-    stageDeltas[stageKey] = 0;
-    stageCounts[stageKey] = 0;
-  });
-  
-  allOrders.forEach(order => {
-    Object.keys(STAGES).forEach(stageKey => {
-      const stage = STAGES[stageKey];
-      const delta = order.deltas[stage.field];
-      if (delta !== null && delta !== undefined) {
-        stageDeltas[stageKey] += delta;
-        stageCounts[stageKey]++;
-      }
-    });
-  });
-  
-  const labels = [];
-  const data = [];
-  
-  Object.keys(STAGES).forEach(stageKey => {
-    const stage = STAGES[stageKey];
-    labels.push(stage.name);
-    const avg = stageCounts[stageKey] > 0 ? stageDeltas[stageKey] / stageCounts[stageKey] : 0;
-    data.push(avg);
-  });
-  
-  if (stageChart) stageChart.destroy();
-  
-  stageChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Delta promedio (días)',
-        data,
-        backgroundColor: data.map(d => d > 0 ? '#ef4444' : d < 0 ? '#10b981' : '#6b7280')
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false }
-      },
-      scales: {
-        y: {
-          title: { display: true, text: 'Días' }
-        }
-      }
-    }
-  });
-}
-
-function updateTimeKPIs() {
-  // Calculate theoretical average time
-  let theoSum = 0;
-  let theoCount = 0;
-  
-  allOrders.forEach(order => {
-    const recibo = parseIsoDate(order['RECIBO F8']);
-    const lastStage = order.theoretical['PROY. ENTREGA'];
-    if (recibo && lastStage) {
-      theoSum += daysDiff(recibo, lastStage);
-      theoCount++;
-    }
-  });
-  
-  const avgTheo = theoCount > 0 ? theoSum / theoCount : 0;
-  
-  // Calculate real average time
-  let realSum = 0;
-  let realCount = 0;
-  
-  allOrders.forEach(order => {
-    const recibo = parseIsoDate(order['RECIBO F8']);
-    const entregaReal = parseIsoDate(order['ENTREGA REAL']);
-    if (recibo && entregaReal) {
-      realSum += daysDiff(recibo, entregaReal);
-      realCount++;
-    }
-  });
-  
-  const avgReal = realCount > 0 ? realSum / realCount : 0;
-  
-  // Calculate total delta
-  let deltaSum = 0;
-  let deltaCount = 0;
-  
-  allOrders.forEach(order => {
-    Object.values(order.deltas).forEach(delta => {
-      if (delta !== null && delta !== undefined) {
-        deltaSum += delta;
-        deltaCount++;
-      }
-    });
-  });
-  
-  const avgDelta = deltaCount > 0 ? deltaSum / deltaCount : 0;
-  
-  // Update UI
-  document.getElementById('kpi-teorico').textContent = avgTheo.toFixed(1) + 'd';
-  document.getElementById('kpi-real').textContent = avgReal > 0 ? avgReal.toFixed(1) + 'd' : '—';
-  document.getElementById('kpi-delta').textContent = avgDelta.toFixed(1) + 'd';
-  document.getElementById('kpi-acumulado').textContent = deltaSum.toFixed(1) + 'd';
-}
-
-// ============= EXPORT FUNCTION =============
-
-function exportData() {
-  // Create CSV content
-  const headers = ['F8 SALMI', 'UNIDAD', 'GRUPO', 'RECIBO F8', 'Etapa Actual', 'Fecha Teórica', 'Fecha Real', 'Delta (días)', 'Progreso'];
-  
-  const rows = allOrders.map(order => {
-    const currentStage = STAGES[order.currentStage];
-    const f8 = order['F8 SALMI'] || '';
-    const unidad = order['UNIDAD'] || '';
-    const grupo = order['GRUPO'] || '';
-    const recibo = order['RECIBO F8'] ? formatDateDDMonYY(parseIsoDate(order['RECIBO F8'])) : '';
-    const stageName = currentStage ? currentStage.name : '';
-    
-    let theoDate = '';
-    let realDate = '';
-    let delta = '';
-    
-    if (currentStage) {
-      theoDate = order.theoretical[currentStage.field] ? formatDateDDMonYY(order.theoretical[currentStage.field]) : '';
-      realDate = order[currentStage.field] ? formatDateDDMonYY(parseIsoDate(order[currentStage.field])) : '';
-      const deltaVal = order.deltas[currentStage.field];
-      delta = deltaVal !== null && deltaVal !== undefined ? deltaVal : '';
-    }
-    
-    let completedStages = 0;
-    Object.keys(STAGES).forEach(stageKey => {
-      const stage = STAGES[stageKey];
-      if (order[stage.field]) completedStages++;
-    });
-    const totalStages = Object.keys(STAGES).length;
-    const progress = `${completedStages}/${totalStages}`;
-    
-    return [f8, unidad, grupo, recibo, stageName, theoDate, realDate, delta, progress];
-  });
-  
-  // Build CSV
-  const csvContent = [
-    headers.join(','),
-    ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-  ].join('\n');
-  
-  // Download
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  link.setAttribute('href', url);
-  link.setAttribute('download', `requisiciones_flujo_${new Date().toISOString().slice(0,10)}.csv`);
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
-
-// ============= EVENT HANDLERS =============
-
-function setupEventHandlers() {
-  // Flow blocks
-  document.querySelectorAll('.flow-block').forEach(block => {
-    block.addEventListener('click', () => {
-      const stage = block.dataset.stage;
-      filterOrdersByStage(stage);
-    });
-  });
-  
-  // Clear filter button
-  document.getElementById('btnClearFilter')?.addEventListener('click', clearFilter);
-  
-  // Calendar navigation
-  document.getElementById('btnPrevMonth')?.addEventListener('click', () => changeMonth(-1));
-  document.getElementById('btnNextMonth')?.addEventListener('click', () => changeMonth(1));
-  
-  // Refresh button
-  document.getElementById('btnRefresh')?.addEventListener('click', init);
-  
-  // Export button
-  document.getElementById('btnExport')?.addEventListener('click', exportData);
-  
-  // Login
-  document.getElementById('btnLogin')?.addEventListener('click', () => {
-    if (window.google?.accounts?.id) {
-      google.accounts.id.initialize({
-        client_id: CLIENT_ID,
-        callback: (r) => {
-          idToken = r.credential;
-          document.getElementById('btnEditMode').disabled = false;
-          document.getElementById('btnLogin').textContent = 'Sesión iniciada';
-          alert('Sesión iniciada. Activa "Modo edición" para editar fechas.');
-        }
-      });
-      google.accounts.id.prompt();
-    } else {
-      alert('Falta librería de Google Identity');
-    }
-  });
-  
-  // Edit mode
-  document.getElementById('btnEditMode')?.addEventListener('click', () => {
-    editMode = !editMode;
-    const btn = document.getElementById('btnEditMode');
-    btn.textContent = `Modo edición: ${editMode ? 'ON' : 'OFF'}`;
-    btn.classList.toggle('edit-on', editMode);
-    
-    // Re-render current view
-    if (currentFilter?.type === 'stage') {
-      filterOrdersByStage(currentFilter.value);
-    } else if (currentFilter?.type === 'date') {
-      filterOrdersByDate(currentFilter.value);
-    } else {
-      renderOrdersList(allOrders);
-    }
-  });
-}
-
-// ============= INITIALIZATION =============
-
-async function init() {
-  console.log('Initializing Flow Dashboard...');
-  
-  // Show loading
-  document.getElementById('ordersList').innerHTML = '<p class="loading-message">Cargando requisiciones...</p>';
-  
-  // Fetch data
-  await fetchAllOrders();
-  
-  // Render UI
-  updateQuickStats();
-  updateFlowBlocks();
-  renderOrdersList(allOrders);
-  renderCalendar();
-  renderGapChart();
-  renderStageDeltas();
-  updateTimeKPIs();
-  
-  // Setup event handlers
-  setupEventHandlers();
-  
-  console.log(`Loaded ${allOrders.length} orders`);
-}
-
-// Start the app
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
+if (window.__FLOW_APP_LOADED__) {
+  console.log('flow-app.js ya cargado, omitiendo.');
 } else {
-  init();
+  window.__FLOW_APP_LOADED__ = true;
+
+  const A = window.APP.A_URL;
+  const B = window.APP.B_URL;
+  const CLIENT_ID = window.APP.CLIENT_ID;
+
+  // Orden canónico de etapas, alineado con deriveStage_ del backend
+  const STAGES_ORDER = [
+    'F8 RECIBIDA',
+    'EN ASIGNACIÓN',
+    'SALIDA DE SALMI',
+    'FACTURADO',
+    'EMPACADO',
+    'ENTREGADA'
+  ];
+
+  let idToken = null;
+  let editMode = false;
+
+  // Helpers básicos
+  function jsonp(url) {
+    return new Promise((resolve, reject) => {
+      const cb = 'cb_' + Math.random().toString(36).slice(2);
+      const s = document.createElement('script');
+      window[cb] = payload => {
+        try { resolve(payload); }
+        finally {
+          try { delete window[cb]; } catch(e){}
+          s.remove();
+        }
+      };
+      s.onerror = () => {
+        try { delete window[cb]; } catch(e){}
+        s.remove();
+        reject(new Error('network'));
+      };
+      s.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cb + '&_=' + Date.now();
+      document.body.appendChild(s);
+    });
+  }
+
+  function parseIsoDate(v) {
+    if (!v) return null;
+    if (v instanceof Date) return v;
+    // Esperamos formato 'YYYY-MM-DD' o 'YYYY-MM-DDT00:00:00.000Z'
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v));
+    if (!m) return null;
+    return new Date(m[1] + '-' + m[2] + '-' + m[3] + 'T00:00:00Z');
+  }
+
+  function daysBetween(d1, d2) {
+    if (!d1 || !d2) return null;
+    const t1 = d1.getTime();
+    const t2 = d2.getTime();
+    return (t2 - t1) / 86400000;
+  }
+
+  // ============================
+  //  RENDER DE LISTA IZQUIERDA
+  // ============================
+  function renderOrdersList(rows) {
+    const container = document.getElementById('ordersList');
+    if (!container) return;
+    if (!rows || !rows.length) {
+      container.innerHTML = '<p class="loading-message">Sin requisiciones para este criterio.</p>';
+      return;
+    }
+
+    const html = rows.map(r => {
+      const id = r['F8 SALMI'] || '(sin F8)';
+      const unidad = r['UNIDAD'] || '';
+      const tipo = r['TIPO'] || '';
+      const grupo = r['GRUPO'] || '';
+      const estado = r['ESTADO'] || '';
+      const rec = r['RECIBO F8'] ? formatDateShort(r['RECIBO F8']) : '—';
+      const proy = r['PROY. ENTREGA'] ? formatDateShort(r['PROY. ENTREGA']) : '—';
+      const real = r['ENTREGA REAL'] ? formatDateShort(r['ENTREGA REAL']) : '—';
+
+      const recD = parseIsoDate(r['RECIBO F8']);
+      const proyD = parseIsoDate(r['PROY. ENTREGA']);
+      const realD = parseIsoDate(r['ENTREGA REAL']);
+      const teor  = (recD && proyD) ? Math.round(daysBetween(recD, proyD)) : null;
+      const realT = (recD && realD) ? Math.round(daysBetween(recD, realD)) : null;
+      let deltaHtml = '<span class="date-delta zero">—</span>';
+      if (teor != null && realT != null) {
+        const d = realT - teor;
+        const cls = d > 0 ? 'positive' : (d < 0 ? 'negative' : 'zero');
+        deltaHtml = `<span class="date-delta ${cls}">${d > 0 ? '+'+d : d} días</span>`;
+      }
+
+      return `
+        <div class="order-card">
+          <div class="order-card-header">
+            <span class="order-id">${id}</span>
+            <span class="order-stage">${estado}</span>
+          </div>
+          <div class="order-info">
+            <div>${unidad}</div>
+            <div>${tipo} · ${grupo}</div>
+          </div>
+          <div class="order-dates">
+            <div class="date-item">
+              <span class="date-label">Recibo F8</span>
+              <span class="date-value">${rec}</span>
+            </div>
+            <div class="date-item">
+              <span class="date-label">Proy. Entrega</span>
+              <span class="date-value">${proy}</span>
+            </div>
+            <div class="date-item">
+              <span class="date-label">Entrega Real</span>
+              <span class="date-value">${real}</span>
+            </div>
+            <div class="date-item">
+              <span class="date-label">Delta</span>
+              ${deltaHtml}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    container.innerHTML = html;
+  }
+
+  function formatDateShort(v) {
+    const d = parseIsoDate(v);
+    if (!d) return '—';
+    const dd = String(d.getUTCDate()).padStart(2,'0');
+    const mm = String(d.getUTCMonth()+1).padStart(2,'0');
+    const yy = String(d.getUTCFullYear()).slice(-2);
+    return dd + '/' + mm + '/' + yy;
+  }
+
+  // ============================
+  //  QUICK STATS (tarjetas arriba)
+  // ============================
+  function updateQuickStatsFromRows(rows) {
+    const totalEl = document.getElementById('stat-total');
+    const procEl  = document.getElementById('stat-proceso');
+    const compEl  = document.getElementById('stat-completados');
+    const retrEl  = document.getElementById('stat-retraso');
+
+    if (!rows || !rows.length) {
+      if (totalEl) totalEl.textContent = '0';
+      if (procEl)  procEl.textContent  = '0';
+      if (compEl)  compEl.textContent  = '0';
+      if (retrEl)  retrEl.textContent  = '0';
+      return;
+    }
+
+    let total = rows.length;
+    let completados = 0;
+    let enProceso = 0;
+    let retraso = 0;
+
+    rows.forEach(r => {
+      const realD = parseIsoDate(r['ENTREGA REAL']);
+      const proyD = parseIsoDate(r['PROY. ENTREGA']);
+      if (realD) completados++;
+      else enProceso++;
+
+      if (realD && proyD && realD > proyD) retraso++;
+    });
+
+    if (totalEl) totalEl.textContent = total;
+    if (procEl)  procEl.textContent  = enProceso;
+    if (compEl)  compEl.textContent  = completados;
+    if (retrEl)  retrEl.textContent  = retraso;
+  }
+
+  // ============================
+  //  GAP ANALYSIS (deltas)
+  // ============================
+  let _gapChart, _stageDeltasChart;
+
+  function updateGapAndTimeKpisFromRows(rows) {
+    const kTeor   = document.getElementById('kpi-teorico');
+    const kReal   = document.getElementById('kpi-real');
+    const kDelta  = document.getElementById('kpi-delta');
+    const kAcum   = document.getElementById('kpi-acumulado');
+
+    if (!rows || !rows.length) {
+      if (kTeor)  kTeor.textContent  = '—';
+      if (kReal)  kReal.textContent  = '—';
+      if (kDelta) kDelta.textContent = '—';
+      if (kAcum)  kAcum.textContent  = '—';
+      if (_gapChart) _gapChart.destroy();
+      if (_stageDeltasChart) _stageDeltasChart.destroy();
+      return;
+    }
+
+    let sumTeor=0, nTeor=0;
+    let sumReal=0, nReal=0;
+    let sumDelta=0;
+
+    // Para chart de deltas por fecha, agrupamos por fecha PROY
+    const deltaByProjDate = {}; // key YYYY-MM-DD -> { deltaSum, count }
+
+    rows.forEach(r => {
+      const recD  = parseIsoDate(r['RECIBO F8']);
+      const proyD = parseIsoDate(r['PROY. ENTREGA']);
+      const realD = parseIsoDate(r['ENTREGA REAL']);
+
+      if (recD && proyD) {
+        const t = daysBetween(recD, proyD);
+        if (t != null) { sumTeor += t; nTeor++; }
+      }
+      if (recD && realD) {
+        const tr = daysBetween(recD, realD);
+        if (tr != null) { sumReal += tr; nReal++; }
+      }
+      if (recD && proyD && realD) {
+        const t  = daysBetween(recD, proyD);
+        const tr = daysBetween(recD, realD);
+        if (t != null && tr != null) {
+          const d = tr - t;
+          sumDelta += d;
+          const key = toDateKey(proyD);
+          if (!deltaByProjDate[key]) deltaByProjDate[key] = {sum:0,count:0};
+          deltaByProjDate[key].sum += d;
+          deltaByProjDate[key].count++;
+        }
+      }
+    });
+
+    const avgTeor = nTeor ? sumTeor/nTeor : null;
+    const avgReal = nReal ? sumReal/nReal : null;
+    const avgDelta = (nReal && nTeor) ? ( (sumReal - sumTeor) / Math.max(nReal,nTeor) ) : null;
+
+    if (kTeor)  kTeor.textContent  = (avgTeor!=null) ? avgTeor.toFixed(1) : '—';
+    if (kReal)  kReal.textContent  = (avgReal!=null) ? avgReal.toFixed(1) : '—';
+    if (kDelta) kDelta.textContent = (avgDelta!=null) ? avgDelta.toFixed(1) : '—';
+    if (kAcum)  kAcum.textContent  = sumDelta ? sumDelta.toFixed(1) : '0.0';
+
+    // Chart de Gap (delta acumulado por fecha proy)
+    const ctxGap = document.getElementById('gapChart');
+    if (ctxGap) {
+      const labels = Object.keys(deltaByProjDate).sort();
+      let acumulado = 0;
+      const dataAcum = labels.map(d => {
+        const obj = deltaByProjDate[d];
+        acumulado += obj.sum; // sumas brutas por día
+        return acumulado;
+      });
+      if (_gapChart) _gapChart.destroy();
+      _gapChart = new Chart(ctxGap.getContext('2d'),{
+        type:'line',
+        data:{
+          labels,
+          datasets:[{
+            label:'Delta acumulado (días)',
+            data:dataAcum,
+            fill:false,
+            borderColor:'#f97316',
+            tension:0.25
+          }]
+        },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{
+            legend:{ position:'bottom' }
+          },
+          scales:{
+            y:{ ticks:{ callback:v=>v+' d' } }
+          }
+        }
+      });
+    }
+
+    // (Opcional) Stage deltas chart: aquí podríamos hacer un breakdown por etapa,
+    // pero como no definimos fórmula específica de "delta por etapa", lo dejamos vacío o simple.
+    const ctxStage = document.getElementById('stageDeltas');
+    if (ctxStage) {
+      if (_stageDeltasChart) _stageDeltasChart.destroy();
+      // Por ahora mostramos promedio real y teórico como barras, para no dejar vacío.
+      _stageDeltasChart = new Chart(ctxStage.getContext('2d'),{
+        type:'bar',
+        data:{
+          labels:['Teórico','Real'],
+          datasets:[{
+            label:'Tiempo promedio (días)',
+            data:[
+              avgTeor!=null?avgTeor:0,
+              avgReal!=null?avgReal:0
+            ],
+            backgroundColor:['#3b82f6','#ef4444']
+          }]
+        },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{ legend:{ display:false } },
+          scales:{
+            y:{
+              beginAtZero:true,
+              ticks:{ callback:v=>v+' d' }
+            }
+          }
+        }
+      });
+    }
+  }
+
+  function toDateKey(d) {
+    if (!d) return '';
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth()+1).padStart(2,'0');
+    const day = String(d.getUTCDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+
+  // ============================
+  //  CALENDARIO
+  // ============================
+  let currentCalYear, currentCalMonth; // month: 1..12
+  let currentCalData = {}; // { 'YYYY-MM-DD': { total, byStage: {...} } }
+
+  async function loadCalendarMonth(year, month) {
+    currentCalYear = year;
+    currentCalMonth = month;
+    const url = `${A}?route=calendar.monthsummary&year=${year}&month=${month}`;
+    const res = await jsonp(url);
+    if (!res || res.status !== 'ok') {
+      console.warn('Error calendar.monthsummary', res && res.error);
+      return;
+    }
+    currentCalData = res.data || {};
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    const calEl = document.getElementById('calendar');
+    const titleEl = document.getElementById('calendarTitle');
+    if (!calEl || !titleEl) return;
+
+    const year = currentCalYear;
+    const month = currentCalMonth;
+
+    const firstDay = new Date(Date.UTC(year, month-1, 1));
+    const startDow = firstDay.getUTCDay(); // 0=Sunday
+    const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+
+    const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    titleEl.textContent = `${monthNames[month-1]} ${year}`;
+
+    calEl.innerHTML = '';
+
+    const dayNames = ['L','M','X','J','V','S','D'];
+    dayNames.forEach(dn => {
+      const div = document.createElement('div');
+      div.className = 'calendar-day-header';
+      div.textContent = dn;
+      calEl.appendChild(div);
+    });
+
+    let dow = (startDow + 6) % 7; // queremos Lunes=0 .. Domingo=6
+    for (let i=0; i<dow; i++) {
+      const empty = document.createElement('div');
+      empty.className = 'calendar-day other-month';
+      calEl.appendChild(empty);
+    }
+
+    const todayKey = toDateKey(new Date());
+
+    for (let day=1; day<=daysInMonth; day++) {
+      const d = new Date(Date.UTC(year, month-1, day));
+      const key = toDateKey(d);
+      const info = currentCalData[key] || { total:0, byStage:{} };
+      const total = info.total || 0;
+
+      const cell = document.createElement('div');
+      cell.className = 'calendar-day';
+      if (key === todayKey) {
+        cell.classList.add('today');
+      }
+      if (total > 0) {
+        const count = document.createElement('div');
+        count.className = 'calendar-day-number';
+        count.textContent = day;
+        cell.appendChild(count);
+
+        const big = document.createElement('div');
+        big.className = 'calendar-day-badge'; // Reusamos estilo, pero lo hacemos más visible
+        big.textContent = total;
+        cell.appendChild(big);
+
+        // Tooltip con breakdown
+        let tooltip = `Total: ${total}\n`;
+        const bySt = info.byStage || {};
+        Object.keys(bySt).sort().forEach(st => {
+          tooltip += `${st}: ${bySt[st]}\n`;
+        });
+        cell.title = tooltip.trim();
+
+      } else {
+        const count = document.createElement('div');
+        count.className = 'calendar-day-number';
+        count.textContent = day;
+        cell.appendChild(count);
+      }
+
+      cell.addEventListener('click', () => onCalendarDayClick(key));
+      calEl.appendChild(cell);
+    }
+  }
+
+  async function onCalendarDayClick(dateKey) {
+    const title = document.getElementById('panel-title');
+    if (title) title.textContent = `Requisiciones del ${dateKey}`;
+
+    const res = await jsonp(`${A}?route=calendar.daydetails&date=${dateKey}`);
+    if (!res || res.status !== 'ok') {
+      console.warn('calendar.daydetails error', res && res.error);
+      return;
+    }
+    const data = res.data;
+    const rows = data.rows || [];
+
+    renderOrdersList(rows);
+    updateQuickStatsFromRows(rows);
+    updateGapAndTimeKpisFromRows(rows);
+
+    const btnClear = document.getElementById('btnClearFilter');
+    if (btnClear) btnClear.style.display = 'inline-block';
+  }
+
+  // ============================
+  //  CLICK EN BLOCKS DEL FLUJO
+  // ============================
+
+  async function onFlowBlockClick(stageKey) {
+    // Mapear data-stage HTML a etiqueta de etapa del backend
+    const map = {
+      'RECIBO':'F8 RECIBIDA',
+      'ASIGNACION':'EN ASIGNACIÓN',
+      'SALIDA':'SALIDA DE SALMI',
+      'DESPACHO':'SALIDA DE SALMI',   // si quieres diferenciar, podemos cambiarlo
+      'FACTURACION':'FACTURADO',
+      'EMPACADO':'EMPACADO',
+      'ENTREGA':'ENTREGADA'
+    };
+    const baseStage = map[stageKey] || stageKey;
+
+    const idx = STAGES_ORDER.indexOf(baseStage);
+    const states = idx >= 0 ? STAGES_ORDER.slice(idx) : [baseStage];
+
+    let allRows = [];
+    for (const st of states) {
+      const url = `${A}?route=orders.list&page=1&pageSize=500&estado=${encodeURIComponent(st)}`;
+      const res = await jsonp(url);
+      if (res && res.status === 'ok') {
+        allRows = allRows.concat(res.data.rows || []);
+      }
+    }
+
+    // Ordenar de más futuro (etapa más alta) a más pasado
+    allRows.sort((a,b) => {
+      const sa = stageIndexFromRow(a);
+      const sb = stageIndexFromRow(b);
+      return sb - sa; // descendente
+    });
+
+    const title = document.getElementById('panel-title');
+    if (title) title.textContent = `Requisiciones en ${baseStage} y posteriores`;
+
+    renderOrdersList(allRows);
+    updateQuickStatsFromRows(allRows);
+    updateGapAndTimeKpisFromRows(allRows);
+
+    const btnClear = document.getElementById('btnClearFilter');
+    if (btnClear) btnClear.style.display = 'inline-block';
+  }
+
+  function stageIndexFromRow(r) {
+    const st = r['ESTADO'] || '';
+    const idx = STAGES_ORDER.indexOf(st);
+    return idx >= 0 ? idx : -1;
+  }
+
+  // ============================
+  //  INICIALIZACIÓN
+  // ============================
+
+  async function initFlowDashboard() {
+    // Login y modo edición (mismos IDs que en flow-dashboard.html)
+    const btnLogin    = document.getElementById('btnLogin');
+    const btnEditMode = document.getElementById('btnEditMode');
+    const btnRefresh  = document.getElementById('btnRefresh');
+    const btnClear    = document.getElementById('btnClearFilter');
+
+    if (btnLogin) {
+      btnLogin.addEventListener('click', () => {
+        if (window.google?.accounts?.id) {
+          google.accounts.id.initialize({
+            client_id: CLIENT_ID,
+            callback: r => {
+              idToken = r.credential;
+              if (btnEditMode) btnEditMode.disabled = false;
+              btnLogin.textContent = 'Sesión iniciada';
+              alert('Sesión iniciada. Activa “Modo edición” si aplica.');
+            }
+          });
+          google.accounts.id.prompt();
+        } else {
+          alert('Falta librería de Google Identity');
+        }
+      });
+    }
+
+    if (btnEditMode) {
+      btnEditMode.addEventListener('click', () => {
+        editMode = !editMode;
+        btnEditMode.textContent = `Modo edición: ${editMode ? 'ON' : 'OFF'}`;
+        btnEditMode.classList.toggle('edit-on', editMode);
+      });
+    }
+
+    if (btnRefresh) {
+      btnRefresh.addEventListener('click', () => {
+        loadInitialData();
+      });
+    }
+
+    if (btnClear) {
+      btnClear.addEventListener('click', () => {
+        btnClear.style.display = 'none';
+        const title = document.getElementById('panel-title');
+        if (title) title.textContent = 'Todas las requisiciones';
+        loadInitialData(); // recarga general
+      });
+    }
+
+    // Navegación de calendario
+    const btnPrevMonth = document.getElementById('btnPrevMonth');
+    const btnNextMonth = document.getElementById('btnNextMonth');
+
+    if (btnPrevMonth) {
+      btnPrevMonth.addEventListener('click', () => {
+        let y = currentCalYear;
+        let m = currentCalMonth - 1;
+        if (m < 1) { m = 12; y--; }
+        loadCalendarMonth(y, m);
+      });
+    }
+    if (btnNextMonth) {
+      btnNextMonth.addEventListener('click', () => {
+        let y = currentCalYear;
+        let m = currentCalMonth + 1;
+        if (m > 12) { m = 1; y++; }
+        loadCalendarMonth(y, m);
+      });
+    }
+
+    // Clicks en bloques del flujo
+    document.querySelectorAll('.flow-block[data-stage]').forEach(el => {
+      el.addEventListener('click', () => {
+        document.querySelectorAll('.flow-block').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        const stageKey = el.getAttribute('data-stage'); // RECIBO, ASIGNACION, etc.
+        onFlowBlockClick(stageKey);
+      });
+    });
+
+    // Carga inicial
+    await loadInitialData();
+
+    // Calendario: mes actual
+    const now = new Date();
+    await loadCalendarMonth(now.getUTCFullYear(), now.getUTCMonth()+1);
+  }
+
+  async function loadInitialData() {
+    const listEl = document.getElementById('ordersList');
+    if (listEl) listEl.innerHTML = '<p class="loading-message">Cargando requisiciones...</p>';
+
+    try {
+      const res = await jsonp(`${A}?route=init.lite&pageSize=200`);
+      if (!res || res.status !== 'ok') {
+        console.warn('init.lite error', res && res.error);
+        if (listEl) listEl.innerHTML = '<p class="loading-message">Error al cargar datos iniciales.</p>';
+        return;
+      }
+      const data = res.data;
+      const rows = data.table?.rows || [];
+
+      const title = document.getElementById('panel-title');
+      if (title) title.textContent = 'Todas las requisiciones';
+
+      renderOrdersList(rows);
+      updateQuickStatsFromRows(rows);
+      updateGapAndTimeKpisFromRows(rows);
+    } catch(e) {
+      console.warn('loadInitialData error', e);
+      if (listEl) listEl.innerHTML = '<p class="loading-message">Error de red al cargar datos.</p>';
+    }
+  }
+
+  // Iniciar
+  document.addEventListener('DOMContentLoaded', initFlowDashboard);
 }
