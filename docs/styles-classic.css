@@ -1,0 +1,553 @@
+:root { --stickyTop: 64px; }
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color:#0f172a;
+  background:#ffffff;
+}
+h1,h3 { margin: 0; }
+
+/* Header */
+.app-header{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:10px 16px; background:#0b4a99; color:#fff; position:sticky; top:0; z-index:1000;
+  box-shadow:0 2px 4px rgba(0,0,0,.08);
+}
+.app-header .brand{display:flex; gap:10px; align-items:center;}
+.app-header .brand img{
+  border-radius:6px; background: transparent;
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+}
+.app-header .header-actions button,
+.app-header .header-actions a{margin-left:8px}
+
+/* KPIs */
+#kpis{
+  display:flex;
+  flex-wrap:nowrap;
+  gap:10px;
+  padding:10px 16px;
+  overflow-x:auto;
+}
+.kpi{
+  min-width: 180px;
+  background:#f8fafc;
+  border:1px solid #e5e7eb;
+  border-radius:8px;
+  padding:8px 12px;
+}
+.kpi div{font-size:12px; color:#6b7280;}
+.kpi strong{font-size:18px;}
+
+/* Filtros */
+#filters{
+  padding: 8px 16px 0;
+}
+
+#filters .row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+}
+
+/* Input/select estilo compacto */
+#filters select,
+#filters input[type="text"],
+#filters input[type="date"]{
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  padding: 4px 8px;
+  font-size: 13px;
+  background-color: #fff;
+}
+
+#filters select{
+  min-width: 150px;
+}
+
+#filters input[type="text"]{
+  min-width: 200px;
+}
+
+#filters .filter-sep{
+  padding: 0 4px;
+  color:#6b7280;
+  font-size: 13px;
+}
+
+/* Botones filtros */
+#filters button{
+  border-radius: 6px;
+  padding: 4px 12px;
+  border: none;
+  font-size: 13px;
+  cursor:pointer;
+}
+
+#btnApply{
+  background:#2563eb;
+  color:#fff;
+}
+
+#btnClear{
+  background:#e5e7eb;
+  color:#111827;
+}
+
+/* En escritorio, una sola fila con scroll si no cabe */
+@media (min-width: 1100px){
+  #filters .row{
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+}
+
+/* Estado de carga en botones de filtros */
+#filters button.loading{
+  opacity: 0.7;
+  cursor: wait;
+}
+
+#filters button.loading::after{
+  content: '…';
+  margin-left: 4px;
+}
+
+/* Spinner en botones de filtros */
+#filters button.loading::before{
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 4px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.7);
+  border-top-color: transparent;
+  animation: spin 0.6s linear infinite;
+}
+
+/* Para el botón gris (Limpiar) cambiamos el color del borde */
+#btnClear.loading::before{
+  border-color: #6b7280;
+  border-top-color: transparent;
+}
+
+@keyframes spin{
+  to { transform: rotate(360deg); }
+}
+
+/* ========= BLOQUE DE GRÁFICOS + ANÁLISIS ========= */
+
+/* Contenedor general: una columna, dos filas internas */
+#charts{
+  margin: 8px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Fila superior: evolución ancho completo */
+.charts-row-top{
+  width: 100%;
+}
+
+/* Tarjetas de gráficos */
+.card{
+  border:1px solid #e5e7eb;
+  border-radius:8px;
+  padding:10px;
+  background:#fff;
+}
+
+.card-evol{
+  height: 260px;              /* gráfico de evolución más alto */
+}
+
+/* Fila inferior: 3 columnas (Comentarios, Estado de avance, Congestión) */
+.charts-row-bottom{
+  display:flex;
+  gap:8px;
+  width:100%;
+}
+
+/* Comentarios más angosto, Avance y Congestión más anchos */
+.card-coment{
+  flex: 0.6 1 0;   /* ~20% del ancho */
+  height: 230px;
+}
+
+.card-grupos{
+  flex: 1.8 1 0;   /* ~40% */
+  height: 230px;
+}
+
+.card-queues{
+  flex: 2.0 1 0;   /* ~40% */
+  height: 230px;
+}
+
+.card h3{
+  font-size:14px;
+  margin-bottom:6px;
+  color:#334155;
+}
+
+/* Altura de canvas */
+.card-evol canvas{
+  width:100% !important;
+  height:210px !important;
+}
+.card-coment canvas,
+.card-grupos canvas{
+  width:100% !important;
+  height:185px !important;
+}
+
+/* Panel de colas dentro de la tercera tarjeta */
+.card-queues .queue-table-wrap{
+  width:100%;
+  height: calc(100% - 24px);
+  overflow:auto;
+  border-radius:4px;
+  border:1px solid #e5e7eb;
+  background:#ffffff;
+}
+
+/* Tabla de colas compacta */
+#tabla-queues{
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+#tabla-queues th,
+#tabla-queues td{
+  padding: 2px 4px;
+  white-space: normal;
+  line-height: 1.2;
+}
+
+#tabla-queues thead{
+  background:#f3f4f6;
+}
+
+#tabla-queues tbody tr:nth-child(even){
+  background:#f9fafb;
+}
+
+/* Limitar ancho de algunas columnas de la tabla de colas */
+#tabla-queues th:nth-child(1),
+#tabla-queues td:nth-child(1){
+  max-width: 90px;
+}
+
+#tabla-queues th:nth-child(2),
+#tabla-queues td:nth-child(2){
+  max-width: 70px;
+}
+
+#tabla-queues th:nth-child(3),
+#tabla-queues td:nth-child(3){
+  max-width: 70px;
+}
+
+#tabla-queues th:nth-child(5),
+#tabla-queues td:nth-child(5){
+  max-width: 70px;
+}
+
+#tabla-queues th:nth-child(6),
+#tabla-queues td:nth-child(6){
+  max-width: 70px;
+}
+
+#tabla-queues th:nth-child(7),
+#tabla-queues td:nth-child(7){
+  max-width: 80px;
+}
+
+#tabla-queues th:nth-child(8),
+#tabla-queues td:nth-child(8){
+  max-width: 70px;
+}
+
+#tabla-queues th:nth-child(9),
+#tabla-queues td:nth-child(9){
+  max-width: 70px;
+}
+
+#tabla-queues th:nth-child(10),
+#tabla-queues td:nth-child(10){
+  max-width: 70px;
+}
+
+#tabla-queues th:nth-child(11),
+#tabla-queues td:nth-child(11){
+  max-width: 80px;
+}
+
+/* Scroll superior sincronizado */
+#top-scroll{
+  height:12px; 
+  overflow:auto; 
+  margin:0 16px;
+}
+
+/* ================== TABLA PRINCIPAL ================== */
+
+.table-wrap{
+  margin: 8px 16px 40px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: #ffffff;
+  overflow: auto;
+}
+
+.table-wrap table{
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  table-layout: auto;
+  font-size: 12px;
+}
+
+/* Encabezados */
+.table-wrap thead th{
+  position: sticky;
+  top: 0;
+  background: #e5e7eb;
+  color: #111827;
+  font-weight: 600;
+  padding: 6px 8px;
+  border-bottom: 1px solid #9ca3af;
+  border-right: 1px solid #d1d5db;
+  white-space: nowrap;
+  text-align: left;
+  z-index: 5; /* por encima de los td */
+}
+
+/* Celdas */
+.table-wrap tbody td{
+  padding: 4px 8px;
+  border-bottom: 1px solid #f3f4f6;
+  border-right: 1px solid #f3f4f6;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  vertical-align: top;
+}
+
+/* Zebra */
+.table-wrap tbody tr:nth-child(even){
+  background-color: #f9fafb;
+}
+
+/* Hover fila */
+.table-wrap tbody tr:hover{
+  background-color: #eef2ff;
+}
+
+/* Columnas de fecha centradas */
+.table-wrap td[data-col="FECHA F8"],
+.table-wrap td[data-col="RECIBO F8"],
+.table-wrap td[data-col="ASIGNACIÓN"],
+.table-wrap td[data-col="SALIDA"],
+.table-wrap td[data-col="DESPACHO"],
+.table-wrap td[data-col="FACTURACIÓN"],
+.table-wrap td[data-col="EMPACADO"],
+.table-wrap td[data-col="PROY. ENTREGA"],
+.table-wrap td[data-col="ENTREGA REAL"]{
+  text-align: center;
+}
+
+/* Columnas numéricas alineadas a la derecha */
+.table-wrap td[data-col="CANT. ASIG."],
+.table-wrap td[data-col="CANT. SOL."],
+.table-wrap td[data-col="RENGLONES ASI."],
+.table-wrap td[data-col="RENGLONES SOL."],
+.table-wrap td[data-col="TIEMPO"],
+.table-wrap td[data-col="FILL CANT."],
+.table-wrap td[data-col="FILL RENGL."]{
+  text-align: right;
+}
+
+/* Texto largo en varias líneas */
+.table-wrap td[data-col="COMENT."],
+.table-wrap td[data-col="SUSTANCIAS"]{
+  white-space: normal;
+}
+
+/* Celda editable */
+td.editable {
+  cursor: pointer;
+  background: #fffbeb;
+}
+
+/* ================== PAGINACIÓN ================== */
+.pager{
+  padding:8px 16px;
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+.pager button{
+  padding:6px 10px;
+  font-size:12px;
+}
+
+/* ================== FILTROS (ajuste desktop) ================== */
+@media (min-width: 1100px){
+  #filters .row{
+    display:flex;
+    flex-wrap:nowrap;
+    gap:8px;
+    align-items:center;
+    overflow:auto;
+  }
+  #filters select,
+  #filters input[type="text"],
+  #filters input[type="date"]{
+    max-width: 160px;
+    white-space: nowrap;
+  }
+}
+
+/* Estados de completado y fill-rate */
+td.state-ok{
+  background-color:#dcfce7;
+  color:#166534;
+  font-weight:600;
+}
+td.state-bad{
+  background-color:#fee2e2;
+  color:#991b1b;
+  font-weight:600;
+}
+td.fill-high{
+  background-color:#dbeafe;
+  color:#1d4ed8;
+}
+td.fill-medium{
+  background-color:#fef9c3;
+  color:#854d0e;
+}
+td.fill-low{
+  background-color:#fee2e2;
+  color:#991b1b;
+}
+
+/* Barra de acciones en el header */
+.header-actions{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+
+/* Botones principales del header */
+.header-actions button{
+  padding:4px 10px;
+  border-radius:999px;
+  border:1px solid #d1d5db;
+  background:#f9fafb;
+  color:#111827;
+  font-size:13px;
+  cursor:pointer;
+}
+
+.header-actions button:hover{
+  background:#e5e7eb;
+}
+
+/* Botón de modo edición: estilo especial cuando está ON */
+#btnEditMode{
+  border-color:#2563eb;
+  color:#2563eb;
+  background:#eff6ff;
+}
+#btnEditMode.edit-on{
+  background:#2563eb;
+  color:#fff;
+}
+
+/* Botón Actualizar más marcado */
+#btnRefresh{
+  background:#2563eb;
+  color:#fff;
+  border-color:#2563eb;
+}
+
+/* Link de editor clásico como acción secundaria (si se usa) */
+#classicEditorLink{
+  font-size:13px;
+  color:#e5e7eb;
+  text-decoration:underline;
+}
+#classicEditorLink:hover{
+  color:#ffffff;
+}
+
+/* Columnas fijas: primeras 4 (th y td) */
+
+.table-wrap thead th.col-fix-1,
+.table-wrap tbody td.col-fix-1{
+  position: sticky;
+  left: 0;
+  z-index: 6;
+}
+
+.table-wrap thead th.col-fix-2,
+.table-wrap tbody td.col-fix-2{
+  position: sticky;
+  left: 118px; /* ancho de 1ª col */
+  z-index: 6;
+}
+
+.table-wrap thead th.col-fix-3,
+.table-wrap tbody td.col-fix-3{
+  position: sticky;
+  left: 348px; /* 120 + 232 */
+  z-index: 6;
+}
+
+.table-wrap thead th.col-fix-4,
+.table-wrap tbody td.col-fix-4{
+  position: sticky;
+  left: 452px; /* 120 + 232 + 110 */
+  z-index: 6;
+}
+
+/* Fondo de las columnas fijas */
+.table-wrap thead th[class^="col-fix-"]{
+  background: #e5e7eb;
+}
+.table-wrap tbody td[class^="col-fix-"]{
+  background: #ffffff;
+}
+
+left col-fix-1: 0;
+left col-fix-2: 184px;
+left col-fix-3: 184 + 232 = 416px;
+left col-fix-4: 416 + 114 = 530px;
+
+/* Centrar texto por defecto en las columnas que no tienen alineación especial */
+.table-wrap tbody td{
+  text-align: center;
+}
+
+/* Mantener override para numéricas (ya lo tienes) */
+.table-wrap td[data-col="CANT. ASIG."],
+.table-wrap td[data-col="CANT. SOL."],
+.table-wrap td[data-col="RENGLONES ASI."],
+.table-wrap td[data-col="RENGLONES SOL."],
+.table-wrap td[data-col="TIEMPO"],
+.table-wrap td[data-col="FILL CANT."],
+.table-wrap td[data-col="FILL RENGL."]{
+  text-align: right;
+}
+
+/* Las de fecha ya las tienes centradas y seguirán así */
