@@ -83,6 +83,26 @@
     </div>
   </section>
 
+  <!-- Resumen Rápido -->
+  <section id="quick-stats">
+    <div class="stat-card">
+      <div class="stat-label">Total Pedidos</div>
+      <div class="stat-value" id="stat-total">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">En Proceso</div>
+      <div class="stat-value" id="stat-proceso">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Completados</div>
+      <div class="stat-value" id="stat-completados">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Con Retraso</div>
+      <div class="stat-value stat-danger" id="stat-retraso">0</div>
+    </div>
+  </section>
+
   <!-- Contenedor principal de dos columnas -->
   <div class="main-container">
     <!-- Columna izquierda: Lista de pedidos filtrados -->
@@ -91,6 +111,7 @@
         <h2 id="panel-title">Todos los pedidos</h2>
         <div class="panel-actions">
           <button id="btnClearFilter" style="display:none;">Limpiar filtro</button>
+          <button id="btnExport" title="Exportar datos">📊 Exportar</button>
         </div>
       </div>
       <div class="orders-list" id="ordersList">

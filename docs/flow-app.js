@@ -192,6 +192,25 @@ function updateFlowBlocks() {
   });
 }
 
+function updateQuickStats() {
+  const total = allOrders.length;
+  
+  // Count orders with ENTREGA REAL (completed)
+  const completados = allOrders.filter(order => order['ENTREGA REAL']).length;
+  const enProceso = total - completados;
+  
+  // Count orders with positive deltas (delayed)
+  const conRetraso = allOrders.filter(order => {
+    return Object.values(order.deltas).some(delta => delta > 0);
+  }).length;
+  
+  // Update UI
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-proceso').textContent = enProceso;
+  document.getElementById('stat-completados').textContent = completados;
+  document.getElementById('stat-retraso').textContent = conRetraso;
+}
+
 function renderOrdersList(orders) {
   const listEl = document.getElementById('ordersList');
   if (!listEl) return;
@@ -242,7 +261,7 @@ function renderOrdersList(orders) {
     const progressPercent = Math.round((completedStages / totalStages) * 100);
     
     return `
-      <div class="order-card" data-order-id="${f8}">
+      <div class="order-card" data-order-id="${f8}" title="Click para ver detalles">
         <div class="order-card-header">
           <div class="order-id">${f8}</div>
           <div class="order-stage">${currentStage ? currentStage.name : '—'}</div>
@@ -260,7 +279,7 @@ function renderOrdersList(orders) {
           </div>
           <div class="date-item">
             <div class="date-label">Fecha real (${currentStage ? currentStage.name : '—'})</div>
-            <div class="date-value ${editMode ? 'editable' : ''}" data-stage="${order.currentStage}">${realDate}</div>
+            <div class="date-value ${editMode ? 'editable' : ''}" data-stage="${order.currentStage}" title="${editMode ? 'Click para editar' : ''}">${realDate}</div>
             ${deltaHtml}
           </div>
         </div>
@@ -753,6 +772,60 @@ function updateTimeKPIs() {
   document.getElementById('kpi-acumulado').textContent = deltaSum.toFixed(1) + 'd';
 }
 
+// ============= EXPORT FUNCTION =============
+
+function exportData() {
+  // Create CSV content
+  const headers = ['F8 SALMI', 'UNIDAD', 'GRUPO', 'RECIBO F8', 'Etapa Actual', 'Fecha Teórica', 'Fecha Real', 'Delta (días)', 'Progreso'];
+  
+  const rows = allOrders.map(order => {
+    const currentStage = STAGES[order.currentStage];
+    const f8 = order['F8 SALMI'] || '';
+    const unidad = order['UNIDAD'] || '';
+    const grupo = order['GRUPO'] || '';
+    const recibo = order['RECIBO F8'] ? formatDateDDMonYY(parseIsoDate(order['RECIBO F8'])) : '';
+    const stageName = currentStage ? currentStage.name : '';
+    
+    let theoDate = '';
+    let realDate = '';
+    let delta = '';
+    
+    if (currentStage) {
+      theoDate = order.theoretical[currentStage.field] ? formatDateDDMonYY(order.theoretical[currentStage.field]) : '';
+      realDate = order[currentStage.field] ? formatDateDDMonYY(parseIsoDate(order[currentStage.field])) : '';
+      const deltaVal = order.deltas[currentStage.field];
+      delta = deltaVal !== null && deltaVal !== undefined ? deltaVal : '';
+    }
+    
+    let completedStages = 0;
+    Object.keys(STAGES).forEach(stageKey => {
+      const stage = STAGES[stageKey];
+      if (order[stage.field]) completedStages++;
+    });
+    const totalStages = Object.keys(STAGES).length;
+    const progress = `${completedStages}/${totalStages}`;
+    
+    return [f8, unidad, grupo, recibo, stageName, theoDate, realDate, delta, progress];
+  });
+  
+  // Build CSV
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+  ].join('\n');
+  
+  // Download
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', `pedidos_flujo_${new Date().toISOString().slice(0,10)}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
 // ============= EVENT HANDLERS =============
 
 function setupEventHandlers() {
@@ -773,6 +846,9 @@ function setupEventHandlers() {
   
   // Refresh button
   document.getElementById('btnRefresh')?.addEventListener('click', init);
+  
+  // Export button
+  document.getElementById('btnExport')?.addEventListener('click', exportData);
   
   // Login
   document.getElementById('btnLogin')?.addEventListener('click', () => {
@@ -822,6 +898,7 @@ async function init() {
   await fetchAllOrders();
   
   // Render UI
+  updateQuickStats();
   updateFlowBlocks();
   renderOrdersList(allOrders);
   renderCalendar();
