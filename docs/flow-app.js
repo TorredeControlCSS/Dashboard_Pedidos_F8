@@ -121,16 +121,18 @@ function calculateDeltas(order, theoretical) {
   return deltas;
 }
 
-function getCurrentStage(order, theoretical) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+function getCurrentStage(order, theoretical, referenceDate = null) {
+  const refDate = referenceDate 
+    ? (referenceDate instanceof Date ? new Date(referenceDate.getTime()) : new Date(referenceDate))
+    : new Date();
+  refDate.setHours(0, 0, 0, 0);
   
-  // Find which stage should be happening today based on theoretical dates
+  // Find which stage should be happening on referenceDate based on theoretical dates
   const stageKeys = Object.keys(STAGES);
   for (let i = stageKeys.length - 1; i >= 0; i--) {
     const stage = STAGES[stageKeys[i]];
     const theoDate = theoretical[stage.field];
-    if (theoDate && theoDate <= today) {
+    if (theoDate && theoDate <= refDate) {
       return stageKeys[i];
     }
   }
@@ -174,7 +176,7 @@ async function fetchAllOrders() {
 
 // ============= UI RENDERING =============
 
-function updateFlowBlocks(ordersToCount = null) {
+function updateFlowBlocks(ordersToCount = null, referenceDate = null) {
   // If ordersToCount is not provided, use allOrders
   const orders = ordersToCount || allOrders;
   
@@ -182,8 +184,16 @@ function updateFlowBlocks(ordersToCount = null) {
   Object.keys(STAGES).forEach(key => stageCounts[key] = 0);
   
   orders.forEach(order => {
-    if (order.currentStage) {
-      stageCounts[order.currentStage]++;
+    // If a reference date is provided, recalculate the stage for that date
+    let stageToCount;
+    if (referenceDate && order.theoretical) {
+      stageToCount = getCurrentStage(order, order.theoretical, referenceDate);
+    } else {
+      stageToCount = order.currentStage;
+    }
+    
+    if (stageToCount) {
+      stageCounts[stageToCount]++;
     }
   });
   
@@ -465,8 +475,8 @@ function filterOrdersByDate(dateStr) {
     return hasTheoDate || hasRealDate;
   });
   
-  // Update flow blocks to show counts for this date
-  updateFlowBlocks(filtered);
+  // Update flow blocks to show counts for this date, using the selected date as reference
+  updateFlowBlocks(filtered, targetDate);
   
   // Update title
   document.getElementById('panel-title').textContent = `Requisiciones del ${formatDateDDMonYY(targetDate)} (${filtered.length} requisiciones)`;
