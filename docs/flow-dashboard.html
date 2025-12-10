@@ -36,49 +36,49 @@
     <div class="flow-block" data-stage="RECIBO" data-days="0">
       <div class="flow-block-header">RECIBO F8</div>
       <div class="flow-block-count" id="count-recibo">0</div>
-      <div class="flow-block-label">Pedidos</div>
+      <div class="flow-block-label">Requisiciones</div>
       <div class="flow-block-days">Día 0</div>
     </div>
     <div class="flow-arrow">→</div>
     <div class="flow-block" data-stage="ASIGNACION" data-days="1">
       <div class="flow-block-header">ASIGNACIÓN</div>
       <div class="flow-block-count" id="count-asignacion">0</div>
-      <div class="flow-block-label">Pedidos</div>
+      <div class="flow-block-label">Requisiciones</div>
       <div class="flow-block-days">+1 día</div>
     </div>
     <div class="flow-arrow">→</div>
     <div class="flow-block" data-stage="SALIDA" data-days="2">
       <div class="flow-block-header">SALIDA</div>
       <div class="flow-block-count" id="count-salida">0</div>
-      <div class="flow-block-label">Pedidos</div>
+      <div class="flow-block-label">Requisiciones</div>
       <div class="flow-block-days">+1 día</div>
     </div>
     <div class="flow-arrow">→</div>
     <div class="flow-block" data-stage="DESPACHO" data-days="3">
       <div class="flow-block-header">DESPACHO</div>
       <div class="flow-block-count" id="count-despacho">0</div>
-      <div class="flow-block-label">Pedidos</div>
+      <div class="flow-block-label">Requisiciones</div>
       <div class="flow-block-days">+1 día</div>
     </div>
     <div class="flow-arrow">→</div>
     <div class="flow-block" data-stage="FACTURACION" data-days="4">
       <div class="flow-block-header">FACTURACIÓN</div>
       <div class="flow-block-count" id="count-facturacion">0</div>
-      <div class="flow-block-label">Pedidos</div>
+      <div class="flow-block-label">Requisiciones</div>
       <div class="flow-block-days">+1 día</div>
     </div>
     <div class="flow-arrow">→</div>
     <div class="flow-block" data-stage="EMPACADO" data-days="5">
       <div class="flow-block-header">EMPACADO</div>
       <div class="flow-block-count" id="count-empacado">0</div>
-      <div class="flow-block-label">Pedidos</div>
+      <div class="flow-block-label">Requisiciones</div>
       <div class="flow-block-days">+3 días</div>
     </div>
     <div class="flow-arrow">→</div>
     <div class="flow-block" data-stage="ENTREGA" data-days="9">
       <div class="flow-block-header">PROY. ENTREGA</div>
       <div class="flow-block-count" id="count-entrega">0</div>
-      <div class="flow-block-label">Pedidos</div>
+      <div class="flow-block-label">Requisiciones</div>
       <div class="flow-block-days">+1 día</div>
     </div>
   </section>
@@ -86,7 +86,7 @@
   <!-- Resumen Rápido -->
   <section id="quick-stats">
     <div class="stat-card">
-      <div class="stat-label">Total Pedidos</div>
+      <div class="stat-label">Total Requisiciones</div>
       <div class="stat-value" id="stat-total">0</div>
     </div>
     <div class="stat-card">
@@ -108,14 +108,14 @@
     <!-- Columna izquierda: Lista de pedidos filtrados -->
     <section class="left-panel">
       <div class="panel-header">
-        <h2 id="panel-title">Todos los pedidos</h2>
+        <h2 id="panel-title">Todas las requisiciones</h2>
         <div class="panel-actions">
           <button id="btnClearFilter" style="display:none;">Limpiar filtro</button>
           <button id="btnExport" title="Exportar datos">📊 Exportar</button>
         </div>
       </div>
       <div class="orders-list" id="ordersList">
-        <p class="loading-message">Cargando pedidos...</p>
+        <p class="loading-message">Cargando requisiciones...</p>
       </div>
     </section>
 
