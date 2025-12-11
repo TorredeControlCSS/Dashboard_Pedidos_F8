@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Dashboard de Requisiciones F8 - Torre de Control</title>
+  <title>Dashboard de Procesos - Torre de Control</title>
   
   <link rel="icon" href="icons/favicon.ico"/>
   
@@ -11,7 +11,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   
-  <link rel="stylesheet" href="flow-styles.css?v=1.1"/>
+  <link rel="stylesheet" href="flow-styles.css?v=1.2"/>
   <link rel="manifest" href="manifest.json"/>
 </head>
 <body>
@@ -171,6 +171,14 @@
         </div>
       </div>
 
+      <!-- Checklist Mensuales -->
+      <div class="monthly-checklist-container">
+        <h3>Checklist Mensuales <span id="monthlyDateLabel"></span></h3>
+        <div id="monthlyChecklist">
+          <p class="loading-message">Seleccione un día con mensuales para ver el resumen.</p>
+        </div>
+      </div>
+
       <!-- Análisis de Gaps -->
       <div class="gap-analysis-container">
         <h3>Análisis de Deltas (Teórico vs Real)</h3>
@@ -215,6 +223,6 @@
   </script>
 
   <!-- App -->
-  <script src="flow-app.js?v=1.7"></script>
+  <script src="flow-app.js?v=1.8"></script>
 </body>
 </html>
