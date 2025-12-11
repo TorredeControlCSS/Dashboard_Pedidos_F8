@@ -410,7 +410,7 @@ h1, h2, h3 { margin: 0; }
   gap: 16px;
 }
 
-/* =============== CALENDAR =============== */
+/* =============== CALENDARIO =============== */
 .calendar-container {
   background: white;
   border: 1px solid var(--border-color);
@@ -540,6 +540,66 @@ h1, h2, h3 { margin: 0; }
   border: 1px solid var(--border-color);
 }
 
+/* =============== CHECKLIST MENSUALES =============== */
+.monthly-checklist-container {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.monthly-checklist-container h3 {
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: var(--text-dark);
+}
+
+#monthlyDateLabel {
+  font-size: 13px;
+  color: var(--text-light);
+  font-weight: 400;
+}
+
+.monthly-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  margin-top: 8px;
+}
+
+.monthly-table th,
+.monthly-table td {
+  border: 1px solid var(--border-color);
+  padding: 4px 6px;
+  text-align: right;
+}
+
+.monthly-table th {
+  background: var(--bg-light);
+  color: var(--text-dark);
+  font-weight: 600;
+}
+
+.monthly-table th:first-child,
+.monthly-table td:first-child {
+  text-align: left;
+}
+
+.badge-ok {
+  color: var(--success-color);
+  font-weight: 600;
+}
+
+.badge-warn {
+  color: var(--warning-color);
+  font-weight: 600;
+}
+
+.badge-err {
+  color: var(--danger-color);
+  font-weight: 600;
+}
+
 /* =============== GAP ANALYSIS =============== */
 .gap-analysis-container,
 .stage-deltas-container {
@@ -586,23 +646,6 @@ h1, h2, h3 { margin: 0; }
   font-size: 24px;
   font-weight: 700;
   color: var(--text-dark);
-}
-
-/* =============== EDITABLE CELLS (futuro) =============== */
-.order-card.editable {
-  cursor: text;
-}
-
-.date-value.editable {
-  padding: 2px 4px;
-  border-radius: 3px;
-  background: #fffbeb;
-  cursor: pointer;
-}
-
-.date-value.editable:hover {
-  background: #fef3c7;
-  outline: 1px solid var(--warning-color);
 }
 
 /* =============== RESPONSIVE =============== */
