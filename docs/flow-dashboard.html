@@ -105,10 +105,34 @@
 
   <!-- Contenedor principal de dos columnas -->
   <div class="main-container">
-    <!-- Columna izquierda: Lista de pedidos filtrados -->
+    <!-- Columna izquierda: Filtros + Lista de pedidos filtrados -->
     <section class="left-panel">
       <div class="panel-header">
-        <h2 id="panel-title">Todas las requisiciones</h2>
+        <div>
+          <h2 id="panel-title">Todas las requisiciones</h2>
+          <!-- Filtros locales del flujo -->
+          <div class="flow-filters">
+            <select id="flowFilterGrupo">
+              <option value="">Todos los grupos</option>
+            </select>
+            <select id="flowFilterUnidad">
+              <option value="">Todas las unidades</option>
+            </select>
+            <select id="flowFilterComent">
+              <option value="">Todos los comentarios</option>
+              <option value="DISCREPANCIA DE INVENTARIO">DISCREPANCIA DE INVENTARIO</option>
+              <option value="FALTA DE PERSONAL">FALTA DE PERSONAL</option>
+              <option value="VIATICOS PARA VIAJES">VIATICOS PARA VIAJES</option>
+              <option value="FALTA MONTACARGA">FALTA MONTACARGA</option>
+              <option value="CONGESTIONAMIENTO EN SALIDAS">CONGESTIONAMIENTO EN SALIDAS</option>
+              <option value="FACTURACION RETRASADA">FACTURACION RETRASADA</option>
+              <option value="FALLAS EN SISTEMA">FALLAS EN SISTEMA</option>
+              <option value="DEMORA EN DOCUMENTACION">DEMORA EN DOCUMENTACION</option>
+              <option value="ERROR DE CAPTACION">ERROR DE CAPTACION</option>
+              <option value="ENTREGADO">ENTREGADO</option>
+            </select>
+          </div>
+        </div>
         <div class="panel-actions">
           <button id="btnClearFilter" style="display:none;">Limpiar filtro</button>
           <button id="btnExport" title="Exportar datos">📊 Exportar</button>
@@ -191,6 +215,6 @@
   </script>
 
   <!-- App -->
-  <script src="flow-app.js?v=1.2"></script>
+  <script src="flow-app.js?v=1.4"></script>
 </body>
 </html>
