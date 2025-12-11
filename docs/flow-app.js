@@ -1,5 +1,5 @@
-// flow-app.js v1.5 — Flow dashboard con filtros, contadores por etapa y export CSV amigable
-console.log('flow-app.js v1.5');
+// flow-app.js v1.6 — Ajuste de contadores por etapa + logs de depuración
+console.log('flow-app.js v1.6');
 
 if (window.__FLOW_APP_LOADED__) {
   console.log('flow-app.js ya cargado, omitiendo.');
@@ -284,6 +284,8 @@ if (window.__FLOW_APP_LOADED__) {
       const st = r['ESTADO'] || '';
       if (mapCounts.hasOwnProperty(st)) mapCounts[st]++;
     });
+
+    console.log('[BLOCKS] conteo por estado:', mapCounts);
 
     const elRec  = document.getElementById('count-recibo');
     const elAsig = document.getElementById('count-asignacion');
@@ -588,7 +590,6 @@ if (window.__FLOW_APP_LOADED__) {
       'FACTURACIÓN','EMPACADO','PROY. ENTREGA','ENTREGA REAL'
     ];
 
-    // Separador compatible con Excel en ES
     const SEP = ';';
 
     const csvRows = [];
@@ -651,7 +652,7 @@ if (window.__FLOW_APP_LOADED__) {
       if (title) title.textContent = 'Todas las requisiciones';
 
       populateFlowFilterOptionsFromRows(currentRows);
-      applyFlowFilters();
+      applyFlowFilters(); // ya llama a updateFlowBlockCounts con filtered
     } catch(e) {
       console.warn('loadInitialData error', e);
       if (listEl) listEl.innerHTML = '<p class="loading-message">Error de red al cargar datos.</p>';
