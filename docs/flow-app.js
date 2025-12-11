@@ -26,6 +26,9 @@ if (window.__FLOW_APP_LOADED__) {
   let currentDayFilter = null;   // YYYY-MM-DD
   let currentRows = [];          // filas base (antes de filtros locales)
 
+  // ============================
+  //  HELPERS BÁSICOS
+  // ============================
   function jsonp(url) {
     return new Promise((resolve, reject) => {
       const cb = 'cb_' + Math.random().toString(36).slice(2);
@@ -479,164 +482,6 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   // ============================
-  //  CALENDARIO
-  // ============================
-  let currentCalYear, currentCalMonth;
-  let currentCalData = {};
-
-  async function loadCalendarMonth(year, month) {
-    currentCalYear = year;
-    currentCalMonth = month;
-    const url = `${A}?route=calendar.monthsummary&year=${year}&month=${month}`;
-    const res = await jsonp(url);
-    if (!res || res.status !== 'ok') {
-      console.warn('Error calendar.monthsummary', res && res.error);
-      return;
-    }
-    currentCalData = res.data || {};
-    renderCalendar();
-  }
-
-  function renderCalendar() {
-    const calEl = document.getElementById('calendar');
-    const titleEl = document.getElementById('calendarTitle');
-    if (!calEl || !titleEl) return;
-
-    const year = currentCalYear;
-    const month = currentCalMonth;
-
-    const firstDay = new Date(Date.UTC(year, month-1, 1));
-    const startDow = firstDay.getUTCDay();
-    const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
-
-    const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    titleEl.textContent = `${monthNames[month-1]} ${year}`;
-
-    calEl.innerHTML = '';
-
-    const dayNames = ['L','M','X','J','V','S','D'];
-    dayNames.forEach(dn => {
-      const div = document.createElement('div');
-      div.className = 'calendar-day-header';
-      div.textContent = dn;
-      calEl.appendChild(div);
-    });
-
-    let dow = (startDow + 6) % 7;
-    for (let i=0; i<dow; i++) {
-      const empty = document.createElement('div');
-      empty.className = 'calendar-day other-month';
-      calEl.appendChild(empty);
-    }
-
-    const todayKey = toDateKey(new Date());
-
-    for (let day=1; day<=daysInMonth; day++) {
-      const d = new Date(Date.UTC(year, month-1, day));
-      const key = toDateKey(d);
-      const info = currentCalData[key] || { total:0, byStage:{} };
-      const total = info.total || 0;
-
-      const cell = document.createElement('div');
-      cell.className = 'calendar-day';
-      if (key === todayKey) cell.classList.add('today');
-
-      const num = document.createElement('div');
-      num.className = 'calendar-day-number';
-      num.textContent = day;
-      cell.appendChild(num);
-
-      if (total > 0) {
-        const big = document.createElement('div');
-        big.className = 'calendar-day-badge';
-        big.textContent = total;
-        cell.appendChild(big);
-
-        let tooltip = `Total: ${total}\n`;
-        const bySt = info.byStage || {};
-        Object.keys(bySt).sort().forEach(st => {
-          tooltip += `${st}: ${bySt[st]}\n`;
-        });
-        cell.title = tooltip.trim();
-      }
-
-      cell.addEventListener('click', () => onCalendarDayClick(key));
-      calEl.appendChild(cell);
-    }
-  }
-
-  async function onCalendarDayClick(dateKey) {
-    currentDayFilter = dateKey;
-    const title = document.getElementById('panel-title');
-    if (title) title.textContent = `Requisiciones del ${dateKey}`;
-
-    // 1) Detalle de requisiciones del día
-    const res = await jsonp(`${A}?route=calendar.daydetails&date=${dateKey}`);
-    if (!res || res.status !== 'ok') {
-      console.warn('calendar.daydetails error', res && res.error);
-      return;
-    }
-    const data = res.data;
-    currentRows = data.rows || [];
-
-    populateFlowFilterOptionsFromRows(currentRows);
-    applyFlowFilters();
-
-    // 2) Checklist de mensuales
-    await loadMonthlyChecklist(dateKey);
-
-    const btnClear = document.getElementById('btnClearFilter');
-    if (btnClear) btnClear.style.display = 'inline-block';
-  }
-
-  // ============================
-  //  FLOW BLOCKS
-  // ============================
-  async function onFlowBlockClick(stageKey) {
-    if (!currentDayFilter) {
-      currentDayFilter = toDateKey(new Date());
-    }
-
-    const res = await jsonp(`${A}?route=calendar.daydetails&date=${currentDayFilter}`);
-    if (!res || res.status !== 'ok') {
-      console.warn('calendar.daydetails error en flow block', res && res.error);
-      return;
-    }
-    const dayRows = res.data.rows || [];
-
-    const map = {
-      'RECIBO':'RECIBO F8',
-      'ASIGNACION':'ASIGNACIÓN',
-      'SALIDA':'SALIDA',
-      'DESPACHO':'DESPACHO',
-      'FACTURACION':'FACTURACIÓN',
-      'EMPACADO':'EMPACADO',
-      'ENTREGA':'PROY. ENTREGA'
-    };
-    const colKey = map[stageKey] || 'RECIBO F8';
-
-    currentRows = dayRows.filter(r => {
-      const raw = r[colKey];
-      if (!raw) return false;
-      const d = parseIsoDate(raw);
-      if (!d) return false;
-      return toDateKey(d) === currentDayFilter;
-    });
-
-    const title = document.getElementById('panel-title');
-    if (title) title.textContent = `Requisiciones en ${colKey} el ${currentDayFilter}`;
-
-    populateFlowFilterOptionsFromRows(currentRows);
-    applyFlowFilters();
-
-    // Checklist sigue siendo por día completo, no depende del bloque
-    await loadMonthlyChecklist(currentDayFilter);
-
-    const btnClear = document.getElementById('btnClearFilter');
-    if (btnClear) btnClear.style.display = 'inline-block';
-  }
-
-  // ============================
   //  CHECKLIST MENSUALES (frontend)
   // ============================
   async function loadMonthlyChecklist(dateKey) {
@@ -709,6 +554,165 @@ if (window.__FLOW_APP_LOADED__) {
       console.warn('loadMonthlyChecklist error', e);
       contEl.innerHTML = '<p class="loading-message">Error de red al cargar checklist.</p>';
     }
+  }
+
+  // ============================
+  //  CALENDARIO
+  // ============================
+  let currentCalYear, currentCalMonth;
+  let currentCalData = {};
+
+  async function loadCalendarMonth(year, month) {
+    currentCalYear = year;
+    currentCalMonth = month;
+    const url = `${A}?route=calendar.monthsummary&year=${year}&month=${month}`;
+    const res = await jsonp(url);
+    if (!res || res.status !== 'ok') {
+      console.warn('Error calendar.monthsummary', res && res.error);
+      return;
+    }
+    currentCalData = res.data || {};
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    const calEl = document.getElementById('calendar');
+    const titleEl = document.getElementById('calendarTitle');
+    if (!calEl || !titleEl) return;
+
+    const year = currentCalYear;
+    const month = currentCalMonth;
+
+    const firstDay = new Date(Date.UTC(year, month-1, 1));
+    const startDow = firstDay.getUTCDay();
+    const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+
+    const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    titleEl.textContent = `${monthNames[month-1]} ${year}`;
+
+    calEl.innerHTML = '';
+
+    const dayNames = ['L','M','X','J','V','S','D'];
+    dayNames.forEach(dn => {
+      const div = document.createElement('div');
+      div.className = 'calendar-day-header';
+      div.textContent = dn;
+      calEl.appendChild(div);
+    });
+
+    let dow = (startDow + 6) % 7;
+    for (let i=0; i<dow; i++) {
+      const empty = document.createElement('div');
+      empty.className = 'calendar-day other-month';
+      calEl.appendChild(empty);
+    }
+
+    const todayKey = toDateKey(new Date());
+
+    for (let day=1; day<=daysInMonth; day++) {
+      const d = new Date(Date.UTC(year, month-1, day));
+      const key = toDateKey(d);
+      const info = currentCalData[key] || { total:0, byStage:{} };
+      const total = info.total || 0;
+
+      const cell = document.createElement('div');
+      cell.className = 'calendar-day';
+      if (key === todayKey) cell.classList.add('today');
+      if (currentDayFilter === key) cell.classList.add('selected');
+
+      const num = document.createElement('div');
+      num.className = 'calendar-day-number';
+      num.textContent = day;
+      cell.appendChild(num);
+
+      if (total > 0) {
+        const big = document.createElement('div');
+        big.className = 'calendar-day-badge';
+        big.textContent = total;
+        cell.appendChild(big);
+
+        let tooltip = `Total: ${total}\n`;
+        const bySt = info.byStage || {};
+        Object.keys(bySt).sort().forEach(st => {
+          tooltip += `${st}: ${bySt[st]}\n`;
+        });
+        cell.title = tooltip.trim();
+      }
+
+      cell.addEventListener('click', () => onCalendarDayClick(key));
+      calEl.appendChild(cell);
+    }
+  }
+
+  async function onCalendarDayClick(dateKey) {
+    currentDayFilter = dateKey;
+
+    const title = document.getElementById('panel-title');
+    if (title) title.textContent = `Requisiciones del ${dateKey}`;
+
+    const res = await jsonp(`${A}?route=calendar.daydetails&date=${dateKey}`);
+    if (!res || res.status !== 'ok') {
+      console.warn('calendar.daydetails error', res && res.error);
+      return;
+    }
+    const data = res.data;
+    currentRows = data.rows || [];
+
+    populateFlowFilterOptionsFromRows(currentRows);
+    applyFlowFilters();
+
+    await loadMonthlyChecklist(dateKey);
+
+    const btnClear = document.getElementById('btnClearFilter');
+    if (btnClear) btnClear.style.display = 'inline-block';
+
+    renderCalendar(); // para marcar visualmente el día seleccionado
+  }
+
+  // ============================
+  //  FLOW BLOCKS
+  // ============================
+  async function onFlowBlockClick(stageKey) {
+    if (!currentDayFilter) {
+      currentDayFilter = toDateKey(new Date());
+    }
+
+    const res = await jsonp(`${A}?route=calendar.daydetails&date=${currentDayFilter}`);
+    if (!res || res.status !== 'ok') {
+      console.warn('calendar.daydetails error en flow block', res && res.error);
+      return;
+    }
+    const dayRows = res.data.rows || [];
+
+    const map = {
+      'RECIBO':'RECIBO F8',
+      'ASIGNACION':'ASIGNACIÓN',
+      'SALIDA':'SALIDA',
+      'DESPACHO':'DESPACHO',
+      'FACTURACION':'FACTURACIÓN',
+      'EMPACADO':'EMPACADO',
+      'ENTREGA':'PROY. ENTREGA'
+    };
+    const colKey = map[stageKey] || 'RECIBO F8';
+
+    currentRows = dayRows.filter(r => {
+      const raw = r[colKey];
+      if (!raw) return false;
+      const d = parseIsoDate(raw);
+      if (!d) return false;
+      return toDateKey(d) === currentDayFilter;
+    });
+
+    const title = document.getElementById('panel-title');
+    if (title) title.textContent = `Requisiciones en ${colKey} el ${currentDayFilter}`;
+
+    populateFlowFilterOptionsFromRows(currentRows);
+    applyFlowFilters();
+
+    await loadMonthlyChecklist(currentDayFilter);
+
+    const btnClear = document.getElementById('btnClearFilter');
+    if (btnClear) btnClear.style.display = 'inline-block';
   }
 
   // ============================
