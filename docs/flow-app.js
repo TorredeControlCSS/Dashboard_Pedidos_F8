@@ -1,5 +1,5 @@
-// flow-app.js v1.8 — Flujo por fechas + checklist de mensuales
-console.log('flow-app.js v1.8');
+// flow-app.js v1.9 — Flujo por fechas + checklist de mensuales + día seleccionado en calendario
+console.log('flow-app.js v1.9');
 
 if (window.__FLOW_APP_LOADED__) {
   console.log('flow-app.js ya cargado, omitiendo.');
@@ -26,9 +26,6 @@ if (window.__FLOW_APP_LOADED__) {
   let currentDayFilter = null;   // YYYY-MM-DD
   let currentRows = [];          // filas base (antes de filtros locales)
 
-  // ============================
-  //  HELPERS BÁSICOS
-  // ============================
   function jsonp(url) {
     return new Promise((resolve, reject) => {
       const cb = 'cb_' + Math.random().toString(36).slice(2);
