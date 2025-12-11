@@ -262,25 +262,41 @@ h1, h2, h3 { margin: 0; }
 .panel-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 8px;
   margin-bottom: 16px;
   padding-bottom: 12px;
   border-bottom: 2px solid var(--border-color);
 }
 
-.panel-header h2 {
-  font-size: 18px;
-  color: var(--text-dark);
+.flow-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.panel-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
 }
 
 .panel-actions button {
-  padding: 6px 12px;
+  padding: 4px 10px;
   border-radius: 6px;
   border: 1px solid var(--border-color);
   background: white;
   color: var(--text-dark);
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
+  white-space: nowrap;
+}
+
+.panel-header h2 {
+  font-size: 18px;
+  color: var(--text-dark);
 }
 
 .panel-actions button:hover {
@@ -299,6 +315,7 @@ h1, h2, h3 { margin: 0; }
   padding: 40px 20px;
 }
 
+/* Cards */
 .order-card {
   background: var(--bg-light);
   border: 1px solid var(--border-color);
@@ -499,6 +516,7 @@ h1, h2, h3 { margin: 0; }
   font-weight: 600;
 }
 
+/* =============== LEGEND =============== */
 .calendar-legend {
   display: flex;
   gap: 12px;
@@ -570,7 +588,7 @@ h1, h2, h3 { margin: 0; }
   color: var(--text-dark);
 }
 
-/* =============== EDITABLE CELLS =============== */
+/* =============== EDITABLE CELLS (futuro) =============== */
 .order-card.editable {
   cursor: text;
 }
@@ -588,8 +606,6 @@ h1, h2, h3 { margin: 0; }
 }
 
 /* =============== RESPONSIVE =============== */
-
-/* Tablets and medium screens */
 @media (max-width: 1024px) {
   #process-flow {
     gap: 6px;
@@ -605,7 +621,6 @@ h1, h2, h3 { margin: 0; }
   }
 }
 
-/* Mobile devices */
 @media (max-width: 768px) {
   #process-flow {
     padding: 12px 8px;
