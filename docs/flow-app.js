@@ -1,5 +1,5 @@
-// flow-app.js v1.6 — Ajuste de contadores por etapa + logs de depuración
-console.log('flow-app.js v1.6');
+// flow-app.js v1.7 — Conteos por columnas de fecha (M..S) y etapas por día
+console.log('flow-app.js v1.7');
 
 if (window.__FLOW_APP_LOADED__) {
   console.log('flow-app.js ya cargado, omitiendo.');
@@ -10,13 +10,16 @@ if (window.__FLOW_APP_LOADED__) {
   const B = window.APP.B_URL;
   const CLIENT_ID = window.APP.CLIENT_ID;
 
-  const STAGES_ORDER = [
-    'F8 RECIBIDA',
-    'EN ASIGNACIÓN',
-    'SALIDA DE SALMI',
-    'FACTURADO',
-    'EMPACADO',
-    'ENTREGADA'
+  // Orden lógico del flujo según columnas de fechas
+  const FLOW_COLUMNS = [
+    { key: 'RECIBO F8',    label: 'RECIBO F8',    blockId: 'count-recibo' },
+    { key: 'ASIGNACIÓN',   label: 'ASIGNACIÓN',   blockId: 'count-asignacion' },
+    { key: 'SALIDA',       label: 'SALIDA',       blockId: 'count-salida' },
+    { key: 'DESPACHO',     label: 'DESPACHO',     blockId: 'count-despacho' },
+    { key: 'FACTURACIÓN',  label: 'FACTURACIÓN',  blockId: 'count-facturacion' },
+    { key: 'EMPACADO',     label: 'EMPACADO',     blockId: 'count-empacado' },
+    { key: 'PROY. ENTREGA',label: 'PROY. ENTREGA',blockId: 'count-entrega' }
+    // ENTREGRA REAL la usamos para KPIs, no para bloques por ahora
   ];
 
   let idToken = null;
@@ -79,6 +82,25 @@ if (window.__FLOW_APP_LOADED__) {
     return dd + '/' + mm + '/' + yy;
   }
 
+  // Dado un registro r y una fecha clave YYYY-MM-DD, devuelve la etapa del flujo
+  // más avanzada que coincida con esa fecha en las columnas de flujo.
+  function flowStageForDate(r, dateKey) {
+    if (!dateKey) return null;
+    // Recorremos en orden de flujo; guardamos la última columna que coincide
+    let lastMatch = null;
+    for (const col of FLOW_COLUMNS) {
+      const raw = r[col.key];
+      if (!raw) continue;
+      const d = parseIsoDate(raw);
+      if (!d) continue;
+      const k = toDateKey(d);
+      if (k === dateKey) {
+        lastMatch = col.label;
+      }
+    }
+    return lastMatch; // puede ser null si no coincide ninguna
+  }
+
   // ============================
   //  FILTROS LOCALES
   // ============================
@@ -100,7 +122,6 @@ if (window.__FLOW_APP_LOADED__) {
       return true;
     });
 
-    // Guardar subconjunto visible para export
     window.__DEBUG_LAST_ROWS = filtered;
 
     renderOrdersList(filtered);
@@ -146,10 +167,10 @@ if (window.__FLOW_APP_LOADED__) {
   // ============================
   //  LISTA IZQUIERDA
   // ============================
-  function stageIndexFromRow(r) {
-    const st = r['ESTADO'] || '';
-    const idx = STAGES_ORDER.indexOf(st);
-    return idx >= 0 ? idx : STAGES_ORDER.length + 1;
+  function stageIndexForLabel(label) {
+    if (!label) return FLOW_COLUMNS.length + 1;
+    const idx = FLOW_COLUMNS.findIndex(c => c.label === label);
+    return idx >= 0 ? idx : FLOW_COLUMNS.length + 1;
   }
 
   function renderOrdersList(rows) {
@@ -160,24 +181,36 @@ if (window.__FLOW_APP_LOADED__) {
       return;
     }
 
-    const sorted = [...rows].sort((a,b) => {
-      const ia = stageIndexFromRow(a);
-      const ib = stageIndexFromRow(b);
+    const dateKey = currentDayFilter;
+
+    // Enriquecemos con la etapa del flujo para el día actual
+    const enriched = rows.map(r => {
+      const stageToday = flowStageForDate(r, dateKey);
+      return { r, stageToday };
+    });
+
+    const sorted = enriched.sort((a,b) => {
+      const ia = stageIndexForLabel(a.stageToday);
+      const ib = stageIndexForLabel(b.stageToday);
       if (ia !== ib) return ia - ib;
-      const ida = String(a['F8 SALMI'] || '');
-      const idb = String(b['F8 SALMI'] || '');
+      const ida = String(a.r['F8 SALMI'] || '');
+      const idb = String(b.r['F8 SALMI'] || '');
       return ida.localeCompare(idb);
     });
 
-    const html = sorted.map(r => {
+    const html = sorted.map(({r, stageToday}) => {
       const id = r['F8 SALMI'] || '(sin F8)';
       const unidad = r['UNIDAD'] || '';
       const tipo = r['TIPO'] || '';
       const grupo = r['GRUPO'] || '';
-      const estado = r['ESTADO'] || '';
       const coment = r['COMENT.'] || '—';
 
       const rec = r['RECIBO F8'] ? formatDateShort(r['RECIBO F8']) : '—';
+      const asg = r['ASIGNACIÓN'] ? formatDateShort(r['ASIGNACIÓN']) : '—';
+      const sal = r['SALIDA'] ? formatDateShort(r['SALIDA']) : '—';
+      const desp = r['DESPACHO'] ? formatDateShort(r['DESPACHO']) : '—';
+      const fac = r['FACTURACIÓN'] ? formatDateShort(r['FACTURACIÓN']) : '—';
+      const emp = r['EMPACADO'] ? formatDateShort(r['EMPACADO']) : '—';
       const proy = r['PROY. ENTREGA'] ? formatDateShort(r['PROY. ENTREGA']) : '—';
       const real = r['ENTREGA REAL'] ? formatDateShort(r['ENTREGA REAL']) : '—';
 
@@ -194,11 +227,13 @@ if (window.__FLOW_APP_LOADED__) {
         deltaHtml = `<span class="date-delta ${cls}">${d > 0 ? '+'+d : d} días</span>`;
       }
 
+      const etapaHoy = stageToday ? stageToday : '—';
+
       return `
         <div class="order-card">
           <div class="order-card-header">
             <span class="order-id">${id}</span>
-            <span class="order-stage">${estado}</span>
+            <span class="order-stage">${etapaHoy}</span>
           </div>
           <div class="order-info">
             <div>${unidad}</div>
@@ -209,6 +244,26 @@ if (window.__FLOW_APP_LOADED__) {
             <div class="date-item">
               <span class="date-label">Recibo F8</span>
               <span class="date-value">${rec}</span>
+            </div>
+            <div class="date-item">
+              <span class="date-label">Asignación</span>
+              <span class="date-value">${asg}</span>
+            </div>
+            <div class="date-item">
+              <span class="date-label">Salida</span>
+              <span class="date-value">${sal}</span>
+            </div>
+            <div class="date-item">
+              <span class="date-label">Despacho</span>
+              <span class="date-value">${desp}</span>
+            </div>
+            <div class="date-item">
+              <span class="date-label">Facturación</span>
+              <span class="date-value">${fac}</span>
+            </div>
+            <div class="date-item">
+              <span class="date-label">Empacado</span>
+              <span class="date-value">${emp}</span>
             </div>
             <div class="date-item">
               <span class="date-label">Proy. Entrega</span>
@@ -231,7 +286,7 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   // ============================
-  //  QUICK STATS y CONTADORES DE BLOQUES
+  //  QUICK STATS
   // ============================
   function updateQuickStatsFromRows(rows) {
     window.__DEBUG_LAST_ROWS = rows;
@@ -271,37 +326,41 @@ if (window.__FLOW_APP_LOADED__) {
     if (retrEl)  retrEl.textContent  = retraso;
   }
 
+  // ============================
+  //  CONTADORES DE BLOQUES (por columnas de fecha)
+  // ============================
   function updateFlowBlockCounts(rows) {
-    const mapCounts = {
-      'F8 RECIBIDA':     0,
-      'EN ASIGNACIÓN':   0,
-      'SALIDA DE SALMI': 0,
-      'FACTURADO':       0,
-      'EMPACADO':        0,
-      'ENTREGADA':       0
-    };
+    const dateKey = currentDayFilter;
+    if (!dateKey) {
+      // Si no hay día seleccionado, ponemos 0 en todos
+      FLOW_COLUMNS.forEach(col => {
+        const el = document.getElementById(col.blockId);
+        if (el) el.textContent = '0';
+      });
+      return;
+    }
+
+    const counts = {};
+    FLOW_COLUMNS.forEach(col => { counts[col.label] = 0; });
+
     (rows || []).forEach(r => {
-      const st = r['ESTADO'] || '';
-      if (mapCounts.hasOwnProperty(st)) mapCounts[st]++;
+      FLOW_COLUMNS.forEach(col => {
+        const raw = r[col.key];
+        if (!raw) return;
+        const d = parseIsoDate(raw);
+        if (!d) return;
+        if (toDateKey(d) === dateKey) {
+          counts[col.label]++;
+        }
+      });
     });
 
-    console.log('[BLOCKS] conteo por estado:', mapCounts);
+    console.log('[BLOCKS] para día', dateKey, counts);
 
-    const elRec  = document.getElementById('count-recibo');
-    const elAsig = document.getElementById('count-asignacion');
-    const elSal  = document.getElementById('count-salida');
-    const elDesp = document.getElementById('count-despacho');
-    const elFact = document.getElementById('count-facturacion');
-    const elEmp  = document.getElementById('count-empacado');
-    const elEnt  = document.getElementById('count-entrega');
-
-    if (elRec)  elRec.textContent  = mapCounts['F8 RECIBIDA'];
-    if (elAsig) elAsig.textContent = mapCounts['EN ASIGNACIÓN'];
-    if (elSal)  elSal.textContent  = mapCounts['SALIDA DE SALMI'];
-    if (elDesp) elDesp.textContent = mapCounts['SALIDA DE SALMI']; // misma etapa operativa
-    if (elFact) elFact.textContent = mapCounts['FACTURADO'];
-    if (elEmp)  elEmp.textContent  = mapCounts['EMPACADO'];
-    if (elEnt)  elEnt.textContent  = mapCounts['ENTREGADA'];
+    FLOW_COLUMNS.forEach(col => {
+      const el = document.getElementById(col.blockId);
+      if (el) el.textContent = counts[col.label] || 0;
+    });
   }
 
   // ============================
@@ -551,21 +610,28 @@ if (window.__FLOW_APP_LOADED__) {
     }
     const dayRows = res.data.rows || [];
 
+    // Mapeamos data-stage a columna de flujo
     const map = {
-      'RECIBO':'F8 RECIBIDA',
-      'ASIGNACION':'EN ASIGNACIÓN',
-      'SALIDA':'SALIDA DE SALMI',
-      'DESPACHO':'SALIDA DE SALMI',
-      'FACTURACION':'FACTURADO',
+      'RECIBO':'RECIBO F8',
+      'ASIGNACION':'ASIGNACIÓN',
+      'SALIDA':'SALIDA',
+      'DESPACHO':'DESPACHO',
+      'FACTURACION':'FACTURACIÓN',
       'EMPACADO':'EMPACADO',
-      'ENTREGA':'ENTREGADA'
+      'ENTREGA':'PROY. ENTREGA'
     };
-    const baseStage = map[stageKey] || stageKey;
+    const colKey = map[stageKey] || 'RECIBO F8';
 
-    currentRows = dayRows.filter(r => (r['ESTADO'] || '') === baseStage);
+    currentRows = dayRows.filter(r => {
+      const raw = r[colKey];
+      if (!raw) return false;
+      const d = parseIsoDate(raw);
+      if (!d) return false;
+      return toDateKey(d) === currentDayFilter;
+    });
 
     const title = document.getElementById('panel-title');
-    if (title) title.textContent = `Requisiciones en ${baseStage} el ${currentDayFilter}`;
+    if (title) title.textContent = `Requisiciones en ${colKey} el ${currentDayFilter}`;
 
     populateFlowFilterOptionsFromRows(currentRows);
     applyFlowFilters();
@@ -585,7 +651,7 @@ if (window.__FLOW_APP_LOADED__) {
     }
 
     const headers = [
-      'F8 SALMI','UNIDAD','TIPO','GRUPO','ESTADO','COMENT.',
+      'F8 SALMI','UNIDAD','TIPO','GRUPO','COMENT.',
       'RECIBO F8','ASIGNACIÓN','SALIDA','DESPACHO',
       'FACTURACIÓN','EMPACADO','PROY. ENTREGA','ENTREGA REAL'
     ];
@@ -601,7 +667,6 @@ if (window.__FLOW_APP_LOADED__) {
         r['UNIDAD'] || '',
         r['TIPO'] || '',
         r['GRUPO'] || '',
-        r['ESTADO'] || '',
         r['COMENT.'] || '',
         r['RECIBO F8'] || '',
         r['ASIGNACIÓN'] || '',
@@ -651,8 +716,10 @@ if (window.__FLOW_APP_LOADED__) {
       const title = document.getElementById('panel-title');
       if (title) title.textContent = 'Todas las requisiciones';
 
+      // Aquí todavía no hay currentDayFilter, así que los contadores de bloques
+      // se actualizarán a 0 hasta que elijas un día.
       populateFlowFilterOptionsFromRows(currentRows);
-      applyFlowFilters(); // ya llama a updateFlowBlockCounts con filtered
+      applyFlowFilters();
     } catch(e) {
       console.warn('loadInitialData error', e);
       if (listEl) listEl.innerHTML = '<p class="loading-message">Error de red al cargar datos.</p>';
