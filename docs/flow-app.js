@@ -1,5 +1,5 @@
-// flow-app.js v1.2 — Flow dashboard con KPIs dinámicos, calendario y filtros por bloque
-console.log('flow-app.js v1.2');
+// flow-app.js v1.4 — Flow dashboard con filtros locales (Grupo/Unidad/Comentario)
+console.log('flow-app.js v1.4');
 
 if (window.__FLOW_APP_LOADED__) {
   console.log('flow-app.js ya cargado, omitiendo.');
@@ -10,7 +10,6 @@ if (window.__FLOW_APP_LOADED__) {
   const B = window.APP.B_URL;
   const CLIENT_ID = window.APP.CLIENT_ID;
 
-  // Orden canónico de etapas, alineado con deriveStage_ del backend
   const STAGES_ORDER = [
     'F8 RECIBIDA',
     'EN ASIGNACIÓN',
@@ -22,6 +21,9 @@ if (window.__FLOW_APP_LOADED__) {
 
   let idToken = null;
   let editMode = false;
+
+  let currentDayFilter = null;   // YYYY-MM-DD
+  let currentRows = [];          // filas base (sin filtros locales)
 
   // ============================
   //  HELPERS BÁSICOS
@@ -78,8 +80,74 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   // ============================
+  //  FILTROS LOCALES (grupo/unidad/coment)
+  // ============================
+  function applyFlowFilters() {
+    const selGrupo = document.getElementById('flowFilterGrupo');
+    const selUnidad = document.getElementById('flowFilterUnidad');
+    const selComent = document.getElementById('flowFilterComent');
+
+    const gVal = selGrupo ? selGrupo.value : '';
+    const uVal = selUnidad ? selUnidad.value : '';
+    const cVal = selComent ? selComent.value : '';
+
+    let rows = currentRows || [];
+
+    const filtered = rows.filter(r => {
+      if (gVal && String(r['GRUPO']||'') !== gVal) return false;
+      if (uVal && String(r['UNIDAD']||'') !== uVal) return false;
+      if (cVal && String(r['COMENT.']||'') !== cVal) return false;
+      return true;
+    });
+
+    renderOrdersList(filtered);
+    updateQuickStatsFromRows(filtered);
+    updateGapAndTimeKpisFromRows(filtered);
+  }
+
+  function populateFlowFilterOptionsFromRows(rows) {
+    const selGrupo = document.getElementById('flowFilterGrupo');
+    const selUnidad = document.getElementById('flowFilterUnidad');
+
+    if (!rows || !rows.length) {
+      if (selGrupo) selGrupo.innerHTML = '<option value="">Todos los grupos</option>';
+      if (selUnidad) selUnidad.innerHTML = '<option value="">Todas las unidades</option>';
+      return;
+    }
+
+    const grupos = new Set();
+    const unidades = new Set();
+    rows.forEach(r => {
+      if (r['GRUPO']) grupos.add(String(r['GRUPO']));
+      if (r['UNIDAD']) unidades.add(String(r['UNIDAD']));
+    });
+
+    if (selGrupo) {
+      const antes = selGrupo.value;
+      selGrupo.innerHTML =
+        '<option value="">Todos los grupos</option>' +
+        Array.from(grupos).sort().map(g => `<option value="${g}">${g}</option>`).join('');
+      if (Array.from(grupos).includes(antes)) selGrupo.value = antes;
+    }
+
+    if (selUnidad) {
+      const antes = selUnidad.value;
+      selUnidad.innerHTML =
+        '<option value="">Todas las unidades</option>' +
+        Array.from(unidades).sort().map(u => `<option value="${u}">${u}</option>`).join('');
+      if (Array.from(unidades).includes(antes)) selUnidad.value = antes;
+    }
+  }
+
+  // ============================
   //  LISTA IZQUIERDA
   // ============================
+  function stageIndexFromRow(r) {
+    const st = r['ESTADO'] || '';
+    const idx = STAGES_ORDER.indexOf(st);
+    return idx >= 0 ? idx : STAGES_ORDER.length + 1;
+  }
+
   function renderOrdersList(rows) {
     const container = document.getElementById('ordersList');
     if (!container) return;
@@ -88,12 +156,23 @@ if (window.__FLOW_APP_LOADED__) {
       return;
     }
 
-    const html = rows.map(r => {
+    const sorted = [...rows].sort((a,b) => {
+      const ia = stageIndexFromRow(a);
+      const ib = stageIndexFromRow(b);
+      if (ia !== ib) return ia - ib;
+      const ida = String(a['F8 SALMI'] || '');
+      const idb = String(b['F8 SALMI'] || '');
+      return ida.localeCompare(idb);
+    });
+
+    const html = sorted.map(r => {
       const id = r['F8 SALMI'] || '(sin F8)';
       const unidad = r['UNIDAD'] || '';
       const tipo = r['TIPO'] || '';
       const grupo = r['GRUPO'] || '';
       const estado = r['ESTADO'] || '';
+      const coment = r['COMENT.'] || '—';
+
       const rec = r['RECIBO F8'] ? formatDateShort(r['RECIBO F8']) : '—';
       const proy = r['PROY. ENTREGA'] ? formatDateShort(r['PROY. ENTREGA']) : '—';
       const real = r['ENTREGA REAL'] ? formatDateShort(r['ENTREGA REAL']) : '—';
@@ -120,6 +199,7 @@ if (window.__FLOW_APP_LOADED__) {
           <div class="order-info">
             <div>${unidad}</div>
             <div>${tipo} · ${grupo}</div>
+            <div><strong>Comentario:</strong> ${coment}</div>
           </div>
           <div class="order-dates">
             <div class="date-item">
@@ -150,7 +230,7 @@ if (window.__FLOW_APP_LOADED__) {
   //  QUICK STATS (tarjetas)
   // ============================
   function updateQuickStatsFromRows(rows) {
-    window.__DEBUG_LAST_ROWS = rows; // para inspección en consola
+    window.__DEBUG_LAST_ROWS = rows; // para inspección
 
     const totalEl = document.getElementById('stat-total');
     const procEl  = document.getElementById('stat-proceso');
@@ -250,7 +330,6 @@ if (window.__FLOW_APP_LOADED__) {
     if (kDelta) kDelta.textContent = (avgDelta!=null) ? avgDelta.toFixed(1) : '—';
     if (kAcum)  kAcum.textContent  = sumDelta ? sumDelta.toFixed(1) : '0.0';
 
-    // Si Chart.js no está disponible, no dibujamos gráficos pero KPIs siguen funcionando
     if (typeof Chart === 'undefined') {
       console.warn('Chart.js no está cargado; se omite dibujo de gráficos.');
       return;
@@ -401,6 +480,7 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   async function onCalendarDayClick(dateKey) {
+    currentDayFilter = dateKey;
     const title = document.getElementById('panel-title');
     if (title) title.textContent = `Requisiciones del ${dateKey}`;
 
@@ -410,21 +490,30 @@ if (window.__FLOW_APP_LOADED__) {
       return;
     }
     const data = res.data;
-    const rows = data.rows || [];
+    currentRows = data.rows || [];
 
-    renderOrdersList(rows);
-    updateQuickStatsFromRows(rows);
-    updateGapAndTimeKpisFromRows(rows);
+    populateFlowFilterOptionsFromRows(currentRows);
+    applyFlowFilters();
 
     const btnClear = document.getElementById('btnClearFilter');
     if (btnClear) btnClear.style.display = 'inline-block';
   }
 
   // ============================
-  //  FLOW BLOCKS
+  //  FLOW BLOCKS (usan el día seleccionado)
   // ============================
   async function onFlowBlockClick(stageKey) {
-    // Mapear data-stage HTML a etiqueta de etapa del backend
+    if (!currentDayFilter) {
+      currentDayFilter = toDateKey(new Date());
+    }
+
+    const res = await jsonp(`${A}?route=calendar.daydetails&date=${currentDayFilter}`);
+    if (!res || res.status !== 'ok') {
+      console.warn('calendar.daydetails error en flow block', res && res.error);
+      return;
+    }
+    const dayRows = res.data.rows || [];
+
     const map = {
       'RECIBO':'F8 RECIBIDA',
       'ASIGNACION':'EN ASIGNACIÓN',
@@ -436,39 +525,72 @@ if (window.__FLOW_APP_LOADED__) {
     };
     const baseStage = map[stageKey] || stageKey;
 
-    const idx = STAGES_ORDER.indexOf(baseStage);
-    const states = idx >= 0 ? STAGES_ORDER.slice(idx) : [baseStage];
-
-    let allRows = [];
-    for (const st of states) {
-      const url = `${A}?route=orders.list&page=1&pageSize=500&estado=${encodeURIComponent(st)}`;
-      const res = await jsonp(url);
-      if (res && res.status === 'ok') {
-        allRows = allRows.concat(res.data.rows || []);
-      }
-    }
-
-    allRows.sort((a,b) => {
-      const sa = stageIndexFromRow(a);
-      const sb = stageIndexFromRow(b);
-      return sb - sa; // más futuras primero
-    });
+    currentRows = dayRows.filter(r => (r['ESTADO'] || '') === baseStage);
 
     const title = document.getElementById('panel-title');
-    if (title) title.textContent = `Requisiciones en ${baseStage} y posteriores`;
+    if (title) title.textContent = `Requisiciones en ${baseStage} el ${currentDayFilter}`;
 
-    renderOrdersList(allRows);
-    updateQuickStatsFromRows(allRows);
-    updateGapAndTimeKpisFromRows(allRows);
+    populateFlowFilterOptionsFromRows(currentRows);
+    applyFlowFilters();
 
     const btnClear = document.getElementById('btnClearFilter');
     if (btnClear) btnClear.style.display = 'inline-block';
   }
 
-  function stageIndexFromRow(r) {
-    const st = r['ESTADO'] || '';
-    const idx = STAGES_ORDER.indexOf(st);
-    return idx >= 0 ? idx : -1;
+  // ============================
+  //  EXPORTAR CSV
+  // ============================
+  function exportCurrentRowsToCSV() {
+    // Exportamos lo que está visible tras filtros: usar __DEBUG_LAST_ROWS si existe
+    const rows = window.__DEBUG_LAST_ROWS || currentRows || [];
+    if (!rows.length) {
+      alert('No hay datos para exportar.');
+      return;
+    }
+
+    const headers = [
+      'F8 SALMI','UNIDAD','TIPO','GRUPO','ESTADO','COMENT.',
+      'RECIBO F8','ASIGNACIÓN','SALIDA','DESPACHO',
+      'FACTURACIÓN','EMPACADO','PROY. ENTREGA','ENTREGA REAL'
+    ];
+
+    const csvRows = [];
+    csvRows.push(headers.join(','));
+
+    rows.forEach(r => {
+      const row = [
+        r['F8 SALMI'] || '',
+        r['UNIDAD'] || '',
+        r['TIPO'] || '',
+        r['GRUPO'] || '',
+        r['ESTADO'] || '',
+        r['COMENT.'] || '',
+        r['RECIBO F8'] || '',
+        r['ASIGNACIÓN'] || '',
+        r['SALIDA'] || '',
+        r['DESPACHO'] || '',
+        r['FACTURACIÓN'] || '',
+        r['EMPACADO'] || '',
+        r['PROY. ENTREGA'] || '',
+        r['ENTREGA REAL'] || ''
+      ].map(v => {
+        const s = String(v).replace(/"/g,'""');
+        return `"${s}"`;
+      });
+      csvRows.push(row.join(','));
+    });
+
+    const csvContent = csvRows.join('\r\n');
+    const blob = new Blob([csvContent], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const fileDate = currentDayFilter || toDateKey(new Date());
+    a.href = url;
+    a.download = `requisiciones_${fileDate}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   // ============================
@@ -486,14 +608,13 @@ if (window.__FLOW_APP_LOADED__) {
         return;
       }
       const data = res.data;
-      const rows = data.table?.rows || [];
+      currentRows = data.table?.rows || [];
 
       const title = document.getElementById('panel-title');
       if (title) title.textContent = 'Todas las requisiciones';
 
-      renderOrdersList(rows);
-      updateQuickStatsFromRows(rows);
-      updateGapAndTimeKpisFromRows(rows);
+      populateFlowFilterOptionsFromRows(currentRows);
+      applyFlowFilters();
     } catch(e) {
       console.warn('loadInitialData error', e);
       if (listEl) listEl.innerHTML = '<p class="loading-message">Error de red al cargar datos.</p>';
@@ -505,6 +626,11 @@ if (window.__FLOW_APP_LOADED__) {
     const btnEditMode = document.getElementById('btnEditMode');
     const btnRefresh  = document.getElementById('btnRefresh');
     const btnClear    = document.getElementById('btnClearFilter');
+    const btnExport   = document.getElementById('btnExport');
+
+    const selGrupo = document.getElementById('flowFilterGrupo');
+    const selUnidad = document.getElementById('flowFilterUnidad');
+    const selComent = document.getElementById('flowFilterComent');
 
     if (btnLogin) {
       btnLogin.addEventListener('click', () => {
@@ -544,9 +670,21 @@ if (window.__FLOW_APP_LOADED__) {
         btnClear.style.display = 'none';
         const title = document.getElementById('panel-title');
         if (title) title.textContent = 'Todas las requisiciones';
+        currentDayFilter = null;
+        if (selGrupo) selGrupo.value = '';
+        if (selUnidad) selUnidad.value = '';
+        if (selComent) selComent.value = '';
         loadInitialData();
       });
     }
+
+    if (btnExport) {
+      btnExport.addEventListener('click', exportCurrentRowsToCSV);
+    }
+
+    if (selGrupo) selGrupo.addEventListener('change', applyFlowFilters);
+    if (selUnidad) selUnidad.addEventListener('change', applyFlowFilters);
+    if (selComent) selComent.addEventListener('change', applyFlowFilters);
 
     const btnPrevMonth = document.getElementById('btnPrevMonth');
     const btnNextMonth = document.getElementById('btnNextMonth');
@@ -580,6 +718,7 @@ if (window.__FLOW_APP_LOADED__) {
     await loadInitialData();
 
     const now = new Date();
+    currentDayFilter = toDateKey(now);
     await loadCalendarMonth(now.getUTCFullYear(), now.getUTCMonth()+1);
   }
 
