@@ -1,5 +1,5 @@
-// flow-app.js v1.4 — Flow dashboard con filtros locales (Grupo/Unidad/Comentario)
-console.log('flow-app.js v1.4');
+// flow-app.js v1.5 — Flow dashboard con filtros, contadores por etapa y export CSV amigable
+console.log('flow-app.js v1.5');
 
 if (window.__FLOW_APP_LOADED__) {
   console.log('flow-app.js ya cargado, omitiendo.');
@@ -23,7 +23,7 @@ if (window.__FLOW_APP_LOADED__) {
   let editMode = false;
 
   let currentDayFilter = null;   // YYYY-MM-DD
-  let currentRows = [];          // filas base (sin filtros locales)
+  let currentRows = [];          // filas base (antes de filtros locales)
 
   // ============================
   //  HELPERS BÁSICOS
@@ -80,7 +80,7 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   // ============================
-  //  FILTROS LOCALES (grupo/unidad/coment)
+  //  FILTROS LOCALES
   // ============================
   function applyFlowFilters() {
     const selGrupo = document.getElementById('flowFilterGrupo');
@@ -91,7 +91,7 @@ if (window.__FLOW_APP_LOADED__) {
     const uVal = selUnidad ? selUnidad.value : '';
     const cVal = selComent ? selComent.value : '';
 
-    let rows = currentRows || [];
+    const rows = currentRows || [];
 
     const filtered = rows.filter(r => {
       if (gVal && String(r['GRUPO']||'') !== gVal) return false;
@@ -100,9 +100,13 @@ if (window.__FLOW_APP_LOADED__) {
       return true;
     });
 
+    // Guardar subconjunto visible para export
+    window.__DEBUG_LAST_ROWS = filtered;
+
     renderOrdersList(filtered);
     updateQuickStatsFromRows(filtered);
     updateGapAndTimeKpisFromRows(filtered);
+    updateFlowBlockCounts(filtered);
   }
 
   function populateFlowFilterOptionsFromRows(rows) {
@@ -227,10 +231,10 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   // ============================
-  //  QUICK STATS (tarjetas)
+  //  QUICK STATS y CONTADORES DE BLOQUES
   // ============================
   function updateQuickStatsFromRows(rows) {
-    window.__DEBUG_LAST_ROWS = rows; // para inspección
+    window.__DEBUG_LAST_ROWS = rows;
 
     const totalEl = document.getElementById('stat-total');
     const procEl  = document.getElementById('stat-proceso');
@@ -265,6 +269,37 @@ if (window.__FLOW_APP_LOADED__) {
     if (procEl)  procEl.textContent  = enProceso;
     if (compEl)  compEl.textContent  = completados;
     if (retrEl)  retrEl.textContent  = retraso;
+  }
+
+  function updateFlowBlockCounts(rows) {
+    const mapCounts = {
+      'F8 RECIBIDA':     0,
+      'EN ASIGNACIÓN':   0,
+      'SALIDA DE SALMI': 0,
+      'FACTURADO':       0,
+      'EMPACADO':        0,
+      'ENTREGADA':       0
+    };
+    (rows || []).forEach(r => {
+      const st = r['ESTADO'] || '';
+      if (mapCounts.hasOwnProperty(st)) mapCounts[st]++;
+    });
+
+    const elRec  = document.getElementById('count-recibo');
+    const elAsig = document.getElementById('count-asignacion');
+    const elSal  = document.getElementById('count-salida');
+    const elDesp = document.getElementById('count-despacho');
+    const elFact = document.getElementById('count-facturacion');
+    const elEmp  = document.getElementById('count-empacado');
+    const elEnt  = document.getElementById('count-entrega');
+
+    if (elRec)  elRec.textContent  = mapCounts['F8 RECIBIDA'];
+    if (elAsig) elAsig.textContent = mapCounts['EN ASIGNACIÓN'];
+    if (elSal)  elSal.textContent  = mapCounts['SALIDA DE SALMI'];
+    if (elDesp) elDesp.textContent = mapCounts['SALIDA DE SALMI']; // misma etapa operativa
+    if (elFact) elFact.textContent = mapCounts['FACTURADO'];
+    if (elEmp)  elEmp.textContent  = mapCounts['EMPACADO'];
+    if (elEnt)  elEnt.textContent  = mapCounts['ENTREGADA'];
   }
 
   // ============================
@@ -500,7 +535,7 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   // ============================
-  //  FLOW BLOCKS (usan el día seleccionado)
+  //  FLOW BLOCKS
   // ============================
   async function onFlowBlockClick(stageKey) {
     if (!currentDayFilter) {
@@ -541,7 +576,6 @@ if (window.__FLOW_APP_LOADED__) {
   //  EXPORTAR CSV
   // ============================
   function exportCurrentRowsToCSV() {
-    // Exportamos lo que está visible tras filtros: usar __DEBUG_LAST_ROWS si existe
     const rows = window.__DEBUG_LAST_ROWS || currentRows || [];
     if (!rows.length) {
       alert('No hay datos para exportar.');
@@ -554,8 +588,11 @@ if (window.__FLOW_APP_LOADED__) {
       'FACTURACIÓN','EMPACADO','PROY. ENTREGA','ENTREGA REAL'
     ];
 
+    // Separador compatible con Excel en ES
+    const SEP = ';';
+
     const csvRows = [];
-    csvRows.push(headers.join(','));
+    csvRows.push(headers.join(SEP));
 
     rows.forEach(r => {
       const row = [
@@ -577,7 +614,7 @@ if (window.__FLOW_APP_LOADED__) {
         const s = String(v).replace(/"/g,'""');
         return `"${s}"`;
       });
-      csvRows.push(row.join(','));
+      csvRows.push(row.join(SEP));
     });
 
     const csvContent = csvRows.join('\r\n');
