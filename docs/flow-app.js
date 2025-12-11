@@ -1,5 +1,5 @@
-// flow-app.js v1.7 — Conteos por columnas de fecha (M..S) y etapas por día
-console.log('flow-app.js v1.7');
+// flow-app.js v1.8 — Flujo por fechas + checklist de mensuales
+console.log('flow-app.js v1.8');
 
 if (window.__FLOW_APP_LOADED__) {
   console.log('flow-app.js ya cargado, omitiendo.');
@@ -10,7 +10,6 @@ if (window.__FLOW_APP_LOADED__) {
   const B = window.APP.B_URL;
   const CLIENT_ID = window.APP.CLIENT_ID;
 
-  // Orden lógico del flujo según columnas de fechas
   const FLOW_COLUMNS = [
     { key: 'RECIBO F8',    label: 'RECIBO F8',    blockId: 'count-recibo' },
     { key: 'ASIGNACIÓN',   label: 'ASIGNACIÓN',   blockId: 'count-asignacion' },
@@ -19,7 +18,6 @@ if (window.__FLOW_APP_LOADED__) {
     { key: 'FACTURACIÓN',  label: 'FACTURACIÓN',  blockId: 'count-facturacion' },
     { key: 'EMPACADO',     label: 'EMPACADO',     blockId: 'count-empacado' },
     { key: 'PROY. ENTREGA',label: 'PROY. ENTREGA',blockId: 'count-entrega' }
-    // ENTREGRA REAL la usamos para KPIs, no para bloques por ahora
   ];
 
   let idToken = null;
@@ -82,11 +80,8 @@ if (window.__FLOW_APP_LOADED__) {
     return dd + '/' + mm + '/' + yy;
   }
 
-  // Dado un registro r y una fecha clave YYYY-MM-DD, devuelve la etapa del flujo
-  // más avanzada que coincida con esa fecha en las columnas de flujo.
   function flowStageForDate(r, dateKey) {
     if (!dateKey) return null;
-    // Recorremos en orden de flujo; guardamos la última columna que coincide
     let lastMatch = null;
     for (const col of FLOW_COLUMNS) {
       const raw = r[col.key];
@@ -98,7 +93,7 @@ if (window.__FLOW_APP_LOADED__) {
         lastMatch = col.label;
       }
     }
-    return lastMatch; // puede ser null si no coincide ninguna
+    return lastMatch;
   }
 
   // ============================
@@ -183,7 +178,6 @@ if (window.__FLOW_APP_LOADED__) {
 
     const dateKey = currentDayFilter;
 
-    // Enriquecemos con la etapa del flujo para el día actual
     const enriched = rows.map(r => {
       const stageToday = flowStageForDate(r, dateKey);
       return { r, stageToday };
@@ -327,12 +321,11 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   // ============================
-  //  CONTADORES DE BLOQUES (por columnas de fecha)
+  //  CONTADORES DE BLOQUES
   // ============================
   function updateFlowBlockCounts(rows) {
     const dateKey = currentDayFilter;
     if (!dateKey) {
-      // Si no hay día seleccionado, ponemos 0 en todos
       FLOW_COLUMNS.forEach(col => {
         const el = document.getElementById(col.blockId);
         if (el) el.textContent = '0';
@@ -580,6 +573,7 @@ if (window.__FLOW_APP_LOADED__) {
     const title = document.getElementById('panel-title');
     if (title) title.textContent = `Requisiciones del ${dateKey}`;
 
+    // 1) Detalle de requisiciones del día
     const res = await jsonp(`${A}?route=calendar.daydetails&date=${dateKey}`);
     if (!res || res.status !== 'ok') {
       console.warn('calendar.daydetails error', res && res.error);
@@ -590,6 +584,9 @@ if (window.__FLOW_APP_LOADED__) {
 
     populateFlowFilterOptionsFromRows(currentRows);
     applyFlowFilters();
+
+    // 2) Checklist de mensuales
+    await loadMonthlyChecklist(dateKey);
 
     const btnClear = document.getElementById('btnClearFilter');
     if (btnClear) btnClear.style.display = 'inline-block';
@@ -610,7 +607,6 @@ if (window.__FLOW_APP_LOADED__) {
     }
     const dayRows = res.data.rows || [];
 
-    // Mapeamos data-stage a columna de flujo
     const map = {
       'RECIBO':'RECIBO F8',
       'ASIGNACION':'ASIGNACIÓN',
@@ -636,8 +632,86 @@ if (window.__FLOW_APP_LOADED__) {
     populateFlowFilterOptionsFromRows(currentRows);
     applyFlowFilters();
 
+    // Checklist sigue siendo por día completo, no depende del bloque
+    await loadMonthlyChecklist(currentDayFilter);
+
     const btnClear = document.getElementById('btnClearFilter');
     if (btnClear) btnClear.style.display = 'inline-block';
+  }
+
+  // ============================
+  //  CHECKLIST MENSUALES (frontend)
+  // ============================
+  async function loadMonthlyChecklist(dateKey) {
+    const labelEl = document.getElementById('monthlyDateLabel');
+    const contEl  = document.getElementById('monthlyChecklist');
+    if (!contEl) return;
+
+    if (labelEl) labelEl.textContent = `(${dateKey})`;
+    contEl.innerHTML = '<p class="loading-message">Cargando checklist de mensuales...</p>';
+
+    try {
+      const res = await jsonp(`${A}?route=monthly.checklist&date=${dateKey}`);
+      if (!res || res.status !== 'ok') {
+        console.warn('monthly.checklist error', res && res.error);
+        contEl.innerHTML = '<p class="loading-message">No se pudo cargar el checklist.</p>';
+        return;
+      }
+      const data = res.data || {};
+      const grupos = data.grupos || [];
+
+      if (!grupos.length) {
+        contEl.innerHTML = '<p class="loading-message">No hay mensuales para esta fecha.</p>';
+        return;
+      }
+
+      const html = `
+        <table class="monthly-table">
+          <thead>
+            <tr>
+              <th>Unidad</th>
+              <th>Requisiciones</th>
+              <th>Con Salida</th>
+              <th>Con Fact.</th>
+              <th>Con Emp.</th>
+              <th>Con Proy.</th>
+              <th>Con Entrega</th>
+              <th title="Facturación antes de salida">Fact &lt; Sal</th>
+              <th title="Facturación &gt; 7 días después de salida">Fact &gt;7d</th>
+              <th>Solo Salida</th>
+              <th>Solo Fact.</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${grupos.map(g => {
+              const inco = g.incoherencias || {};
+              const hayErr = (inco.factAntesSalida || inco.soloFact);
+              const hayWarn = inco.factMuyTarde || inco.soloSalida;
+              const cls = hayErr ? 'badge-err' : (hayWarn ? 'badge-warn' : 'badge-ok');
+              return `
+                <tr>
+                  <td>${g.unidad}</td>
+                  <td class="${cls}">${g.totalRequisiciones}</td>
+                  <td>${g.conSalida}</td>
+                  <td>${g.conFact}</td>
+                  <td>${g.conEmpacado}</td>
+                  <td>${g.conProy}</td>
+                  <td>${g.conEntregaReal}</td>
+                  <td>${inco.factAntesSalida || 0}</td>
+                  <td>${inco.factMuyTarde || 0}</td>
+                  <td>${inco.soloSalida || 0}</td>
+                  <td>${inco.soloFact || 0}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+      contEl.innerHTML = html;
+    } catch (e) {
+      console.warn('loadMonthlyChecklist error', e);
+      contEl.innerHTML = '<p class="loading-message">Error de red al cargar checklist.</p>';
+    }
   }
 
   // ============================
@@ -716,8 +790,6 @@ if (window.__FLOW_APP_LOADED__) {
       const title = document.getElementById('panel-title');
       if (title) title.textContent = 'Todas las requisiciones';
 
-      // Aquí todavía no hay currentDayFilter, así que los contadores de bloques
-      // se actualizarán a 0 hasta que elijas un día.
       populateFlowFilterOptionsFromRows(currentRows);
       applyFlowFilters();
     } catch(e) {
@@ -779,6 +851,10 @@ if (window.__FLOW_APP_LOADED__) {
         if (selGrupo) selGrupo.value = '';
         if (selUnidad) selUnidad.value = '';
         if (selComent) selComent.value = '';
+        const labelEl = document.getElementById('monthlyDateLabel');
+        const contEl  = document.getElementById('monthlyChecklist');
+        if (labelEl) labelEl.textContent = '';
+        if (contEl) contEl.innerHTML = '<p class="loading-message">Seleccione un día con mensuales para ver el resumen.</p>';
         loadInitialData();
       });
     }
