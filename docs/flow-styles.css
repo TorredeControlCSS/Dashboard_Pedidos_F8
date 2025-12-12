@@ -95,9 +95,9 @@ h1, h2, h3 { margin: 0; }
 }
 
 .top-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto; /* filtros | bloques | KPIs */
   align-items: stretch;
-  justify-content: space-between;
   gap: 8px;
 }
 
