@@ -1,5 +1,5 @@
-// flow-app.js v2.0 — Flujo por fechas + checklist de mensuales + día seleccionado + header sticky
-console.log('flow-app.js v2.0');
+// flow-app.js v2.1 — Flujo por fechas + checklist de mensuales + día seleccionado + header sticky
+console.log('flow-app.js v2.1');
 
 if (window.__FLOW_APP_LOADED__) {
   console.log('flow-app.js ya cargado, omitiendo.');
@@ -199,20 +199,34 @@ if (window.__FLOW_APP_LOADED__) {
       const grupo = r['GRUPO'] || '';
       const coment = r['COMENT.'] || '—';
 
-      const rec = r['RECIBO F8'] ? formatDateShort(r['RECIBO F8']) : '—';
-      const asg = r['ASIGNACIÓN'] ? formatDateShort(r['ASIGNACIÓN']) : '—';
-      const sal = r['SALIDA'] ? formatDateShort(r['SALIDA']) : '—';
-      const desp = r['DESPACHO'] ? formatDateShort(r['DESPACHO']) : '—';
-      const fac = r['FACTURACIÓN'] ? formatDateShort(r['FACTURACIÓN']) : '—';
-      const emp = r['EMPACADO'] ? formatDateShort(r['EMPACADO']) : '—';
-      const proy = r['PROY. ENTREGA'] ? formatDateShort(r['PROY. ENTREGA']) : '—';
-      const real = r['ENTREGA REAL'] ? formatDateShort(r['ENTREGA REAL']) : '—';
-
-      const recD = parseIsoDate(r['RECIBO F8']);
+      // Fechas como Date
+      const recD  = parseIsoDate(r['RECIBO F8']);
+      const asgD  = parseIsoDate(r['ASIGNACIÓN']);
+      const salD  = parseIsoDate(r['SALIDA']);
+      const despD = parseIsoDate(r['DESPACHO']);
+      const facD  = parseIsoDate(r['FACTURACIÓN']);
+      const empD  = parseIsoDate(r['EMPACADO']);
       const proyD = parseIsoDate(r['PROY. ENTREGA']);
       const realD = parseIsoDate(r['ENTREGA REAL']);
-      const teor  = (recD && proyD) ? Math.round(daysBetween(recD, proyD)) : null;
-      const realT = (recD && realD) ? Math.round(daysBetween(recD, realD)) : null;
+
+      // Texto formateado
+      const rec  = recD  ? formatDateShort(recD)  : '—';
+      const asg  = asgD  ? formatDateShort(asgD)  : '—';
+      const sal  = salD  ? formatDateShort(salD)  : '—';
+      const desp = despD ? formatDateShort(despD) : '—';
+      const fac  = facD  ? formatDateShort(facD)  : '—';
+      const emp  = empD  ? formatDateShort(empD)  : '—';
+      const proy = proyD ? formatDateShort(proyD) : '—';
+      const real = realD ? formatDateShort(realD) : '—';
+
+      const isHighlight = d => d && toDateKey(d) === dateKey;
+
+      const recForDelta  = recD;
+      const proyForDelta = proyD;
+      const realForDelta = realD;
+
+      const teor  = (recForDelta && proyForDelta) ? Math.round(daysBetween(recForDelta, proyForDelta)) : null;
+      const realT = (recForDelta && realForDelta) ? Math.round(daysBetween(recForDelta, realForDelta)) : null;
 
       let deltaHtml = '<span class="date-delta zero">—</span>';
       if (teor != null && realT != null) {
@@ -237,35 +251,35 @@ if (window.__FLOW_APP_LOADED__) {
           <div class="order-dates">
             <div class="date-item">
               <span class="date-label">Recibo F8</span>
-              <span class="date-value">${rec}</span>
+              <span class="date-value ${isHighlight(recD) ? 'highlight-day' : ''}">${rec}</span>
             </div>
             <div class="date-item">
               <span class="date-label">Asignación</span>
-              <span class="date-value">${asg}</span>
+              <span class="date-value ${isHighlight(asgD) ? 'highlight-day' : ''}">${asg}</span>
             </div>
             <div class="date-item">
               <span class="date-label">Salida</span>
-              <span class="date-value">${sal}</span>
+              <span class="date-value ${isHighlight(salD) ? 'highlight-day' : ''}">${sal}</span>
             </div>
             <div class="date-item">
               <span class="date-label">Despacho</span>
-              <span class="date-value">${desp}</span>
+              <span class="date-value ${isHighlight(despD) ? 'highlight-day' : ''}">${desp}</span>
             </div>
             <div class="date-item">
               <span class="date-label">Facturación</span>
-              <span class="date-value">${fac}</span>
+              <span class="date-value ${isHighlight(facD) ? 'highlight-day' : ''}">${fac}</span>
             </div>
             <div class="date-item">
               <span class="date-label">Empacado</span>
-              <span class="date-value">${emp}</span>
+              <span class="date-value ${isHighlight(empD) ? 'highlight-day' : ''}">${emp}</span>
             </div>
             <div class="date-item">
               <span class="date-label">Proy. Entrega</span>
-              <span class="date-value">${proy}</span>
+              <span class="date-value ${isHighlight(proyD) ? 'highlight-day' : ''}">${proy}</span>
             </div>
             <div class="date-item">
               <span class="date-label">Entrega Real</span>
-              <span class="date-value">${real}</span>
+              <span class="date-value ${isHighlight(realD) ? 'highlight-day' : ''}">${real}</span>
             </div>
             <div class="date-item">
               <span class="date-label">Delta</span>
@@ -859,6 +873,7 @@ if (window.__FLOW_APP_LOADED__) {
         if (labelEl) labelEl.textContent = '';
         if (contEl) contEl.innerHTML = '<p class="loading-message">Seleccione un día con mensuales para ver el resumen.</p>';
         loadInitialData();
+        renderCalendar(); // para quitar selección
       });
     }
 
