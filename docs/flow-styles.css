@@ -89,7 +89,7 @@ h1, h2, h3 { margin: 0; }
 
 /* TOP WRAPPER: franja bloques + KPIs */
 .top-wrapper {
-  max-width: 1400px; /* más ancho para que los bloques crezcan */
+  max-width: 1400px;
   margin: 0 auto;
   padding: 8px 8px 4px;
 }
@@ -108,13 +108,12 @@ h1, h2, h3 { margin: 0; }
   justify-content: flex-start;
   padding: 0;
   background: transparent;
-  overflow-x: visible;  /* en escritorio sin scroll horizontal */
+  overflow-x: visible;
   gap: 8px;
 }
 
-/* Bloques: más anchos en escritorio */
 .flow-block {
-  flex: 0 1 160px;      /* ancho base ~160px, se pueden estirar algo */
+  flex: 0 1 160px;
   min-width: 140px;
   background: white;
   border: 2px solid var(--border-color);
@@ -223,7 +222,7 @@ h1, h2, h3 { margin: 0; }
   align-items: center;
 }
 
-/* QUICK STATS (a la derecha en escritorio, debajo en móvil) */
+/* QUICK STATS */
 #quick-stats {
   flex-shrink: 0;
   display: grid;
@@ -258,6 +257,51 @@ h1, h2, h3 { margin: 0; }
 
 .stat-value.stat-danger { color: var(--danger-color); }
 
+/* Barra superior de filtros y acciones */
+.top-controls {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 4px 16px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.top-controls-left h2 {
+  font-size: 16px;
+  margin: 0;
+  color: var(--text-dark);
+}
+
+.top-controls-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.top-controls-right select {
+  font-size: 12px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.top-controls-right button {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: white;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.top-controls-right button:hover {
+  background: var(--bg-light);
+}
+
 /* MAIN LAYOUT */
 .main-container {
   display: grid;
@@ -267,7 +311,7 @@ h1, h2, h3 { margin: 0; }
   min-height: calc(100vh - 200px);
 }
 
-/* LEFT PANEL (header sticky) */
+/* LEFT PANEL */
 .left-panel {
   background: white;
   border: 1px solid var(--border-color);
@@ -283,47 +327,16 @@ h1, h2, h3 { margin: 0; }
   top: 0;
   z-index: 5;
   background: white;
-  padding: 10px 12px 6px;
+  padding: 6px 10px;
   margin: 0;
   border-bottom: 2px solid var(--border-color);
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.flow-filters {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 4px;
-}
-
-.panel-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  align-items: flex-end;
-  flex-shrink: 0;
-}
-
-.panel-actions button {
-  padding: 4px 10px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-  background: white;
-  color: var(--text-dark);
-  font-size: 12px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.panel-actions button:hover {
-  background: var(--bg-light);
 }
 
 .panel-header h2 {
-  font-size: 16px;
+  font-size: 15px;
   color: var(--text-dark);
 }
 
@@ -385,7 +398,7 @@ h1, h2, h3 { margin: 0; }
 
 .order-dates {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 6px;
   margin-top: 4px;
   padding-top: 4px;
@@ -396,6 +409,15 @@ h1, h2, h3 { margin: 0; }
 .date-item { display: flex; flex-direction: column; }
 .date-label { color: var(--text-light); margin-bottom: 1px; }
 .date-value { font-weight: 600; }
+
+/* Resaltado de día analizado */
+.date-value.highlight-day {
+  background: #fee2e2;
+  color: #b91c1c;
+  font-weight: 700;
+  padding: 1px 3px;
+  border-radius: 4px;
+}
 
 .date-delta { font-size: 10px; font-weight: 600; margin-top: 2px; }
 .date-delta.positive { color: var(--danger-color); }
@@ -647,7 +669,6 @@ h1, h2, h3 { margin: 0; }
    RESPONSIVE TABLET / MOBILE
    ========================= */
 
-/* <= 900px: una sola columna, bloques y KPIs apilados */
 @media (max-width: 900px) {
   .app-header {
     flex-wrap: wrap;
@@ -670,6 +691,21 @@ h1, h2, h3 { margin: 0; }
     margin-top: 6px;
   }
 
+  .top-controls {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 4px 8px;
+  }
+
+  .top-controls-right {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .top-controls-right select {
+    flex: 1 1 auto;
+  }
+
   .main-container {
     grid-template-columns: 1fr;
     padding: 8px;
@@ -684,7 +720,7 @@ h1, h2, h3 { margin: 0; }
   }
 }
 
-/* <= 600px: todo en una columna muy compacta y bloques como carrusel */
+/* <= 600px: más compacto */
 @media (max-width: 600px) {
   .app-header {
     padding: 8px 10px;
@@ -709,11 +745,11 @@ h1, h2, h3 { margin: 0; }
 
   #process-flow {
     gap: 6px;
-    overflow-x: auto;    /* en móvil sí queremos scroll horizontal */
+    overflow-x: auto;
   }
 
   .flow-block {
-    flex: 0 0 120px;     /* tarjetas fijas en carrusel */
+    flex: 0 0 120px;
     min-width: 120px;
     padding: 6px 4px;
   }
@@ -731,13 +767,7 @@ h1, h2, h3 { margin: 0; }
   }
 
   .panel-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .panel-actions {
-    flex-direction: row;
-    margin-top: 6px;
+    justify-content: flex-start;
   }
 
   .orders-list {
@@ -761,5 +791,9 @@ h1, h2, h3 { margin: 0; }
 
   .calendar-day-badge {
     font-size: 9px;
+  }
+
+  .order-dates {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
