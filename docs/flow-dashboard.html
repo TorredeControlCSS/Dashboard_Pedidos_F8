@@ -15,8 +15,10 @@
   <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400;600&display=swap" />
 
-  <link rel="stylesheet" href="flow-styles.css?v=1.4"/>
+  <!-- PWA manifest -->
   <link rel="manifest" href="manifest.json"/>
+
+  <link rel="stylesheet" href="flow-styles.css?v=2.0"/>
 </head>
 <body>
   <header class="app-header">
@@ -35,100 +37,102 @@
     </div>
   </header>
 
-  <!-- Franja superior: bloques + KPIs en una sola "barra" -->
+  <!-- Franja superior: bloques + KPIs en UNA sola fila en escritorio -->
   <div class="top-wrapper">
-    <!-- Bloques del Flujo de Proceso -->
-    <section id="process-flow">
-      <div class="flow-block" data-stage="RECIBO" data-days="0">
-        <div class="flow-block-icon">
-          <span class="material-symbols-outlined">mark_email_unread</span>
+    <div class="top-row">
+      <!-- Bloques del Flujo de Proceso -->
+      <section id="process-flow">
+        <div class="flow-block" data-stage="RECIBO" data-days="0">
+          <div class="flow-block-icon">
+            <span class="material-symbols-outlined">mark_email_unread</span>
+          </div>
+          <div class="flow-block-header">RECIBO F8</div>
+          <div class="flow-block-count" id="count-recibo">0</div>
+          <div class="flow-block-label">Requisiciones</div>
+          <div class="flow-block-days">Día 0</div>
         </div>
-        <div class="flow-block-header">RECIBO F8</div>
-        <div class="flow-block-count" id="count-recibo">0</div>
-        <div class="flow-block-label">Requisiciones</div>
-        <div class="flow-block-days">Día 0</div>
-      </div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-block" data-stage="ASIGNACION" data-days="1">
-        <div class="flow-block-icon">
-          <span class="material-symbols-outlined">assignment_ind</span>
+        <div class="flow-arrow">→</div>
+        <div class="flow-block" data-stage="ASIGNACION" data-days="1">
+          <div class="flow-block-icon">
+            <span class="material-symbols-outlined">assignment_ind</span>
+          </div>
+          <div class="flow-block-header">ASIGNACIÓN</div>
+          <div class="flow-block-count" id="count-asignacion">0</div>
+          <div class="flow-block-label">Requisiciones</div>
+          <div class="flow-block-days">+1 día</div>
         </div>
-        <div class="flow-block-header">ASIGNACIÓN</div>
-        <div class="flow-block-count" id="count-asignacion">0</div>
-        <div class="flow-block-label">Requisiciones</div>
-        <div class="flow-block-days">+1 día</div>
-      </div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-block" data-stage="SALIDA" data-days="2">
-        <div class="flow-block-icon">
-          <span class="material-symbols-outlined">exit_to_app</span>
+        <div class="flow-arrow">→</div>
+        <div class="flow-block" data-stage="SALIDA" data-days="2">
+          <div class="flow-block-icon">
+            <span class="material-symbols-outlined">exit_to_app</span>
+          </div>
+          <div class="flow-block-header">SALIDA</div>
+          <div class="flow-block-count" id="count-salida">0</div>
+          <div class="flow-block-label">Requisiciones</div>
+          <div class="flow-block-days">+1 día</div>
         </div>
-        <div class="flow-block-header">SALIDA</div>
-        <div class="flow-block-count" id="count-salida">0</div>
-        <div class="flow-block-label">Requisiciones</div>
-        <div class="flow-block-days">+1 día</div>
-      </div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-block" data-stage="DESPACHO" data-days="3">
-        <div class="flow-block-icon">
-          <span class="material-symbols-outlined">outbox</span>
+        <div class="flow-arrow">→</div>
+        <div class="flow-block" data-stage="DESPACHO" data-days="3">
+          <div class="flow-block-icon">
+            <span class="material-symbols-outlined">outbox</span>
+          </div>
+          <div class="flow-block-header">DESPACHO</div>
+          <div class="flow-block-count" id="count-despacho">0</div>
+          <div class="flow-block-label">Requisiciones</div>
+          <div class="flow-block-days">+1 día</div>
         </div>
-        <div class="flow-block-header">DESPACHO</div>
-        <div class="flow-block-count" id="count-despacho">0</div>
-        <div class="flow-block-label">Requisiciones</div>
-        <div class="flow-block-days">+1 día</div>
-      </div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-block" data-stage="FACTURACION" data-days="4">
-        <div class="flow-block-icon">
-          <span class="material-symbols-outlined">request_quote</span>
+        <div class="flow-arrow">→</div>
+        <div class="flow-block" data-stage="FACTURACION" data-days="4">
+          <div class="flow-block-icon">
+            <span class="material-symbols-outlined">request_quote</span>
+          </div>
+          <div class="flow-block-header">FACTURACIÓN</div>
+          <div class="flow-block-count" id="count-facturacion">0</div>
+          <div class="flow-block-label">Requisiciones</div>
+          <div class="flow-block-days">+1 día</div>
         </div>
-        <div class="flow-block-header">FACTURACIÓN</div>
-        <div class="flow-block-count" id="count-facturacion">0</div>
-        <div class="flow-block-label">Requisiciones</div>
-        <div class="flow-block-days">+1 día</div>
-      </div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-block" data-stage="EMPACADO" data-days="5">
-        <div class="flow-block-icon">
-          <span class="material-symbols-outlined">inventory_2</span>
+        <div class="flow-arrow">→</div>
+        <div class="flow-block" data-stage="EMPACADO" data-days="5">
+          <div class="flow-block-icon">
+            <span class="material-symbols-outlined">inventory_2</span>
+          </div>
+          <div class="flow-block-header">EMPACADO</div>
+          <div class="flow-block-count" id="count-empacado">0</div>
+          <div class="flow-block-label">Requisiciones</div>
+          <div class="flow-block-days">+3 días</div>
         </div>
-        <div class="flow-block-header">EMPACADO</div>
-        <div class="flow-block-count" id="count-empacado">0</div>
-        <div class="flow-block-label">Requisiciones</div>
-        <div class="flow-block-days">+3 días</div>
-      </div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-block" data-stage="ENTREGA" data-days="9">
-        <div class="flow-block-icon">
-          <span class="material-symbols-outlined">local_shipping</span>
+        <div class="flow-arrow">→</div>
+        <div class="flow-block" data-stage="ENTREGA" data-days="9">
+          <div class="flow-block-icon">
+            <span class="material-symbols-outlined">local_shipping</span>
+          </div>
+          <div class="flow-block-header">PROY. ENTREGA</div>
+          <div class="flow-block-count" id="count-entrega">0</div>
+          <div class="flow-block-label">Requisiciones</div>
+          <div class="flow-block-days">+1 día</div>
         </div>
-        <div class="flow-block-header">PROY. ENTREGA</div>
-        <div class="flow-block-count" id="count-entrega">0</div>
-        <div class="flow-block-label">Requisiciones</div>
-        <div class="flow-block-days">+1 día</div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Resumen Rápido (integrado visualmente con los bloques) -->
-    <section id="quick-stats">
-      <div class="stat-card">
-        <div class="stat-label">Total Requisiciones</div>
-        <div class="stat-value" id="stat-total">0</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">En Proceso</div>
-        <div class="stat-value" id="stat-proceso">0</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Completados</div>
-        <div class="stat-value" id="stat-completados">0</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Con Retraso</div>
-        <div class="stat-value stat-danger" id="stat-retraso">0</div>
-      </div>
-    </section>
+      <!-- Resumen Rápido (a la derecha, misma fila en escritorio, abajo en móvil) -->
+      <section id="quick-stats">
+        <div class="stat-card">
+          <div class="stat-label">Total</div>
+          <div class="stat-value" id="stat-total">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">En Proceso</div>
+          <div class="stat-value" id="stat-proceso">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Completados</div>
+          <div class="stat-value" id="stat-completados">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Con Retraso</div>
+          <div class="stat-value stat-danger" id="stat-retraso">0</div>
+        </div>
+      </section>
+    </div>
   </div>
 
   <!-- Contenedor principal de dos columnas -->
@@ -172,7 +176,7 @@
 
     <!-- Columna derecha -->
     <section class="right-panel">
-      <!-- Calendario + Checklist en grid compacto -->
+      <!-- Calendario + Checklist -->
       <div class="calendar-and-monthly">
         <div class="calendar-container">
           <div class="calendar-header">
@@ -245,6 +249,14 @@
       B_URL: 'https://script.google.com/macros/s/AKfycbysdeYW1g-l1p6ZOyk9aPaUIdx5H4GbzYFVeD1T8_SsyQoODqo-dSzjQMeu7lZzYmQ/exec',
       CLIENT_ID: '63868073848-8bfis5g0f8mt14oia3flmbqksg69tejq.apps.googleusercontent.com'
     };
+
+    // Registrar service worker para PWA (si está disponible)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js')
+          .catch(err => console.log('SW registration failed', err));
+      });
+    }
   </script>
 
   <script src="flow-app.js?v=2.0"></script>
