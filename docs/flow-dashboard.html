@@ -18,7 +18,7 @@
   <!-- PWA manifest -->
   <link rel="manifest" href="manifest.json"/>
 
-  <link rel="stylesheet" href="flow-styles.css?v=2.1"/>
+  <link rel="stylesheet" href="flow-styles.css?v=2.2"/>
 </head>
 <body>
   <header class="app-header">
@@ -135,12 +135,10 @@
     </div>
   </div>
 
-  <!-- Barra superior de filtros y acciones -->
-  <div class="top-controls">
-    <div class="top-controls-left">
-      <h2 id="panel-title">Todas las requisiciones</h2>
-    </div>
-    <div class="top-controls-right">
+  <!-- Barra de controles en la esquina superior izquierda -->
+  <div class="filters-bar">
+    <div class="filters-title" id="panel-title">Requisiciones del 2025-12-12</div>
+    <div class="filters-controls">
       <select id="flowFilterGrupo">
         <option value="">Todos los grupos</option>
       </select>
@@ -253,7 +251,6 @@
       CLIENT_ID: '63868073848-8bfis5g0f8mt14oia3flmbqksg69tejq.apps.googleusercontent.com'
     };
 
-    // Registrar service worker para PWA (si está disponible)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js')
@@ -262,6 +259,6 @@
     }
   </script>
 
-  <script src="flow-app.js?v=2.1"></script>
+  <script src="flow-app.js?v=2.2"></script>
 </body>
 </html>
