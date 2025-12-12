@@ -109,12 +109,13 @@ h1, h2, h3 { margin: 0; }
   justify-content: flex-start;
   padding: 0;
   background: transparent;
-  overflow-x: auto;
+  overflow-x: visible;  /* en escritorio sin scroll horizontal */
   gap: 8px;
 }
 
 .flow-block {
-  min-width: 120px;
+  flex: 1 1 0;          /* se reparten el ancho disponible en escritorio */
+  min-width: 0;
   background: white;
   border: 2px solid var(--border-color);
   border-radius: 10px;
@@ -683,7 +684,7 @@ h1, h2, h3 { margin: 0; }
   }
 }
 
-/* <= 600px: todo en una columna muy compacta */
+/* <= 600px: todo en una columna muy compacta y bloques como carrusel */
 @media (max-width: 600px) {
   .app-header {
     padding: 8px 10px;
@@ -708,9 +709,11 @@ h1, h2, h3 { margin: 0; }
 
   #process-flow {
     gap: 6px;
+    overflow-x: auto;    /* en móvil sí queremos scroll horizontal */
   }
 
   .flow-block {
+    flex: 0 0 110px;     /* tarjetas fijas en carrusel */
     min-width: 110px;
     padding: 6px 4px;
   }
