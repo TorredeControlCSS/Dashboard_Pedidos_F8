@@ -89,7 +89,7 @@ h1, h2, h3 { margin: 0; }
 
 /* TOP WRAPPER: franja bloques + KPIs */
 .top-wrapper {
-  max-width: 1200px;
+  max-width: 1400px; /* más ancho para que los bloques crezcan */
   margin: 0 auto;
   padding: 8px 8px 4px;
   background: linear-gradient(135deg, #f8fafc 0%, #e5e7eb 100%);
@@ -113,9 +113,10 @@ h1, h2, h3 { margin: 0; }
   gap: 8px;
 }
 
+/* Bloques: más anchos en escritorio */
 .flow-block {
-  flex: 1 1 0;          /* se reparten el ancho disponible en escritorio */
-  min-width: 0;
+  flex: 0 1 160px;      /* ancho base ~160px, se pueden estirar algo */
+  min-width: 140px;
   background: white;
   border: 2px solid var(--border-color);
   border-radius: 10px;
@@ -713,8 +714,8 @@ h1, h2, h3 { margin: 0; }
   }
 
   .flow-block {
-    flex: 0 0 110px;     /* tarjetas fijas en carrusel */
-    min-width: 110px;
+    flex: 0 0 120px;     /* tarjetas fijas en carrusel */
+    min-width: 120px;
     padding: 6px 4px;
   }
 
