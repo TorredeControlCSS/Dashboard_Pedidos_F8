@@ -1,5 +1,5 @@
 // flow-app.js v2.1 — Flujo por fechas + checklist de mensuales + día seleccionado + header sticky
-console.log('flow-app.js v2.1');
+console.log('flow-app.js v2.2');
 
 if (window.__FLOW_APP_LOADED__) {
   console.log('flow-app.js ya cargado, omitiendo.');
