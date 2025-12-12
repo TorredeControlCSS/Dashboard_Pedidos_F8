@@ -258,9 +258,9 @@ h1, h2, h3 { margin: 0; }
 
 /* Barra de filtros (dos filas, selects en columna) */
 .filters-bar {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 4px 16px 4px;
+  width: auto;
+  margin: 0;
+  padding: 4px 8px 4px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
