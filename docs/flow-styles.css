@@ -222,7 +222,7 @@ h1, h2, h3 { margin: 0; }
   align-items: center;
 }
 
-/* QUICK STATS (a la derecha en escritorio, vertical en móvil) */
+/* QUICK STATS (a la derecha en escritorio, debajo en móvil) */
 #quick-stats {
   flex-shrink: 0;
   display: grid;
@@ -661,10 +661,6 @@ h1, h2, h3 { margin: 0; }
 
   .top-row {
     flex-direction: column;
-  }
-
-  #process-flow {
-    justify-content: flex-start;
   }
 
   #quick-stats {
