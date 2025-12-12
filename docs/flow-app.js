@@ -1,5 +1,5 @@
-// flow-app.js v1.9 — Flujo por fechas + checklist de mensuales + día seleccionado en calendario
-console.log('flow-app.js v1.9');
+// flow-app.js v2.0 — Flujo por fechas + checklist de mensuales + día seleccionado + header sticky
+console.log('flow-app.js v2.0');
 
 if (window.__FLOW_APP_LOADED__) {
   console.log('flow-app.js ya cargado, omitiendo.');
@@ -482,7 +482,7 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   // ============================
-  //  CHECKLIST MENSUALES (frontend)
+  //  CHECKLIST MENSUALES
   // ============================
   async function loadMonthlyChecklist(dateKey) {
     const labelEl = document.getElementById('monthlyDateLabel');
@@ -513,6 +513,7 @@ if (window.__FLOW_APP_LOADED__) {
             <tr>
               <th>Unidad</th>
               <th>Requisiciones</th>
+              <th>Con Asig.</th>
               <th>Con Salida</th>
               <th>Con Fact.</th>
               <th>Con Emp.</th>
@@ -528,12 +529,13 @@ if (window.__FLOW_APP_LOADED__) {
             ${grupos.map(g => {
               const inco = g.incoherencias || {};
               const hayErr = (inco.factAntesSalida || inco.soloFact);
-              const hayWarn = inco.factMuyTarde || inco.soloSalida;
+              const hayWarn = inco.factMuyTarde || inco.soloSalida || g.conSalida === 0;
               const cls = hayErr ? 'badge-err' : (hayWarn ? 'badge-warn' : 'badge-ok');
               return `
                 <tr>
                   <td>${g.unidad}</td>
                   <td class="${cls}">${g.totalRequisiciones}</td>
+                  <td>${g.conAsignacion}</td>
                   <td>${g.conSalida}</td>
                   <td>${g.conFact}</td>
                   <td>${g.conEmpacado}</td>
@@ -666,7 +668,7 @@ if (window.__FLOW_APP_LOADED__) {
     const btnClear = document.getElementById('btnClearFilter');
     if (btnClear) btnClear.style.display = 'inline-block';
 
-    renderCalendar(); // para marcar visualmente el día seleccionado
+    renderCalendar();
   }
 
   // ============================
@@ -897,11 +899,16 @@ if (window.__FLOW_APP_LOADED__) {
       });
     });
 
+    // 1) Carga rápida inicial (para filtros, etc.)
     await loadInitialData();
 
+    // 2) Establecer día actual
     const now = new Date();
     currentDayFilter = toDateKey(now);
+
+    // 3) Cargar mes del calendario e inmediatamente simular clic en el día actual
     await loadCalendarMonth(now.getUTCFullYear(), now.getUTCMonth()+1);
+    await onCalendarDayClick(currentDayFilter);
   }
 
   document.addEventListener('DOMContentLoaded', initFlowDashboard);
