@@ -128,7 +128,6 @@ h1, h2, h3 { margin: 0; }
   justify-content: space-between;
 }
 
-/* Icono dentro del bloque */
 .flow-block-icon {
   display: flex;
   justify-content: center;
@@ -257,39 +256,38 @@ h1, h2, h3 { margin: 0; }
 
 .stat-value.stat-danger { color: var(--danger-color); }
 
-/* Barra superior de filtros y acciones */
-.top-controls {
+/* Barra de filtros en la esquina superior izquierda */
+.filters-bar {
   max-width: 1400px;
   margin: 0 auto;
   padding: 4px 16px 4px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
 }
 
-.top-controls-left h2 {
-  font-size: 16px;
-  margin: 0;
+.filters-title {
+  font-size: 15px;
+  font-weight: 600;
   color: var(--text-dark);
 }
 
-.top-controls-right {
+.filters-controls {
   display: flex;
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
-  justify-content: flex-end;
 }
 
-.top-controls-right select {
+.filters-controls select {
   font-size: 12px;
   padding: 4px 6px;
   border-radius: 6px;
   border: 1px solid var(--border-color);
 }
 
-.top-controls-right button {
+.filters-controls button {
   padding: 4px 10px;
   border-radius: 6px;
   border: 1px solid var(--border-color);
@@ -298,7 +296,7 @@ h1, h2, h3 { margin: 0; }
   cursor: pointer;
 }
 
-.top-controls-right button:hover {
+.filters-controls button:hover {
   background: var(--bg-light);
 }
 
@@ -691,18 +689,18 @@ h1, h2, h3 { margin: 0; }
     margin-top: 6px;
   }
 
-  .top-controls {
+  .filters-bar {
     flex-direction: column;
     align-items: flex-start;
     padding: 4px 8px;
   }
 
-  .top-controls-right {
+  .filters-controls {
     width: 100%;
     justify-content: flex-start;
   }
 
-  .top-controls-right select {
+  .filters-controls select {
     flex: 1 1 auto;
   }
 
@@ -764,10 +762,6 @@ h1, h2, h3 { margin: 0; }
 
   #quick-stats {
     grid-template-columns: 1fr;
-  }
-
-  .panel-header {
-    justify-content: flex-start;
   }
 
   .orders-list {
