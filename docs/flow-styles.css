@@ -92,7 +92,6 @@ h1, h2, h3 { margin: 0; }
   max-width: 1400px; /* más ancho para que los bloques crezcan */
   margin: 0 auto;
   padding: 8px 8px 4px;
-  background: linear-gradient(135deg, #f8fafc 0%, #e5e7eb 100%);
 }
 
 .top-row {
