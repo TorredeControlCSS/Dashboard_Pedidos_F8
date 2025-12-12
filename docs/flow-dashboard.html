@@ -18,7 +18,7 @@
   <!-- PWA manifest -->
   <link rel="manifest" href="manifest.json"/>
 
-  <link rel="stylesheet" href="flow-styles.css?v=2.2"/>
+  <link rel="stylesheet" href="flow-styles.css?v=2.3"/>
 </head>
 <body>
   <header class="app-header">
@@ -37,10 +37,9 @@
     </div>
   </header>
 
-  <!-- Franja superior: bloques + KPIs en una sola fila -->
+  <!-- Franja superior: bloques + KPIs -->
   <div class="top-wrapper">
     <div class="top-row">
-      <!-- Bloques del Flujo de Proceso -->
       <section id="process-flow">
         <div class="flow-block" data-stage="RECIBO" data-days="0">
           <div class="flow-block-icon">
@@ -113,7 +112,6 @@
         </div>
       </section>
 
-      <!-- Resumen Rápido -->
       <section id="quick-stats">
         <div class="stat-card">
           <div class="stat-label">Total</div>
@@ -135,16 +133,13 @@
     </div>
   </div>
 
-  <!-- Barra de controles en la esquina superior izquierda -->
+  <!-- Controles esquina superior izquierda (como tu captura) -->
   <div class="filters-bar">
-    <div class="filters-title" id="panel-title">Requisiciones del 2025-12-12</div>
-    <div class="filters-controls">
-      <select id="flowFilterGrupo">
-        <option value="">Todos los grupos</option>
-      </select>
-      <select id="flowFilterUnidad">
-        <option value="">Todas las unidades</option>
-      </select>
+    <div class="filters-controls-row">
+      <button id="btnClearFilter" style="display:none;">Limpiar filtro</button>
+      <button id="btnExport" title="Exportar datos">📊 Exportar</button>
+    </div>
+    <div class="filters-controls-row">
       <select id="flowFilterComent">
         <option value="">Todos los comentarios</option>
         <option value="DISCREPANCIA DE INVENTARIO">DISCREPANCIA DE INVENTARIO</option>
@@ -158,8 +153,12 @@
         <option value="ERROR DE CAPTACION">ERROR DE CAPTACION</option>
         <option value="ENTREGADO">ENTREGADO</option>
       </select>
-      <button id="btnClearFilter" style="display:none;">Limpiar filtro</button>
-      <button id="btnExport" title="Exportar datos">📊 Exportar</button>
+      <select id="flowFilterUnidad">
+        <option value="">Todas las unidades</option>
+      </select>
+      <select id="flowFilterGrupo">
+        <option value="">Todos los grupos</option>
+      </select>
     </div>
   </div>
 
@@ -168,7 +167,7 @@
     <!-- Columna izquierda: Lista de pedidos -->
     <section class="left-panel">
       <div class="panel-header">
-        <h2>Requisiciones</h2>
+        <h2 id="panel-title">Requisiciones del 2025-12-12</h2>
       </div>
       <div class="orders-list" id="ordersList">
         <p class="loading-message">Cargando requisiciones...</p>
@@ -177,7 +176,6 @@
 
     <!-- Columna derecha -->
     <section class="right-panel">
-      <!-- Calendario + Checklist -->
       <div class="calendar-and-monthly">
         <div class="calendar-container">
           <div class="calendar-header">
@@ -210,13 +208,11 @@
         </div>
       </div>
 
-      <!-- Análisis de Gaps -->
       <div class="gap-analysis-container">
         <h3>Análisis de Deltas (Teórico vs Real)</h3>
         <canvas id="gapChart"></canvas>
       </div>
 
-      <!-- KPIs de tiempos -->
       <div class="time-kpis">
         <div class="time-kpi">
           <div class="kpi-label">Tiempo promedio teórico</div>
@@ -236,7 +232,6 @@
         </div>
       </div>
 
-      <!-- Distribución de Deltas por Etapa -->
       <div class="stage-deltas-container">
         <h3>Deltas por Etapa del Proceso</h3>
         <canvas id="stageDeltas"></canvas>
@@ -259,6 +254,6 @@
     }
   </script>
 
-  <script src="flow-app.js?v=2.2"></script>
+  <script src="flow-app.js?v=2.3"></script>
 </body>
 </html>
