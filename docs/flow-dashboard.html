@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Dashboard de Procesamiento de F8</title>
   
-  <link rel="icon" href="icons/favicon.ico"/>
+  <link rel="icon" href="assets/logo.png"/>
 
   <!-- Librerías -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -18,7 +18,7 @@
   <!-- PWA manifest -->
   <link rel="manifest" href="manifest.json"/>
 
-  <link rel="stylesheet" href="flow-styles.css?v=2.0"/>
+  <link rel="stylesheet" href="flow-styles.css?v=2.1"/>
 </head>
 <body>
   <header class="app-header">
@@ -37,7 +37,7 @@
     </div>
   </header>
 
-  <!-- Franja superior: bloques + KPIs en UNA sola fila en escritorio -->
+  <!-- Franja superior: bloques + KPIs en una sola fila -->
   <div class="top-wrapper">
     <div class="top-row">
       <!-- Bloques del Flujo de Proceso -->
@@ -113,7 +113,7 @@
         </div>
       </section>
 
-      <!-- Resumen Rápido (a la derecha, misma fila en escritorio, abajo en móvil) -->
+      <!-- Resumen Rápido -->
       <section id="quick-stats">
         <div class="stat-card">
           <div class="stat-label">Total</div>
@@ -135,39 +135,42 @@
     </div>
   </div>
 
+  <!-- Barra superior de filtros y acciones -->
+  <div class="top-controls">
+    <div class="top-controls-left">
+      <h2 id="panel-title">Todas las requisiciones</h2>
+    </div>
+    <div class="top-controls-right">
+      <select id="flowFilterGrupo">
+        <option value="">Todos los grupos</option>
+      </select>
+      <select id="flowFilterUnidad">
+        <option value="">Todas las unidades</option>
+      </select>
+      <select id="flowFilterComent">
+        <option value="">Todos los comentarios</option>
+        <option value="DISCREPANCIA DE INVENTARIO">DISCREPANCIA DE INVENTARIO</option>
+        <option value="FALTA DE PERSONAL">FALTA DE PERSONAL</option>
+        <option value="VIATICOS PARA VIAJES">VIATICOS PARA VIAJES</option>
+        <option value="FALTA MONTACARGA">FALTA MONTACARGA</option>
+        <option value="CONGESTIONAMIENTO EN SALIDAS">CONGESTIONAMIENTO EN SALIDAS</option>
+        <option value="FACTURACION RETRASADA">FACTURACION RETRASADA</option>
+        <option value="FALLAS EN SISTEMA">FALLAS EN SISTEMA</option>
+        <option value="DEMORA EN DOCUMENTACION">DEMORA EN DOCUMENTACION</option>
+        <option value="ERROR DE CAPTACION">ERROR DE CAPTACION</option>
+        <option value="ENTREGADO">ENTREGADO</option>
+      </select>
+      <button id="btnClearFilter" style="display:none;">Limpiar filtro</button>
+      <button id="btnExport" title="Exportar datos">📊 Exportar</button>
+    </div>
+  </div>
+
   <!-- Contenedor principal de dos columnas -->
   <div class="main-container">
-    <!-- Columna izquierda: Filtros + Lista de pedidos filtrados -->
+    <!-- Columna izquierda: Lista de pedidos -->
     <section class="left-panel">
       <div class="panel-header">
-        <div>
-          <h2 id="panel-title">Todas las requisiciones</h2>
-          <div class="flow-filters">
-            <select id="flowFilterGrupo">
-              <option value="">Todos los grupos</option>
-            </select>
-            <select id="flowFilterUnidad">
-              <option value="">Todas las unidades</option>
-            </select>
-            <select id="flowFilterComent">
-              <option value="">Todos los comentarios</option>
-              <option value="DISCREPANCIA DE INVENTARIO">DISCREPANCIA DE INVENTARIO</option>
-              <option value="FALTA DE PERSONAL">FALTA DE PERSONAL</option>
-              <option value="VIATICOS PARA VIAJES">VIATICOS PARA VIAJES</option>
-              <option value="FALTA MONTACARGA">FALTA MONTACARGA</option>
-              <option value="CONGESTIONAMIENTO EN SALIDAS">CONGESTIONAMIENTO EN SALIDAS</option>
-              <option value="FACTURACION RETRASADA">FACTURACION RETRASADA</option>
-              <option value="FALLAS EN SISTEMA">FALLAS EN SISTEMA</option>
-              <option value="DEMORA EN DOCUMENTACION">DEMORA EN DOCUMENTACION</option>
-              <option value="ERROR DE CAPTACION">ERROR DE CAPTACION</option>
-              <option value="ENTREGADO">ENTREGADO</option>
-            </select>
-          </div>
-        </div>
-        <div class="panel-actions">
-          <button id="btnClearFilter" style="display:none;">Limpiar filtro</button>
-          <button id="btnExport" title="Exportar datos">📊 Exportar</button>
-        </div>
+        <h2>Requisiciones</h2>
       </div>
       <div class="orders-list" id="ordersList">
         <p class="loading-message">Cargando requisiciones...</p>
@@ -259,6 +262,6 @@
     }
   </script>
 
-  <script src="flow-app.js?v=2.0"></script>
+  <script src="flow-app.js?v=2.1"></script>
 </body>
 </html>
