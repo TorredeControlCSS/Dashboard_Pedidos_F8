@@ -77,6 +77,16 @@ h1, h2, h3 { margin: 0; }
   border-color: var(--warning-color);
 }
 
+/* Iconos Material Symbols */
+.material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 600,
+    'GRAD' 0,
+    'opsz' 24;
+  font-size: 20px;
+}
+
 /* TOP WRAPPER: centra bloques + KPIs y reduce espacio lateral */
 .top-wrapper {
   max-width: 1200px;
@@ -86,24 +96,39 @@ h1, h2, h3 { margin: 0; }
 /* PROCESS FLOW */
 #process-flow {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
-  padding: 12px 8px 6px;
+  padding: 12px 8px 4px;
   background: linear-gradient(135deg, #f8fafc 0%, #e5e7eb 100%);
   overflow-x: auto;
   gap: 8px;
 }
 
 .flow-block {
-  min-width: 110px;
+  min-width: 120px;
   background: white;
   border: 2px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 8px 6px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Icono dentro del bloque */
+.flow-block-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.flow-block-icon .material-symbols-outlined {
+  font-size: 22px;
 }
 
 /* Gradients */
@@ -137,7 +162,7 @@ h1, h2, h3 { margin: 0; }
 }
 
 .flow-block:hover {
-  transform: translateY(-4px);
+  transform: translateY(-3px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   border-color: var(--secondary-color);
 }
@@ -146,21 +171,21 @@ h1, h2, h3 { margin: 0; }
   background: var(--secondary-color) !important;
   color: white;
   border-color: var(--secondary-color) !important;
-  transform: scale(1.05);
+  transform: scale(1.04);
 }
 
 .flow-block-header {
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   letter-spacing: 0.5px;
 }
 
 .flow-block-count {
   font-size: 22px;
   font-weight: 700;
-  margin: 2px 0;
+  margin: 0;
 }
 
 .flow-block-label {
@@ -185,16 +210,18 @@ h1, h2, h3 { margin: 0; }
   color: var(--text-light);
   font-weight: 700;
   padding: 0 4px;
+  display: flex;
+  align-items: center;
 }
 
-/* QUICK STATS (también dentro del top-wrapper) */
+/* QUICK STATS (debajo de los bloques, misma franja) */
 #quick-stats {
   max-width: 1200px;
   margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
-  padding: 8px 16px 10px;
+  padding: 6px 16px 10px;
   background: var(--bg-light);
 }
 
