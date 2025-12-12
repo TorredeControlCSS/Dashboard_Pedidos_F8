@@ -256,7 +256,7 @@ h1, h2, h3 { margin: 0; }
 
 .stat-value.stat-danger { color: var(--danger-color); }
 
-/* Barra de filtros en la esquina superior izquierda (dos filas) */
+/* Barra de filtros (dos filas, selects en columna) */
 .filters-bar {
   max-width: 1400px;
   margin: 0 auto;
@@ -267,11 +267,19 @@ h1, h2, h3 { margin: 0; }
   gap: 4px;
 }
 
-.filters-controls-row {
+/* Fila superior: botones */
+.filters-controls-row.filters-buttons-row {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
+}
+
+/* Fila inferior: selects en columna */
+.filters-controls-row.filters-selects-column {
+  display: flex;
+  flex-direction: column;  /* uno debajo del otro */
+  align-items: flex-start;
+  gap: 4px;
 }
 
 .filters-controls-row select {
@@ -279,6 +287,7 @@ h1, h2, h3 { margin: 0; }
   padding: 4px 6px;
   border-radius: 6px;
   border: 1px solid var(--border-color);
+  min-width: 180px;
 }
 
 .filters-controls-row button {
