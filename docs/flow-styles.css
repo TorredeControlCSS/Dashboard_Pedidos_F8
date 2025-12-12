@@ -87,21 +87,70 @@ h1, h2, h3 { margin: 0; }
   font-size: 20px;
 }
 
-/* TOP WRAPPER: franja bloques + KPIs */
+/* =========================
+   FRANJA SUPERIOR
+   ========================= */
+
+/* Franja completa debajo del header */
 .top-wrapper {
   max-width: 1400px;
   margin: 0 auto;
   padding: 8px 8px 4px;
 }
 
+/* Una sola fila: filtros | bloques | KPIs */
 .top-row {
   display: grid;
-  grid-template-columns: auto 1fr auto; /* filtros | bloques | KPIs */
+  grid-template-columns: auto 1fr auto; /* izquierda filtros, centro bloques, derecha KPIs */
   align-items: stretch;
   gap: 8px;
 }
 
-/* PROCESS FLOW */
+/* Columna izquierda: filtros como en tu captura */
+.top-filters {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+/* Fila superior: botones */
+.filters-buttons-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filters-buttons-row button {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: white;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.filters-buttons-row button:hover {
+  background: var(--bg-light);
+}
+
+/* Fila inferior: selects uno debajo del otro */
+.filters-selects-column {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.filters-selects-column select {
+  font-size: 12px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  min-width: 180px;
+}
+
+/* PROCESS FLOW (bloques centrales) */
 #process-flow {
   display: flex;
   align-items: stretch;
@@ -221,7 +270,7 @@ h1, h2, h3 { margin: 0; }
   align-items: center;
 }
 
-/* QUICK STATS */
+/* QUICK STATS (a la derecha) */
 #quick-stats {
   flex-shrink: 0;
   display: grid;
@@ -256,54 +305,10 @@ h1, h2, h3 { margin: 0; }
 
 .stat-value.stat-danger { color: var(--danger-color); }
 
-/* Barra de filtros (dos filas, selects en columna) */
-.filters-bar {
-  width: auto;
-  margin: 0;
-  padding: 4px 8px 4px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-}
+/* =========================
+   LAYOUT PRINCIPAL
+   ========================= */
 
-/* Fila superior: botones */
-.filters-controls-row.filters-buttons-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-/* Fila inferior: selects en columna */
-.filters-controls-row.filters-selects-column {
-  display: flex;
-  flex-direction: column;  /* uno debajo del otro */
-  align-items: flex-start;
-  gap: 4px;
-}
-
-.filters-controls-row select {
-  font-size: 12px;
-  padding: 4px 6px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-  min-width: 180px;
-}
-
-.filters-controls-row button {
-  padding: 4px 10px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-  background: white;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.filters-controls-row button:hover {
-  background: var(--bg-light);
-}
-
-/* MAIN LAYOUT */
 .main-container {
   display: grid;
   grid-template-columns: 380px 1fr;
@@ -666,7 +671,9 @@ h1, h2, h3 { margin: 0; }
   font-weight: 700;
 }
 
-/* RESPONSIVE */
+/* =========================
+   RESPONSIVE
+   ========================= */
 
 @media (max-width: 900px) {
   .app-header {
@@ -680,8 +687,9 @@ h1, h2, h3 { margin: 0; }
     flex-wrap: wrap;
   }
 
+  /* En tablet, la franja superior pasa a columna */
   .top-row {
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
 
   #quick-stats {
