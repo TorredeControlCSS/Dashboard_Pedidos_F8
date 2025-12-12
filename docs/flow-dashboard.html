@@ -18,7 +18,7 @@
   <!-- PWA manifest -->
   <link rel="manifest" href="manifest.json"/>
 
-  <link rel="stylesheet" href="flow-styles.css?v=2.3"/>
+  <link rel="stylesheet" href="flow-styles.css?v=2.4"/>
 </head>
 <body>
   <header class="app-header">
@@ -37,9 +37,39 @@
     </div>
   </header>
 
-  <!-- Franja superior: bloques + KPIs -->
+  <!-- Franja superior: FILTROS + BLOQUES + KPIs TODO EN UNA SOLA FILA -->
   <div class="top-wrapper">
     <div class="top-row">
+      <!-- Columna izquierda: filtros como en tu captura -->
+      <section class="top-filters">
+        <div class="filters-buttons-row">
+          <button id="btnClearFilter" style="display:none;">Limpiar filtro</button>
+          <button id="btnExport" title="Exportar datos">📊 Exportar</button>
+        </div>
+        <div class="filters-selects-column">
+          <select id="flowFilterComent">
+            <option value="">Todos los comentarios</option>
+            <option value="DISCREPANCIA DE INVENTARIO">DISCREPANCIA DE INVENTARIO</option>
+            <option value="FALTA DE PERSONAL">FALTA DE PERSONAL</option>
+            <option value="VIATICOS PARA VIAJES">VIATICOS PARA VIAJES</option>
+            <option value="FALTA MONTACARGA">FALTA MONTACARGA</option>
+            <option value="CONGESTIONAMIENTO EN SALIDAS">CONGESTIONAMIENTO EN SALIDAS</option>
+            <option value="FACTURACION RETRASADA">FACTURACION RETRASADA</option>
+            <option value="FALLAS EN SISTEMA">FALLAS EN SISTEMA</option>
+            <option value="DEMORA EN DOCUMENTACION">DEMORA EN DOCUMENTACION</option>
+            <option value="ERROR DE CAPTACION">ERROR DE CAPTACION</option>
+            <option value="ENTREGADO">ENTREGADO</option>
+          </select>
+          <select id="flowFilterUnidad">
+            <option value="">Todas las unidades</option>
+          </select>
+          <select id="flowFilterGrupo">
+            <option value="">Todos los grupos</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Bloques del Flujo de Proceso (centro) -->
       <section id="process-flow">
         <div class="flow-block" data-stage="RECIBO" data-days="0">
           <div class="flow-block-icon">
@@ -112,6 +142,7 @@
         </div>
       </section>
 
+      <!-- KPIs a la derecha -->
       <section id="quick-stats">
         <div class="stat-card">
           <div class="stat-label">Total</div>
@@ -133,38 +164,8 @@
     </div>
   </div>
 
-  <!-- Controles esquina superior izquierda (como tu captura) -->
-  <div class="filters-bar">
-    <div class="filters-controls-row">
-      <button id="btnClearFilter" style="display:none;">Limpiar filtro</button>
-      <button id="btnExport" title="Exportar datos">📊 Exportar</button>
-    </div>
-    <div class="filters-controls-row">
-      <select id="flowFilterComent">
-        <option value="">Todos los comentarios</option>
-        <option value="DISCREPANCIA DE INVENTARIO">DISCREPANCIA DE INVENTARIO</option>
-        <option value="FALTA DE PERSONAL">FALTA DE PERSONAL</option>
-        <option value="VIATICOS PARA VIAJES">VIATICOS PARA VIAJES</option>
-        <option value="FALTA MONTACARGA">FALTA MONTACARGA</option>
-        <option value="CONGESTIONAMIENTO EN SALIDAS">CONGESTIONAMIENTO EN SALIDAS</option>
-        <option value="FACTURACION RETRASADA">FACTURACION RETRASADA</option>
-        <option value="FALLAS EN SISTEMA">FALLAS EN SISTEMA</option>
-        <option value="DEMORA EN DOCUMENTACION">DEMORA EN DOCUMENTACION</option>
-        <option value="ERROR DE CAPTACION">ERROR DE CAPTACION</option>
-        <option value="ENTREGADO">ENTREGADO</option>
-      </select>
-      <select id="flowFilterUnidad">
-        <option value="">Todas las unidades</option>
-      </select>
-      <select id="flowFilterGrupo">
-        <option value="">Todos los grupos</option>
-      </select>
-    </div>
-  </div>
-
   <!-- Contenedor principal de dos columnas -->
   <div class="main-container">
-    <!-- Columna izquierda: Lista de pedidos -->
     <section class="left-panel">
       <div class="panel-header">
         <h2 id="panel-title">Requisiciones del 2025-12-12</h2>
@@ -174,7 +175,6 @@
       </div>
     </section>
 
-    <!-- Columna derecha -->
     <section class="right-panel">
       <div class="calendar-and-monthly">
         <div class="calendar-container">
@@ -254,6 +254,6 @@
     }
   </script>
 
-  <script src="flow-app.js?v=2.3"></script>
+  <script src="flow-app.js?v=2.4"></script>
 </body>
 </html>
