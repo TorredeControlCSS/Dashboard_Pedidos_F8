@@ -103,7 +103,7 @@ h1, h2, h3 { margin: 0; }
   display: grid;
   grid-template-columns: auto minmax(800px, 1fr) auto; /* izquierda filtros, centro bloques, derecha KPIs */
   align-items: stretch;
-  gap: 8px;
+  gap: 16px;
   justify-content: flex-start;
 }
 
@@ -112,7 +112,7 @@ h1, h2, h3 { margin: 0; }
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  gap: 16px;
 }
 
 /* Fila superior: botones */
