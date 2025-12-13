@@ -101,9 +101,9 @@ h1, h2, h3 { margin: 0; }
 /* Una sola fila: filtros | bloques | KPIs */
 .top-row {
   display: grid;
-  grid-template-columns: auto minmax(50px, 1fr) auto; /* izquierda filtros, centro bloques, derecha KPIs */
+  grid-template-columns: auto minmax(10px, 1fr) auto; /* izquierda filtros, centro bloques, derecha KPIs */
   align-items: stretch;
-  gap: 4px;
+  gap: 8px;
   justify-content: flex-start;
 }
 
