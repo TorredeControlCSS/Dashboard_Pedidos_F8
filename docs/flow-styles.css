@@ -145,7 +145,7 @@ h1, h2, h3 { margin: 0; }
 
 .filters-selects-column select {
   font-size: 12px;
-  padding: 4px 6px;
+  padding: 8px 10px;
   border-radius: 6px;
   border: 1px solid var(--border-color);
   width: 300px;       /* ancho fijo para que no cambie con el texto */
