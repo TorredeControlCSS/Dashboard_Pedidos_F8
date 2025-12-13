@@ -95,15 +95,15 @@ h1, h2, h3 { margin: 0; }
 .top-wrapper {
   width: 100%;
   margin: 0;
-  padding: 8px 4px 4px;
+  padding: 8px 8px 4px;
 }
 
 /* Una sola fila: filtros | bloques | KPIs */
 .top-row {
   display: grid;
-  grid-template-columns: auto minmax(800px, 1fr) auto; /* izquierda filtros, centro bloques, derecha KPIs */
+  grid-template-columns: auto minmax(520px, 1fr) auto; /* filtros | bloques | KPIs */
   align-items: stretch;
-  gap: 16px;
+  gap: 6px;
   justify-content: flex-start;
 }
 
@@ -112,7 +112,7 @@ h1, h2, h3 { margin: 0; }
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 16px;
+  gap: 4px;
 }
 
 /* Fila superior: botones */
@@ -148,8 +148,8 @@ h1, h2, h3 { margin: 0; }
   padding: 4px 6px;
   border-radius: 6px;
   border: 1px solid var(--border-color);
-  width: 300px;        /* ancho fijo: AJUSTA a lo que te guste */
-  max-width: 300px;
+  width: 200px;       /* ancho fijo para que no cambie con el texto */
+  max-width: 200px;
   box-sizing: border-box;
 }
 
@@ -320,7 +320,7 @@ h1, h2, h3 { margin: 0; }
   min-height: calc(100vh - 200px);
 }
 
-/* LEFT PANEL */
+/* LEFT PANEL CON SCROLL INTERNO */
 .left-panel {
   background: white;
   border: 1px solid var(--border-color);
@@ -329,6 +329,7 @@ h1, h2, h3 { margin: 0; }
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  max-height: calc(100vh - 180px); /* altura máx relativa a la ventana */
 }
 
 .panel-header {
@@ -351,7 +352,7 @@ h1, h2, h3 { margin: 0; }
 
 .orders-list {
   flex: 1;
-  overflow-y: auto;
+  overflow-y: auto;      /* scroll interno */
   overflow-x: hidden;
   padding: 0 12px 12px;
 }
@@ -675,7 +676,7 @@ h1, h2, h3 { margin: 0; }
 }
 
 /* =========================
-   RESPONSIVE
+   RESPONSIVE TABLET
    ========================= */
 
 @media (max-width: 900px) {
@@ -690,7 +691,6 @@ h1, h2, h3 { margin: 0; }
     flex-wrap: wrap;
   }
 
-  /* La fila superior pasa a 1 columna */
   .top-row {
     grid-template-columns: 1fr;
   }
@@ -714,6 +714,10 @@ h1, h2, h3 { margin: 0; }
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================
+   RESPONSIVE MÓVIL
+   ========================= */
 
 @media (max-width: 600px) {
   .app-header {
@@ -746,18 +750,13 @@ h1, h2, h3 { margin: 0; }
     padding: 6px 4px;
   }
 
-  /* La franja superior pasa a ser una columna:
-     1) filtros
-     2) bloques
-     3) KPIs
-  */
+  /* Filtros arriba */
   .top-row {
     display: flex;
     flex-direction: column;
     gap: 6px;
   }
 
-  /* Filtros compactos arriba */
   .top-filters {
     width: 100%;
   }
@@ -786,7 +785,7 @@ h1, h2, h3 { margin: 0; }
   }
 
   .flow-block {
-    flex: 0 0 140px;      /* ancho fijo en móvil */
+    flex: 0 0 140px;
     min-width: 140px;
     padding: 6px 4px;
   }
@@ -799,16 +798,42 @@ h1, h2, h3 { margin: 0; }
     font-size: 16px;
   }
 
-  /* KPIs debajo de los bloques, 2 por fila */
+  /* KPIs debajo */
   #quick-stats {
     width: 100%;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     margin-top: 4px;
   }
 
+  /* Contenedor principal en columna, para poder reordenar */
   .main-container {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     padding: 6px 8px 12px;
+  }
+
+  /* Calendario (right-panel) primero, Requisiciones después */
+  .right-panel { order: 1; }
+  .left-panel  { order: 2; }
+
+  /* En móvil: panel de requisiciones con altura limitada y scroll interno */
+  .left-panel {
+    max-height: calc(100vh - 200px);
+  }
+
+  .orders-list {
+    max-height: 100%;
+  }
+
+  .left-panel,
+  .right-panel,
+  .calendar-container,
+  .monthly-checklist-container,
+  .gap-analysis-container,
+  .stage-deltas-container {
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .orders-list {
@@ -834,12 +859,10 @@ h1, h2, h3 { margin: 0; }
     font-size: 9px;
   }
 
-  /* Fechas de la tarjeta: 2 columnas para que no se amontonen tanto */
   .order-dates {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  /* KPIs de abajo en una sola columna */
   .time-kpis {
     grid-template-columns: 1fr;
   }
