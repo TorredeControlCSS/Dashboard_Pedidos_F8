@@ -148,8 +148,8 @@ h1, h2, h3 { margin: 0; }
   padding: 4px 6px;
   border-radius: 6px;
   border: 1px solid var(--border-color);
-  width: 200px;        /* ancho fijo: AJUSTA a lo que te guste */
-  max-width: 200px;
+  width: 300px;        /* ancho fijo: AJUSTA a lo que te guste */
+  max-width: 300px;
   box-sizing: border-box;
 }
 
