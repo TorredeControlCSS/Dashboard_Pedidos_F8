@@ -690,7 +690,7 @@ h1, h2, h3 { margin: 0; }
     flex-wrap: wrap;
   }
 
-  /* En tablet, la franja superior pasa a columna */
+  /* La fila superior pasa a 1 columna */
   .top-row {
     grid-template-columns: 1fr;
   }
@@ -718,11 +718,14 @@ h1, h2, h3 { margin: 0; }
 @media (max-width: 600px) {
   .app-header {
     padding: 8px 10px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
   }
 
   .app-header .brand img {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
   }
 
   .app-header h1 {
@@ -733,18 +736,58 @@ h1, h2, h3 { margin: 0; }
     font-size: 11px;
   }
 
+  .header-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
   .top-wrapper {
     padding: 6px 4px;
   }
 
-  #process-flow {
+  /* La franja superior pasa a ser una columna:
+     1) filtros
+     2) bloques
+     3) KPIs
+  */
+  .top-row {
+    display: flex;
+    flex-direction: column;
     gap: 6px;
+  }
+
+  /* Filtros compactos arriba */
+  .top-filters {
+    width: 100%;
+  }
+
+  .filters-buttons-row {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .filters-selects-column {
+    width: 100%;
+  }
+
+  .filters-selects-column select {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Bloques: carrusel horizontal */
+  #process-flow {
+    width: 100%;
     overflow-x: auto;
+    padding-bottom: 4px;
+    gap: 6px;
   }
 
   .flow-block {
-    flex: 0 0 120px;
-    min-width: 120px;
+    flex: 0 0 140px;      /* ancho fijo en móvil */
+    min-width: 140px;
     padding: 6px 4px;
   }
 
@@ -756,8 +799,16 @@ h1, h2, h3 { margin: 0; }
     font-size: 16px;
   }
 
+  /* KPIs debajo de los bloques, 2 por fila */
   #quick-stats {
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 4px;
+  }
+
+  .main-container {
     grid-template-columns: 1fr;
+    padding: 6px 8px 12px;
   }
 
   .orders-list {
@@ -783,7 +834,13 @@ h1, h2, h3 { margin: 0; }
     font-size: 9px;
   }
 
+  /* Fechas de la tarjeta: 2 columnas para que no se amontonen tanto */
   .order-dates {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* KPIs de abajo en una sola columna */
+  .time-kpis {
+    grid-template-columns: 1fr;
   }
 }
