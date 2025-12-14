@@ -846,6 +846,8 @@ h1, h2, h3 { margin: 0; }
   }
 
   .calendar-grid {
+    width: 100%;
+    max-width: 100%;
     gap: 2px;
   }
 
@@ -865,18 +867,15 @@ h1, h2, h3 { margin: 0; }
     grid-template-columns: 1fr;
   }
 
-  /* ===== Ajustes SOLO móvil para que calendario y checklist no se salgan ===== */
-
-  /* 1) Panel derecho: que nunca sea más ancho que la pantalla */
+  /* Ajustes móvil para calendario y checklist */
   .right-panel {
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
   }
 
-  /* 2) Calendario y checklist apilados, ocupando 100% */
   .calendar-and-monthly {
-    display: block;       /* uno debajo del otro en móvil */
+    display: block;
     width: 100%;
     max-width: 100%;
   }
@@ -888,21 +887,14 @@ h1, h2, h3 { margin: 0; }
     box-sizing: border-box;
   }
 
-  /* 3) Si la tabla es muy ancha, solo este bloque tendrá scroll horizontal interno */
   .monthly-checklist-container {
     overflow-x: auto;
   }
 
   .monthly-table {
-    min-width: 480px;     /* ajusta si quieres menos ancho mínimo */
+    min-width: 480px;
     table-layout: fixed;
     word-wrap: break-word;
-  }
-
-  /* 4) Calendario: que no fuerce más ancho */
-  .calendar-grid {
-    width: 100%;
-    max-width: 100%;
   }
 }
 
@@ -912,7 +904,7 @@ h1, h2, h3 { margin: 0; }
 }
 
 .monthly-row-grupo td {
-  background-color: #f9fafb;  /* gris muy claro para distinguir grupos */
+  background-color: #f9fafb;
   font-size: 12px;
 }
 
@@ -933,9 +925,10 @@ h1, h2, h3 { margin: 0; }
 .monthly-toggle-btn:hover {
   background: #e5e7eb;
 }
+
 /* Mini contador de RECIBO F8 en el calendario */
 .calendar-day {
-  position: relative; /* necesario para posicionar el mini contador dentro */
+  position: relative;
 }
 
 .calendar-mini-counter {
@@ -947,5 +940,5 @@ h1, h2, h3 { margin: 0; }
   background: rgba(255, 255, 255, 0.9);
   padding: 1px 4px;
   border-radius: 999px;
-  pointer-events: none; /* el click sigue llegando al día */
+  pointer-events: none;
 }
