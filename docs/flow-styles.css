@@ -868,3 +868,42 @@ h1, h2, h3 { margin: 0; }
     grid-template-columns: 1fr;
   }
 }
+
+ /* 1) Panel derecho: que nunca sea más ancho que la pantalla */
+  .right-panel {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* 2) Calendario y checklist apilados, ocupando 100% */
+  .calendar-and-monthly {
+    display: block;       /* uno debajo del otro en móvil */
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .calendar-container,
+  .monthly-checklist-container {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* 3) Si la tabla es muy ancha, solo este bloque tendrá scroll horizontal interno */
+  .monthly-checklist-container {
+    overflow-x: auto;
+  }
+
+  .monthly-table {
+    min-width: 480px;     /* ancho mínimo razonable para que las columnas no se aplasten tanto */
+    table-layout: fixed;
+    word-wrap: break-word;
+  }
+
+  /* 4) Calendario: que no fuerce más ancho */
+  .calendar-grid {
+    width: 100%;
+    max-width: 100%;
+  }
+}
