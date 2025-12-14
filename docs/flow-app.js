@@ -1,5 +1,5 @@
 // flow-app.js v2.1 — Flujo por fechas + checklist de mensuales + día seleccionado + header sticky
-console.log('flow-app.js v2.2');
+console.log('flow-app.js v2.3');
 
 if (window.__FLOW_APP_LOADED__) {
   console.log('flow-app.js ya cargado, omitiendo.');
@@ -25,6 +25,7 @@ if (window.__FLOW_APP_LOADED__) {
 
   let currentDayFilter = null;   // YYYY-MM-DD
   let currentRows = [];          // filas base (antes de filtros locales)
+  let currentStatusFilter = 'ALL'; // ALL | IN_PROGRESS | COMPLETED | LATE
 
   // ============================
   //  HELPERS BÁSICOS
@@ -111,9 +112,27 @@ if (window.__FLOW_APP_LOADED__) {
     const rows = currentRows || [];
 
     const filtered = rows.filter(r => {
+      // Filtros por grupo / unidad / comentario
       if (gVal && String(r['GRUPO']||'') !== gVal) return false;
       if (uVal && String(r['UNIDAD']||'') !== uVal) return false;
       if (cVal && String(r['COMENT.']||'') !== cVal) return false;
+
+      // Filtro por estado según KPI seleccionado
+      const realD = parseIsoDate(r['ENTREGA REAL']);
+      const proyD = parseIsoDate(r['PROY. ENTREGA']);
+
+      if (currentStatusFilter === 'IN_PROGRESS') {
+        // Solo sin entrega real
+        if (realD) return false;
+      } else if (currentStatusFilter === 'COMPLETED') {
+        // Solo con entrega real (sin importar retraso)
+        if (!realD) return false;
+      } else if (currentStatusFilter === 'LATE') {
+        // Solo completadas con retraso
+        if (!(realD && proyD && realD > proyD)) return false;
+      }
+      // ALL -> no filtra por estado
+
       return true;
     });
 
@@ -694,7 +713,7 @@ if (window.__FLOW_APP_LOADED__) {
     }
 
     const res = await jsonp(`${A}?route=calendar.daydetails&date=${currentDayFilter}`);
-    if (!res || res.status !== 'ok') {
+    if (!res || !res.status !== 'ok') {
       console.warn('calendar.daydetails error en flow block', res && res.error);
       return;
     }
@@ -826,6 +845,34 @@ if (window.__FLOW_APP_LOADED__) {
     const selUnidad = document.getElementById('flowFilterUnidad');
     const selComent = document.getElementById('flowFilterComent');
 
+    // KPIs clicables
+    const kTotal  = document.getElementById('stat-total');
+    const kProc   = document.getElementById('stat-proceso');
+    const kComp   = document.getElementById('stat-completados');
+    const kRetr   = document.getElementById('stat-retraso');
+
+    function setStatusFilter(status) {
+      currentStatusFilter = status; // 'ALL' | 'IN_PROGRESS' | 'COMPLETED' | 'LATE'
+      applyFlowFilters();
+    }
+
+    if (kTotal) {
+      kTotal.style.cursor = 'pointer';
+      kTotal.addEventListener('click', () => setStatusFilter('ALL'));
+    }
+    if (kProc) {
+      kProc.style.cursor = 'pointer';
+      kProc.addEventListener('click', () => setStatusFilter('IN_PROGRESS'));
+    }
+    if (kComp) {
+      kComp.style.cursor = 'pointer';
+      kComp.addEventListener('click', () => setStatusFilter('COMPLETED'));
+    }
+    if (kRetr) {
+      kRetr.style.cursor = 'pointer';
+      kRetr.addEventListener('click', () => setStatusFilter('LATE'));
+    }
+
     if (btnLogin) {
       btnLogin.addEventListener('click', () => {
         if (window.google?.accounts?.id) {
@@ -865,6 +912,7 @@ if (window.__FLOW_APP_LOADED__) {
         const title = document.getElementById('panel-title');
         if (title) title.textContent = 'Todas las requisiciones';
         currentDayFilter = null;
+        currentStatusFilter = 'ALL';   // reset filtro de estado
         if (selGrupo) selGrupo.value = '';
         if (selUnidad) selUnidad.value = '';
         if (selComent) selComent.value = '';
