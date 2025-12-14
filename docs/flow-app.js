@@ -941,6 +941,8 @@ if (window.__FLOW_APP_LOADED__) {
   // ============================
   let currentCalYear, currentCalMonth;
   let currentCalData = {};
+    // Exponer datos de calendario para depuración
+  window.__CAL_DATA__ = currentCalData;
 
   async function loadCalendarMonth(year, month) {
     currentCalYear = year;
@@ -952,6 +954,7 @@ if (window.__FLOW_APP_LOADED__) {
       return;
     }
     currentCalData = res.data || {};
+    window.__CAL_DATA__ = currentCalData;   // <<< AÑADE ESTA LÍNEA
     renderCalendar();
   }
 
