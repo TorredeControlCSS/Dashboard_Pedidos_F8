@@ -868,39 +868,3 @@ h1, h2, h3 { margin: 0; }
     grid-template-columns: 1fr;
   }
 }
-
-/* Asegurar que nada se salga horizontalmente en móvil */
-  .right-panel {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-
-  .calendar-and-monthly {
-    display: block;          /* apilados uno debajo del otro */
-    width: 100%;
-    max-width: 100%;
-  }
-
-  .calendar-container,
-  .monthly-checklist-container {
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-    overflow-x: auto;        /* si algo se pasa, solo este bloque hace scroll horizontal */
-  }
-
-  /* Que la tabla de checklist nunca sea más ancha que la pantalla */
-  .monthly-table {
-    width: 100%;
-    max-width: 100%;
-    table-layout: fixed;     /* columnas ajustadas, no se expanden infinito */
-    word-wrap: break-word;
-  }
-
-  /* Evitar que el grid del calendario fuerce más ancho */
-  .calendar-grid {
-    width: 100%;
-    max-width: 100%;
-  }
-}
