@@ -279,7 +279,7 @@ if (window.__FLOW_APP_LOADED__) {
         deltaHtml = `<span class="date-delta ${cls}">${d > 0 ? '+'+d : d} días</span>`;
       }
 
-      const etapaHoy = stageToday ? stageHoy : '—';
+      const etapaHoy = stageToday ? stageToday : '—';
 
       return `
         <div class="order-card" data-row-index="${idx}">
