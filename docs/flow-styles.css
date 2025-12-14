@@ -825,6 +825,7 @@ h1, h2, h3 { margin: 0; }
 
   .orders-list {
     max-height: 100%;
+    padding: 0 8px 8px;
   }
 
   .left-panel,
@@ -835,10 +836,6 @@ h1, h2, h3 { margin: 0; }
   .stage-deltas-container {
     width: 100%;
     box-sizing: border-box;
-  }
-
-  .orders-list {
-    padding: 0 8px 8px;
   }
 
   .calendar-container,
@@ -867,9 +864,10 @@ h1, h2, h3 { margin: 0; }
   .time-kpis {
     grid-template-columns: 1fr;
   }
-}
 
- /* 1) Panel derecho: que nunca sea más ancho que la pantalla */
+  /* ===== Ajustes SOLO móvil para que calendario y checklist no se salgan ===== */
+
+  /* 1) Panel derecho: que nunca sea más ancho que la pantalla */
   .right-panel {
     width: 100%;
     max-width: 100%;
@@ -896,7 +894,7 @@ h1, h2, h3 { margin: 0; }
   }
 
   .monthly-table {
-    min-width: 480px;     /* ancho mínimo razonable para que las columnas no se aplasten tanto */
+    min-width: 480px;     /* ajusta si quieres menos ancho mínimo */
     table-layout: fixed;
     word-wrap: break-word;
   }
