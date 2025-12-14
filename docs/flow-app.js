@@ -893,19 +893,25 @@ if (window.__FLOW_APP_LOADED__) {
       const table = document.getElementById('monthlyTableMain');
       if (!table) return;
 
-      table.addEventListener('click', ev => {
+     table.addEventListener('click', ev => {
         const btn = ev.target.closest('.monthly-toggle-btn');
         if (!btn) return;
 
         const unidad = btn.getAttribute('data-unidad') || '';
-        const rowsGrupo = table.querySelectorAll(
-          `tr.monthly-row-grupo[data-unidad="${unidad.replace(/"/g,'\\"')}"]`
-        );
+
+        // Buscar todas las filas de grupo que tengan ese data-unidad
+        const rowsGrupo = table.querySelectorAll('tr.monthly-row-grupo');
+        const targetRows = [];
+        rowsGrupo.forEach(tr => {
+          if (tr.getAttribute('data-unidad') === unidad) {
+            targetRows.push(tr);
+          }
+        });
 
         const isCollapsed = btn.textContent.trim() === '+';
         btn.textContent = isCollapsed ? '−' : '+';
 
-        rowsGrupo.forEach(tr => {
+        targetRows.forEach(tr => {
           if (isCollapsed) {
             tr.classList.remove('monthly-row-grupo-hidden');
           } else {
