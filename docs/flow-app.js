@@ -738,7 +738,7 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   // ============================
-  //  CHECKLIST MENSUALES
+  //  CHECKLIST MENSUALES (UNIDAD + GRUPOS EXPANDIBLES)
   // ============================
   async function loadMonthlyChecklist(dateKey) {
     const labelEl = document.getElementById('monthlyDateLabel');
@@ -755,27 +755,60 @@ if (window.__FLOW_APP_LOADED__) {
         contEl.innerHTML = '<p class="loading-message">No se pudo cargar el checklist.</p>';
         return;
       }
+
       const data = res.data || {};
-      let grupos = data.grupos || [];
+      const unidadesResumen = data.grupos || []; // ya viene del backend
 
-      const selUnidad = document.getElementById('flowFilterUnidad');
-      const selGrupo  = document.getElementById('flowFilterGrupo');
-      const uVal = selUnidad ? selUnidad.value : '';
-      const gVal = selGrupo  ? selGrupo.value  : '';
-
-      if (uVal) {
-        grupos = grupos.filter(g => String(g.unidad) === String(uVal));
-      }
-
-      if (!grupos.length) {
-        contEl.innerHTML = '<p class="loading-message">No hay mensuales para esta combinación de filtros.</p>';
+      if (!unidadesResumen.length) {
+        contEl.innerHTML = '<p class="loading-message">No hay mensuales para esta fecha.</p>';
         return;
       }
 
+      // ==== 1) Construimos mapa de detalle por UNIDAD + GRUPO usando currentRows ====
+      const detallePorUnidad = new Map();
+      const rows = currentRows || [];
+
+      rows.forEach(r => {
+        const unidad = String(r['UNIDAD'] || '').trim();
+        const grupo  = String(r['GRUPO']  || '').trim();
+
+        if (!unidad || !grupo) return;
+
+        const keyUnidad = unidad;
+        if (!detallePorUnidad.has(keyUnidad)) {
+          detallePorUnidad.set(keyUnidad, new Map());
+        }
+        const mapGrupos = detallePorUnidad.get(keyUnidad);
+
+        if (!mapGrupos.has(grupo)) {
+          mapGrupos.set(grupo, {
+            unidad,
+            grupo,
+            total: 0,
+            conAsignacion: 0,
+            conSalida: 0,
+            conFact: 0,
+            conEmpacado: 0,
+            conProy: 0,
+            conEntregaReal: 0
+          });
+        }
+        const acc = mapGrupos.get(grupo);
+        acc.total++;
+        if (r['ASIGNACIÓN'])    acc.conAsignacion++;
+        if (r['SALIDA'])        acc.conSalida++;
+        if (r['FACTURACIÓN'])   acc.conFact++;
+        if (r['EMPACADO'])      acc.conEmpacado++;
+        if (r['PROY. ENTREGA']) acc.conProy++;
+        if (r['ENTREGA REAL'])  acc.conEntregaReal++;
+      });
+
+      // ==== 2) Renderizamos tabla con filas de UNIDAD y filas ocultas de GRUPO ====
       const html = `
-        <table class="monthly-table">
+        <table class="monthly-table" id="monthlyTableMain">
           <thead>
             <tr>
+              <th style="width:32px;"></th>
               <th>Unidad</th>
               <th>Requisiciones</th>
               <th>Con Asig.</th>
@@ -791,32 +824,96 @@ if (window.__FLOW_APP_LOADED__) {
             </tr>
           </thead>
           <tbody>
-            ${grupos.map(g => {
-              const inco = g.incoherencias || {};
+            ${unidadesResumen.map((u, idx) => {
+              const inco = u.incoherencias || {};
               const hayErr = (inco.factAntesSalida || inco.soloFact);
-              const hayWarn = inco.factMuyTarde || inco.soloSalida || g.conSalida === 0;
+              const hayWarn = inco.factMuyTarde || inco.soloSalida || u.conSalida === 0;
               const cls = hayErr ? 'badge-err' : (hayWarn ? 'badge-warn' : 'badge-ok');
-              return `
-                <tr>
-                  <td>${g.unidad}</td>
-                  <td class="${cls}">${g.totalRequisiciones}</td>
-                  <td>${g.conAsignacion}</td>
-                  <td>${g.conSalida}</td>
-                  <td>${g.conFact}</td>
-                  <td>${g.conEmpacado}</td>
-                  <td>${g.conProy}</td>
-                  <td>${g.conEntregaReal}</td>
+
+              const unidad = String(u.unidad || '').trim();
+              const tieneDetalle = detallePorUnidad.has(unidad);
+
+              // Fila resumen de unidad
+              let filas = `
+                <tr class="monthly-row-unidad" data-unidad="${unidad.replace(/"/g,'&quot;')}">
+                  <td class="monthly-toggle-cell">
+                    ${tieneDetalle ? `<button class="monthly-toggle-btn" data-unidad="${unidad.replace(/"/g,'&quot;')}">+</button>` : ''}
+                  </td>
+                  <td>${unidad}</td>
+                  <td class="${cls}">${u.totalRequisiciones}</td>
+                  <td>${u.conAsignacion}</td>
+                  <td>${u.conSalida}</td>
+                  <td>${u.conFact}</td>
+                  <td>${u.conEmpacado}</td>
+                  <td>${u.conProy}</td>
+                  <td>${u.conEntregaReal}</td>
                   <td>${inco.factAntesSalida || 0}</td>
                   <td>${inco.factMuyTarde || 0}</td>
                   <td>${inco.soloSalida || 0}</td>
                   <td>${inco.soloFact || 0}</td>
                 </tr>
               `;
+
+              // Filas de detalle por grupo (ocultas por defecto)
+              if (tieneDetalle) {
+                const gruposMap = detallePorUnidad.get(unidad);
+                const gruposArr = Array.from(gruposMap.values())
+                  .sort((a,b) => a.grupo.localeCompare(b.grupo));
+
+                filas += gruposArr.map(g => `
+                  <tr class="monthly-row-grupo monthly-row-grupo-hidden"
+                      data-unidad="${unidad.replace(/"/g,'&quot;')}"
+                      data-grupo="${g.grupo.replace(/"/g,'&quot;')}">
+                    <td></td>
+                    <td style="padding-left:20px;">${g.grupo}</td>
+                    <td>${g.total}</td>
+                    <td>${g.conAsignacion}</td>
+                    <td>${g.conSalida}</td>
+                    <td>${g.conFact}</td>
+                    <td>${g.conEmpacado}</td>
+                    <td>${g.conProy}</td>
+                    <td>${g.conEntregaReal}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                  </tr>
+                `).join('');
+              }
+
+              return filas;
             }).join('')}
           </tbody>
         </table>
       `;
+
       contEl.innerHTML = html;
+
+      // ==== 3) Comportamiento expandir/colapsar ====
+      const table = document.getElementById('monthlyTableMain');
+      if (!table) return;
+
+      table.addEventListener('click', ev => {
+        const btn = ev.target.closest('.monthly-toggle-btn');
+        if (!btn) return;
+
+        const unidad = btn.getAttribute('data-unidad') || '';
+        const rowsGrupo = table.querySelectorAll(
+          `tr.monthly-row-grupo[data-unidad="${unidad.replace(/"/g,'\\"')}"]`
+        );
+
+        const isCollapsed = btn.textContent.trim() === '+';
+        btn.textContent = isCollapsed ? '−' : '+';
+
+        rowsGrupo.forEach(tr => {
+          if (isCollapsed) {
+            tr.classList.remove('monthly-row-grupo-hidden');
+          } else {
+            tr.classList.add('monthly-row-grupo-hidden');
+          }
+        });
+      });
+
     } catch (e) {
       console.warn('loadMonthlyChecklist error', e);
       contEl.innerHTML = '<p class="loading-message">Error de red al cargar checklist.</p>';
