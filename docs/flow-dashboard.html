@@ -13,7 +13,7 @@
 
   <!-- Iconos tipo texto (Material Symbols) -->
   <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400;600&display=swap" />
+        href="https://fonts.googleapis.com/css2?family=Material+Material+Symbols+Outlined:wght@400;600&display=swap" />
 
   <!-- PWA manifest -->
   <link rel="manifest" href="manifest.json"/>
@@ -208,33 +208,38 @@
         </div>
       </div>
 
-      <div class="gap-analysis-container">
-        <h3>Análisis de Deltas (Teórico vs Real)</h3>
-        <canvas id="gapChart"></canvas>
-      </div>
+      <!-- NUEVO BLOQUE COMPACTO: GRÁFICOS EN UNA FILA + KPIs ABAJO -->
+      <div class="time-kpis-wrapper">
+        <div class="charts-row">
+          <div class="gap-analysis-container">
+            <h3>Análisis de Deltas (Teórico vs Real)</h3>
+            <canvas id="gapChart"></canvas>
+          </div>
 
-      <div class="time-kpis">
-        <div class="time-kpi">
-          <div class="kpi-label">Tiempo promedio teórico</div>
-          <div class="kpi-value" id="kpi-teorico">—</div>
+          <div class="stage-deltas-container">
+            <h3>Deltas por Etapa del Proceso</h3>
+            <canvas id="stageDeltas"></canvas>
+          </div>
         </div>
-        <div class="time-kpi">
-          <div class="kpi-label">Tiempo promedio real</div>
-          <div class="kpi-value" id="kpi-real">—</div>
-        </div>
-        <div class="time-kpi">
-          <div class="kpi-label">Delta promedio</div>
-          <div class="kpi-value" id="kpi-delta">—</div>
-        </div>
-        <div class="time-kpi">
-          <div class="kpi-label">Delta acumulado</div>
-          <div class="kpi-value" id="kpi-acumulado">—</div>
-        </div>
-      </div>
 
-      <div class="stage-deltas-container">
-        <h3>Deltas por Etapa del Proceso</h3>
-        <canvas id="stageDeltas"></canvas>
+        <div class="time-kpis">
+          <div class="time-kpi">
+            <div class="kpi-label">Tiempo promedio teórico</div>
+            <div class="kpi-value" id="kpi-teorico">—</div>
+          </div>
+          <div class="time-kpi">
+            <div class="kpi-label">Tiempo promedio real</div>
+            <div class="kpi-value" id="kpi-real">—</div>
+          </div>
+          <div class="time-kpi">
+            <div class="kpi-label">Delta promedio</div>
+            <div class="kpi-value" id="kpi-delta">—</div>
+          </div>
+          <div class="time-kpi">
+            <div class="kpi-label">Delta acumulado</div>
+            <div class="kpi-value" id="kpi-acumulado">—</div>
+          </div>
+        </div>
       </div>
     </section>
   </div>
