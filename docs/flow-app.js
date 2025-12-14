@@ -1,5 +1,5 @@
-// flow-app.js v2.7 — Flujo por fechas + checklist + edición inline en panel izquierdo
-console.log('flow-app.js v2.7');
+// flow-app.js v2.8 — Flujo por fechas + checklist + edición inline y resumen por grupo
+console.log('flow-app.js v2.8');
 
 if (window.__FLOW_APP_LOADED__) {
   console.log('flow-app.js ya cargado, omitiendo.');
@@ -124,9 +124,7 @@ if (window.__FLOW_APP_LOADED__) {
       const d = parseIsoDate(raw);
       if (!d) continue;
       const k = toDateKey(d);
-      if (k === dateKey) {
-        lastMatch = col.label;
-      }
+      if (k === dateKey) lastMatch = col.label;
     }
     return lastMatch;
   }
@@ -146,12 +144,10 @@ if (window.__FLOW_APP_LOADED__) {
     const rows = currentRows || [];
 
     const filtered = rows.filter(r => {
-      // Filtros por grupo / unidad / comentario
       if (gVal && String(r['GRUPO']||'') !== gVal) return false;
       if (uVal && String(r['UNIDAD']||'') !== uVal) return false;
       if (cVal && String(r['COMENT.']||'') !== cVal) return false;
 
-      // Filtro por estado según KPI seleccionado
       const realD = parseIsoDate(r['ENTREGA REAL']);
       const proyD = parseIsoDate(r['PROY. ENTREGA']);
 
@@ -172,6 +168,7 @@ if (window.__FLOW_APP_LOADED__) {
     updateQuickStatsFromRows(filtered);
     updateGapAndTimeKpisFromRows(filtered);
     updateFlowBlockCounts(filtered);
+    renderMonthlyGroupsSummaryFromRows(filtered);
   }
 
   function populateFlowFilterOptionsFromRows(rows) {
@@ -282,7 +279,7 @@ if (window.__FLOW_APP_LOADED__) {
         deltaHtml = `<span class="date-delta ${cls}">${d > 0 ? '+'+d : d} días</span>`;
       }
 
-      const etapaHoy = stageToday ? stageToday : '—';
+      const etapaHoy = stageToday ? stageHoy : '—';
 
       return `
         <div class="order-card" data-row-index="${idx}">
@@ -351,7 +348,6 @@ if (window.__FLOW_APP_LOADED__) {
 
     container.innerHTML = html;
     container.classList.toggle('edit-mode-on', editMode);
-
     container.addEventListener('click', onOrdersListClick, { once: true });
   }
 
@@ -377,34 +373,30 @@ if (window.__FLOW_APP_LOADED__) {
     }
 
     const norm = v => String(v || '').trim();
-
-    // Valor que realmente vamos a enviar al backend
     let valueToSend = newValue || '';
 
     if (DATE_FIELDS.includes(field)) {
-      const oldNorm = formatDateInput(oldRaw);   // YYYY-MM-DD o ''
+      const oldNorm = formatDateInput(oldRaw);
       if (norm(newValue) === norm(oldNorm)) {
         displayEl.textContent = oldDisplay;
         return;
       }
 
-      // AJUSTE: restar un día antes de enviar, para compensar offset en Apps Script
       if (valueToSend) {
         const [yy, mm, dd] = valueToSend.split('-');
         const d = new Date(Date.UTC(+yy, +mm - 1, +dd));
-        d.setUTCDate(d.getUTCDate() - 1); // restar 1 día
+        d.setUTCDate(d.getUTCDate() - 1); // compensar offset en Apps Script
         const yy2 = d.getUTCFullYear();
         const mm2 = String(d.getUTCMonth() + 1).padStart(2, '0');
         const dd2 = String(d.getUTCDate()).padStart(2, '0');
         valueToSend = `${yy2}-${mm2}-${dd2}`;
       }
     } else {
-      // Texto (COMENT.)
       if (norm(newValue) === norm(oldRaw)) {
         displayEl.textContent = oldDisplay;
         return;
       }
-      valueToSend = norm(valueToSend); // quitar espacios
+      valueToSend = norm(valueToSend);
     }
 
     displayEl.textContent = '…';
@@ -423,7 +415,6 @@ if (window.__FLOW_APP_LOADED__) {
         return;
       }
 
-      // No re-formateamos nosotros: recargamos el día para que venga desde el backend
       if (currentDayFilter) {
         await onCalendarDayClick(currentDayFilter);
       } else {
@@ -609,9 +600,7 @@ if (window.__FLOW_APP_LOADED__) {
         if (!raw) return;
         const d = parseIsoDate(raw);
         if (!d) return;
-        if (toDateKey(d) === dateKey) {
-          counts[col.label]++;
-        }
+        if (toDateKey(d) === dateKey) counts[col.label]++;
       });
     });
 
@@ -835,6 +824,92 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   // ============================
+  //  RESUMEN POR UNIDAD Y GRUPO (FRONT-END)
+  // ============================
+  function renderMonthlyGroupsSummaryFromRows(rows) {
+    const cont = document.getElementById('monthlyGroupsSummary');
+    if (!cont) return;
+
+    if (!rows || !rows.length) {
+      cont.innerHTML = '<p class="loading-message">No hay requisiciones para este día o para estos filtros.</p>';
+      return;
+    }
+
+    const map = new Map();
+    rows.forEach(r => {
+      const unidad = String(r['UNIDAD'] || '').trim() || '(sin unidad)';
+      const grupo  = String(r['GRUPO']  || '').trim() || '(sin grupo)';
+      const key = unidad + '|||'+ grupo;
+      if (!map.has(key)) {
+        map.set(key, {
+          unidad,
+          grupo,
+          total: 0,
+          conAsignacion: 0,
+          conSalida: 0,
+          conFact: 0,
+          conEmpacado: 0,
+          conProy: 0,
+          conEntregaReal: 0
+        });
+      }
+      const acc = map.get(key);
+      acc.total++;
+      if (r['ASIGNACIÓN'])   acc.conAsignacion++;
+      if (r['SALIDA'])       acc.conSalida++;
+      if (r['FACTURACIÓN'])  acc.conFact++;
+      if (r['EMPACADO'])     acc.conEmpacado++;
+      if (r['PROY. ENTREGA'])acc.conProy++;
+      if (r['ENTREGA REAL']) acc.conEntregaReal++;
+    });
+
+    const rowsArr = Array.from(map.values()).sort((a,b) => {
+      const ua = a.unidad.localeCompare(b.unidad);
+      if (ua !== 0) return ua;
+      return a.grupo.localeCompare(b.grupo);
+    });
+
+    if (!rowsArr.length) {
+      cont.innerHTML = '<p class="loading-message">No hay datos agrupados para este día.</p>';
+      return;
+    }
+
+    const html = `
+      <table class="monthly-table">
+        <thead>
+          <tr>
+            <th>Unidad</th>
+            <th>Grupo</th>
+            <th>Requisiciones</th>
+            <th>Con Asig.</th>
+            <th>Con Salida</th>
+            <th>Con Fact.</th>
+            <th>Con Emp.</th>
+            <th>Con Proy.</th>
+            <th>Con Entrega</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsArr.map(g => `
+            <tr>
+              <td>${g.unidad}</td>
+              <td>${g.grupo}</td>
+              <td>${g.total}</td>
+              <td>${g.conAsignacion}</td>
+              <td>${g.conSalida}</td>
+              <td>${g.conFact}</td>
+              <td>${g.conEmpacado}</td>
+              <td>${g.conProy}</td>
+              <td>${g.conEntregaReal}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+    cont.innerHTML = html;
+  }
+
+  // ============================
   //  CALENDARIO
   // ============================
   let currentCalYear, currentCalMonth;
@@ -938,6 +1013,7 @@ if (window.__FLOW_APP_LOADED__) {
 
     populateFlowFilterOptionsFromRows(currentRows);
     applyFlowFilters();
+    renderMonthlyGroupsSummaryFromRows(currentRows);
 
     await loadMonthlyChecklist(dateKey);
 
@@ -986,6 +1062,7 @@ if (window.__FLOW_APP_LOADED__) {
 
     populateFlowFilterOptionsFromRows(currentRows);
     applyFlowFilters();
+    renderMonthlyGroupsSummaryFromRows(currentRows);
 
     await loadMonthlyChecklist(currentDayFilter);
 
@@ -1071,6 +1148,7 @@ if (window.__FLOW_APP_LOADED__) {
 
       populateFlowFilterOptionsFromRows(currentRows);
       applyFlowFilters();
+      renderMonthlyGroupsSummaryFromRows(currentRows);
     } catch(e) {
       console.warn('loadInitialData error', e);
       if (listEl) listEl.innerHTML = '<p class="loading-message">Error de red al cargar datos.</p>';
@@ -1163,6 +1241,8 @@ if (window.__FLOW_APP_LOADED__) {
         const contEl  = document.getElementById('monthlyChecklist');
         if (labelEl) labelEl.textContent = '';
         if (contEl) contEl.innerHTML = '<p class="loading-message">Seleccione un día con mensuales para ver el resumen.</p>';
+        const groupsEl = document.getElementById('monthlyGroupsSummary');
+        if (groupsEl) groupsEl.innerHTML = '<p class="loading-message">Seleccione un día para ver el resumen por grupo.</p>';
         loadInitialData();
         renderCalendar();
       });
