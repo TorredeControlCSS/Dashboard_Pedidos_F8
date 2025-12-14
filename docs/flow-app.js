@@ -1,5 +1,5 @@
 // flow-app.js v2.1 — Flujo por fechas + checklist de mensuales + día seleccionado + header sticky
-console.log('flow-app.js v2.3');
+console.log('flow-app.js v2.5');
 
 if (window.__FLOW_APP_LOADED__) {
   console.log('flow-app.js ya cargado, omitiendo.');
@@ -26,6 +26,9 @@ if (window.__FLOW_APP_LOADED__) {
   let currentDayFilter = null;   // YYYY-MM-DD
   let currentRows = [];          // filas base (antes de filtros locales)
   let currentStatusFilter = 'ALL'; // ALL | IN_PROGRESS | COMPLETED | LATE
+
+  // Para edición en modal
+  let currentEditRow = null;
 
   // ============================
   //  HELPERS BÁSICOS
@@ -81,6 +84,15 @@ if (window.__FLOW_APP_LOADED__) {
     return dd + '/' + mm + '/' + yy;
   }
 
+  function formatDateInput(v) {
+    const d = parseIsoDate(v);
+    if (!d) return '';
+    const dd = String(d.getUTCDate()).padStart(2,'0');
+    const mm = String(d.getUTCMonth()+1).padStart(2,'0');
+    const yy = d.getUTCFullYear();
+    return `${yy}-${mm}-${dd}`; // YYYY-MM-DD
+  }
+
   function flowStageForDate(r, dateKey) {
     if (!dateKey) return null;
     let lastMatch = null;
@@ -122,16 +134,12 @@ if (window.__FLOW_APP_LOADED__) {
       const proyD = parseIsoDate(r['PROY. ENTREGA']);
 
       if (currentStatusFilter === 'IN_PROGRESS') {
-        // Solo sin entrega real
         if (realD) return false;
       } else if (currentStatusFilter === 'COMPLETED') {
-        // Solo con entrega real (sin importar retraso)
         if (!realD) return false;
       } else if (currentStatusFilter === 'LATE') {
-        // Solo completadas con retraso
         if (!(realD && proyD && realD > proyD)) return false;
       }
-      // ALL -> no filtra por estado
 
       return true;
     });
@@ -211,7 +219,7 @@ if (window.__FLOW_APP_LOADED__) {
       return ida.localeCompare(idb);
     });
 
-    const html = sorted.map(({r, stageToday}) => {
+    const html = sorted.map(({r, stageToday}, idx) => {
       const id = r['F8 SALMI'] || '(sin F8)';
       const unidad = r['UNIDAD'] || '';
       const tipo = r['TIPO'] || '';
@@ -256,8 +264,9 @@ if (window.__FLOW_APP_LOADED__) {
 
       const etapaHoy = stageToday ? stageToday : '—';
 
+      // data-index para poder recuperar la fila al hacer clic
       return `
-        <div class="order-card">
+        <div class="order-card" data-row-index="${idx}">
           <div class="order-card-header">
             <span class="order-id">${id}</span>
             <span class="order-stage">${etapaHoy}</span>
@@ -310,6 +319,17 @@ if (window.__FLOW_APP_LOADED__) {
     }).join('');
 
     container.innerHTML = html;
+
+    // ENLACE: clic en tarjeta → abrir editor si editMode ON
+    container.querySelectorAll('.order-card').forEach(card => {
+      card.addEventListener('click', () => {
+        if (!editMode) return; // solo en modo edición
+        const idx = parseInt(card.getAttribute('data-row-index'), 10);
+        const rows = currentRows || [];
+        if (!rows[idx]) return;
+        openEditModalForRow(rows[idx]);
+      });
+    });
   }
 
   // ============================
@@ -535,7 +555,7 @@ if (window.__FLOW_APP_LOADED__) {
       const data = res.data || {};
       let grupos = data.grupos || [];
 
-      // ===== aplicar filtros de UNIDAD (y en futuro GRUPO) al checklist =====
+      // aplicar filtro de UNIDAD al checklist
       const selUnidad = document.getElementById('flowFilterUnidad');
       const selGrupo  = document.getElementById('flowFilterGrupo');
       const uVal = selUnidad ? selUnidad.value : '';
@@ -544,7 +564,7 @@ if (window.__FLOW_APP_LOADED__) {
       if (uVal) {
         grupos = grupos.filter(g => String(g.unidad) === String(uVal));
       }
-      // De momento no hay info de "grupo" dentro de g, por eso no filtramos por gVal aún.
+      // (sin info de grupo en g, por ahora no filtramos por gVal)
 
       if (!grupos.length) {
         contEl.innerHTML = '<p class="loading-message">No hay mensuales para esta combinación de filtros.</p>';
@@ -762,6 +782,147 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   // ============================
+  //  EDICIÓN (MODAL EN VISTA FLUJO)
+  // ============================
+  function openEditModalForRow(row) {
+    currentEditRow = row;
+
+    const modal = document.getElementById('editModal');
+    if (!modal) return;
+
+    const id = row['F8 SALMI'] || '(sin F8)';
+    const unidad = row['UNIDAD'] || '';
+    const grupo = row['GRUPO'] || '';
+    const coment = row['COMENT.'] || '';
+
+    document.getElementById('editModalTitle').textContent = `Editar requisición ${id}`;
+    document.getElementById('editFieldId').textContent = id;
+    document.getElementById('editFieldUnidad').textContent = unidad;
+    document.getElementById('editFieldGrupo').textContent = grupo;
+
+    document.getElementById('editFieldAsignacion').value = formatDateInput(row['ASIGNACIÓN']);
+    document.getElementById('editFieldSalida').value      = formatDateInput(row['SALIDA']);
+    document.getElementById('editFieldDespacho').value    = formatDateInput(row['DESPACHO']);
+    document.getElementById('editFieldFacturacion').value = formatDateInput(row['FACTURACIÓN']);
+    document.getElementById('editFieldEmpacado').value    = formatDateInput(row['EMPACADO']);
+    document.getElementById('editFieldProy').value        = formatDateInput(row['PROY. ENTREGA']);
+    document.getElementById('editFieldReal').value        = formatDateInput(row['ENTREGA REAL']);
+
+    const selComent = document.getElementById('editFieldComent');
+    if (selComent) selComent.value = coment || '';
+
+    const msgEl = document.getElementById('editModalMessage');
+    if (msgEl) msgEl.textContent = '';
+
+    modal.style.display = 'block';
+  }
+
+  function closeEditModal() {
+    const modal = document.getElementById('editModal');
+    if (modal) modal.style.display = 'none';
+    currentEditRow = null;
+  }
+
+  async function saveEditModalChanges() {
+    if (!currentEditRow) return;
+
+    if (!idToken) {
+      alert('Debe iniciar sesión para editar (botón "Acceder").');
+      return;
+    }
+
+    const id = currentEditRow['F8 SALMI'];
+    if (!id) {
+      alert('Esta fila no tiene F8 SALMI, no se puede editar.');
+      return;
+    }
+
+    const msgEl = document.getElementById('editModalMessage');
+    if (msgEl) {
+      msgEl.style.color = '#111827';
+      msgEl.textContent = 'Guardando cambios...';
+    }
+
+    // Campos a enviar (solo se envían si cambian)
+    const fieldsToCheck = [
+      { field: 'ASIGNACIÓN',    inputId: 'editFieldAsignacion' },
+      { field: 'SALIDA',        inputId: 'editFieldSalida' },
+      { field: 'DESPACHO',      inputId: 'editFieldDespacho' },
+      { field: 'FACTURACIÓN',   inputId: 'editFieldFacturacion' },
+      { field: 'EMPACADO',      inputId: 'editFieldEmpacado' },
+      { field: 'PROY. ENTREGA', inputId: 'editFieldProy' },
+      { field: 'ENTREGA REAL',  inputId: 'editFieldReal' }
+    ];
+
+    const comentInput = document.getElementById('editFieldComent');
+    const newComent = comentInput ? comentInput.value : '';
+    const oldComent = currentEditRow['COMENT.'] || '';
+
+    const updates = [];
+
+    fieldsToCheck.forEach(cfg => {
+      const inp = document.getElementById(cfg.inputId);
+      if (!inp) return;
+      const newVal = inp.value || '';
+      const oldVal = currentEditRow[cfg.field] || '';
+      const oldValNorm = formatDateInput(oldVal);
+      if (newVal !== (oldValNorm || '')) {
+        updates.push({ field: cfg.field, value: newVal }); // YYYY-MM-DD o ''
+      }
+    });
+
+    if (newComent !== oldComent) {
+      updates.push({ field: 'COMENT.', value: newComent });
+    }
+
+    if (!updates.length) {
+      if (msgEl) {
+        msgEl.style.color = '#16a34a';
+        msgEl.textContent = 'No hay cambios que guardar.';
+      }
+      return;
+    }
+
+    try {
+      for (const up of updates) {
+        const url = `${B}?route=orders.update`
+          + `&idToken=${encodeURIComponent(idToken)}`
+          + `&id=${encodeURIComponent(id)}`
+          + `&field=${encodeURIComponent(up.field)}`
+          + `&value=${encodeURIComponent(up.value || '')}`;
+
+        const res = await jsonp(url);
+        if (!res || res.status !== 'ok') {
+          throw new Error(res && res.error ? res.error : 'Error al actualizar');
+        }
+      }
+
+      if (msgEl) {
+        msgEl.style.color = '#16a34a';
+        msgEl.textContent = 'Cambios guardados correctamente.';
+      }
+
+      // volver a cargar el día actual para refrescar datos
+      if (currentDayFilter) {
+        await onCalendarDayClick(currentDayFilter);
+      } else {
+        await loadInitialData();
+      }
+
+      setTimeout(() => {
+        closeEditModal();
+      }, 800);
+
+    } catch (e) {
+      console.warn('saveEditModalChanges error', e);
+      if (msgEl) {
+        msgEl.style.color = '#b91c1c';
+        msgEl.textContent = 'Error al guardar: ' + (e.message || e);
+      }
+    }
+  }
+
+  // ============================
   //  EXPORTAR CSV
   // ============================
   function exportCurrentRowsToCSV() {
@@ -923,7 +1084,7 @@ if (window.__FLOW_APP_LOADED__) {
         const title = document.getElementById('panel-title');
         if (title) title.textContent = 'Todas las requisiciones';
         currentDayFilter = null;
-        currentStatusFilter = 'ALL';   // reset filtro de estado
+        currentStatusFilter = 'ALL';
         if (selGrupo) selGrupo.value = '';
         if (selUnidad) selUnidad.value = '';
         if (selComent) selComent.value = '';
@@ -932,7 +1093,7 @@ if (window.__FLOW_APP_LOADED__) {
         if (labelEl) labelEl.textContent = '';
         if (contEl) contEl.innerHTML = '<p class="loading-message">Seleccione un día con mensuales para ver el resumen.</p>';
         loadInitialData();
-        renderCalendar(); // para quitar selección
+        renderCalendar();
       });
     }
 
@@ -978,6 +1139,17 @@ if (window.__FLOW_APP_LOADED__) {
         onFlowBlockClick(stageKey);
       });
     });
+
+    // Eventos del modal de edición
+    const mClose = document.getElementById('editModalClose');
+    const mCancel = document.getElementById('editModalCancel');
+    const mSave = document.getElementById('editModalSave');
+    const mBackdrop = document.querySelector('#editModal .flow-edit-backdrop');
+
+    if (mClose) mClose.addEventListener('click', closeEditModal);
+    if (mCancel) mCancel.addEventListener('click', closeEditModal);
+    if (mBackdrop) mBackdrop.addEventListener('click', closeEditModal);
+    if (mSave) mSave.addEventListener('click', saveEditModalChanges);
 
     // 1) Carga rápida inicial (para filtros, etc.)
     await loadInitialData();
