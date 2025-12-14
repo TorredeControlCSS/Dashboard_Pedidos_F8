@@ -629,7 +629,7 @@ h1, h2, h3 { margin: 0; }
   font-weight: 600;
 }
 
-/* GAP & KPIS */
+/* GAP & KPIS: base */
 .gap-analysis-container,
 .stage-deltas-container {
   background: white;
@@ -676,6 +676,44 @@ h1, h2, h3 { margin: 0; }
   font-weight: 700;
 }
 
+/* Layout compacto de gráficos + KPIs */
+.time-kpis-wrapper {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Fila con los dos gráficos lado a lado */
+.charts-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr; /* línea más ancha, barras algo más estrecho */
+  gap: 10px;
+}
+
+/* Ajustamos altura de los contenedores de gráficos */
+.gap-analysis-container,
+.stage-deltas-container {
+  height: 260px;
+  display: flex;
+  flex-direction: column;
+}
+
+.gap-analysis-container canvas,
+.stage-deltas-container canvas {
+  flex: 1;
+  max-height: none; /* dejamos que el flex mande */
+}
+
+/* KPIs en una fila de 4 si hay espacio */
+.time-kpis {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
 /* =========================
    RESPONSIVE TABLET
    ========================= */
@@ -711,8 +749,12 @@ h1, h2, h3 { margin: 0; }
     grid-template-columns: 1fr;
   }
 
+  .charts-row {
+    grid-template-columns: 1fr; /* gráficos uno debajo del otro */
+  }
+
   .time-kpis {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -846,8 +888,6 @@ h1, h2, h3 { margin: 0; }
   }
 
   .calendar-grid {
-    width: 100%;
-    max-width: 100%;
     gap: 2px;
   }
 
@@ -867,15 +907,18 @@ h1, h2, h3 { margin: 0; }
     grid-template-columns: 1fr;
   }
 
-  /* Ajustes móvil para calendario y checklist */
+  /* ===== Ajustes SOLO móvil para que calendario y checklist no se salgan ===== */
+
+  /* 1) Panel derecho: que nunca sea más ancho que la pantalla */
   .right-panel {
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
   }
 
+  /* 2) Calendario y checklist apilados, ocupando 100% */
   .calendar-and-monthly {
-    display: block;
+    display: block;       /* uno debajo del otro en móvil */
     width: 100%;
     max-width: 100%;
   }
@@ -887,14 +930,21 @@ h1, h2, h3 { margin: 0; }
     box-sizing: border-box;
   }
 
+  /* 3) Si la tabla es muy ancha, solo este bloque tendrá scroll horizontal interno */
   .monthly-checklist-container {
     overflow-x: auto;
   }
 
   .monthly-table {
-    min-width: 480px;
+    min-width: 480px;     /* ajusta si quieres menos ancho mínimo */
     table-layout: fixed;
     word-wrap: break-word;
+  }
+
+  /* 4) Calendario: que no fuerce más ancho */
+  .calendar-grid {
+    width: 100%;
+    max-width: 100%;
   }
 }
 
@@ -904,7 +954,7 @@ h1, h2, h3 { margin: 0; }
 }
 
 .monthly-row-grupo td {
-  background-color: #f9fafb;
+  background-color: #f9fafb;  /* gris muy claro para distinguir grupos */
   font-size: 12px;
 }
 
@@ -928,7 +978,7 @@ h1, h2, h3 { margin: 0; }
 
 /* Mini contador de RECIBO F8 en el calendario */
 .calendar-day {
-  position: relative;
+  position: relative; /* necesario para posicionar el mini contador dentro */
 }
 
 .calendar-mini-counter {
@@ -940,5 +990,5 @@ h1, h2, h3 { margin: 0; }
   background: rgba(255, 255, 255, 0.9);
   padding: 1px 4px;
   border-radius: 999px;
-  pointer-events: none;
+  pointer-events: none; /* el click sigue llegando al día */
 }
