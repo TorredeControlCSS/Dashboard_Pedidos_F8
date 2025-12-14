@@ -533,10 +533,21 @@ if (window.__FLOW_APP_LOADED__) {
         return;
       }
       const data = res.data || {};
-      const grupos = data.grupos || [];
+      let grupos = data.grupos || [];
+
+      // ===== aplicar filtros de UNIDAD (y en futuro GRUPO) al checklist =====
+      const selUnidad = document.getElementById('flowFilterUnidad');
+      const selGrupo  = document.getElementById('flowFilterGrupo');
+      const uVal = selUnidad ? selUnidad.value : '';
+      const gVal = selGrupo  ? selGrupo.value  : '';
+
+      if (uVal) {
+        grupos = grupos.filter(g => String(g.unidad) === String(uVal));
+      }
+      // De momento no hay info de "grupo" dentro de g, por eso no filtramos por gVal aún.
 
       if (!grupos.length) {
-        contEl.innerHTML = '<p class="loading-message">No hay mensuales para esta fecha.</p>';
+        contEl.innerHTML = '<p class="loading-message">No hay mensuales para esta combinación de filtros.</p>';
         return;
       }
 
@@ -713,7 +724,7 @@ if (window.__FLOW_APP_LOADED__) {
     }
 
     const res = await jsonp(`${A}?route=calendar.daydetails&date=${currentDayFilter}`);
-    if (!res || !res.status !== 'ok') {
+    if (!res || res.status !== 'ok') {
       console.warn('calendar.daydetails error en flow block', res && res.error);
       return;
     }
@@ -929,8 +940,14 @@ if (window.__FLOW_APP_LOADED__) {
       btnExport.addEventListener('click', exportCurrentRowsToCSV);
     }
 
-    if (selGrupo) selGrupo.addEventListener('change', applyFlowFilters);
-    if (selUnidad) selUnidad.addEventListener('change', applyFlowFilters);
+    if (selGrupo) selGrupo.addEventListener('change', () => {
+      applyFlowFilters();
+      if (currentDayFilter) loadMonthlyChecklist(currentDayFilter);
+    });
+    if (selUnidad) selUnidad.addEventListener('change', () => {
+      applyFlowFilters();
+      if (currentDayFilter) loadMonthlyChecklist(currentDayFilter);
+    });
     if (selComent) selComent.addEventListener('change', applyFlowFilters);
 
     const btnPrevMonth = document.getElementById('btnPrevMonth');
