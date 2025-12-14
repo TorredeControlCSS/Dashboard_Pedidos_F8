@@ -933,3 +933,19 @@ h1, h2, h3 { margin: 0; }
 .monthly-toggle-btn:hover {
   background: #e5e7eb;
 }
+/* Mini contador de RECIBO F8 en el calendario */
+.calendar-day {
+  position: relative; /* necesario para posicionar el mini contador dentro */
+}
+
+.calendar-mini-counter {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  font-size: 10px;
+  color: #4b5563;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 1px 4px;
+  border-radius: 999px;
+  pointer-events: none; /* el click sigue llegando al día */
+}
