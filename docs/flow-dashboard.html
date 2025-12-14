@@ -239,6 +239,87 @@
     </section>
   </div>
 
+  <!-- MODAL DE EDICIÓN PARA VISTA FLUJO -->
+  <div id="editModal" class="flow-edit-modal" style="display:none;">
+    <div class="flow-edit-backdrop"></div>
+    <div class="flow-edit-dialog">
+      <div class="flow-edit-header">
+        <h3 id="editModalTitle">Editar requisición</h3>
+        <button id="editModalClose" class="flow-edit-close">✕</button>
+      </div>
+      <div class="flow-edit-body">
+        <div class="flow-edit-row">
+          <label>F8 SALMI</label>
+          <div id="editFieldId" class="flow-edit-readonly">—</div>
+        </div>
+
+        <div class="flow-edit-row">
+          <label>Unidad</label>
+          <div id="editFieldUnidad" class="flow-edit-readonly">—</div>
+        </div>
+
+        <div class="flow-edit-row">
+          <label>Grupo</label>
+          <div id="editFieldGrupo" class="flow-edit-readonly">—</div>
+        </div>
+
+        <div class="flow-edit-grid">
+          <div>
+            <label>Asignación</label>
+            <input type="date" id="editFieldAsignacion"/>
+          </div>
+          <div>
+            <label>Salida</label>
+            <input type="date" id="editFieldSalida"/>
+          </div>
+          <div>
+            <label>Despacho</label>
+            <input type="date" id="editFieldDespacho"/>
+          </div>
+          <div>
+            <label>Facturación</label>
+            <input type="date" id="editFieldFacturacion"/>
+          </div>
+          <div>
+            <label>Empacado</label>
+            <input type="date" id="editFieldEmpacado"/>
+          </div>
+          <div>
+            <label>Proy. Entrega</label>
+            <input type="date" id="editFieldProy"/>
+          </div>
+          <div>
+            <label>Entrega Real</label>
+            <input type="date" id="editFieldReal"/>
+          </div>
+        </div>
+
+        <div class="flow-edit-row">
+          <label>Comentario</label>
+          <select id="editFieldComent">
+            <option value="">(sin comentario)</option>
+            <option value="DISCREPANCIA DE INVENTARIO">DISCREPANCIA DE INVENTARIO</option>
+            <option value="FALTA DE PERSONAL">FALTA DE PERSONAL</option>
+            <option value="VIATICOS PARA VIAJES">VIATICOS PARA VIAJES</option>
+            <option value="FALTA MONTACARGA">FALTA MONTACARGA</option>
+            <option value="CONGESTIONAMIENTO EN SALIDAS">CONGESTIONAMIENTO EN SALIDAS</option>
+            <option value="FACTURACION RETRASADA">FACTURACION RETRASADA</option>
+            <option value="FALLAS EN SISTEMA">FALLAS EN SISTEMA</option>
+            <option value="DEMORA EN DOCUMENTACION">DEMORA EN DOCUMENTACION</option>
+            <option value="ERROR DE CAPTACION">ERROR DE CAPTACION</option>
+            <option value="ENTREGADO">ENTREGADO</option>
+          </select>
+        </div>
+
+        <div id="editModalMessage" class="flow-edit-message"></div>
+      </div>
+      <div class="flow-edit-footer">
+        <button id="editModalSave" class="flow-edit-save">Guardar cambios</button>
+        <button id="editModalCancel" class="flow-edit-cancel">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     window.APP = {
       A_URL: 'https://script.google.com/macros/s/AKfycbxMr-fkiplPoBPm_x6V9ZnEMB9-Kd6ZH1tvKG2t8zIcFNYF8t-gF1JP2d6bRo9BGHgFTA/exec',
@@ -254,6 +335,6 @@
     }
   </script>
 
-  <script src="flow-app.js?v=2.4"></script>
+  <script src="flow-app.js?v=2.5"></script>
 </body>
 </html>
