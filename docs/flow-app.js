@@ -1001,12 +1001,12 @@ if (window.__FLOW_APP_LOADED__) {
     for (let day = 1; day <= daysInMonth; day++) {
       const d = new Date(Date.UTC(year, month - 1, day));
       const key = toDateKey(d);
-      const info = currentCalData[key] || { total: 0, byStage: {} };
+      const info = currentCalData[key] || { total: 0, byStage: {}, reciboF8: 0 };
       const total = info.total || 0;
-
-      // Mini contador: documentos con RECIBO F8 este día (byStage ya viene del backend)
+      
       const bySt = info.byStage || {};
-      const reciboF8 = bySt['RECIBO F8'] || 0;
+      // AHORA el backend nos da un campo directo reciboF8
+      const reciboF8 = info.reciboF8 || 0;
 
       const cell = document.createElement('div');
       cell.className = 'calendar-day';
