@@ -268,7 +268,7 @@ h1, h2, h3 { margin: 0; }
   font-size: 28px;
   color: var(--text-light);
   font-weight: 700;
-  padding: 0 6px;
+  padding: 0 2px;
   display: flex;
   align-items: center;
   line-height: 1; 
