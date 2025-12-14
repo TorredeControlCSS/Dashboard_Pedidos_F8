@@ -265,7 +265,7 @@ h1, h2, h3 { margin: 0; }
 }
 
 .flow-arrow {
-  font-size: 28px;
+  font-size: 32px;
   color: var(--text-light);
   font-weight: 700;
   padding: 0 2px;
