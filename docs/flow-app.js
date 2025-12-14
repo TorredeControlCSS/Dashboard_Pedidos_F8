@@ -1096,10 +1096,10 @@ if (window.__FLOW_APP_LOADED__) {
 
   async function onCalendarDayClick(dateKey) {
     currentDayFilter = dateKey;
-
+  
     const title = document.getElementById('panel-title');
     if (title) title.textContent = `Requisiciones del ${dateKey}`;
-
+  
     const res = await jsonp(`${A}?route=calendar.daydetails&date=${dateKey}`);
     if (!res || res.status !== 'ok') {
       console.warn('calendar.daydetails error', res && res.error);
@@ -1107,16 +1107,16 @@ if (window.__FLOW_APP_LOADED__) {
     }
     const data = res.data;
     currentRows = data.rows || [];
-
+  
     populateFlowFilterOptionsFromRows(currentRows);
     applyFlowFilters();
-    renderMonthlyGroupsSummaryFromRows(currentRows);
-
+    // renderMonthlyGroupsSummaryFromRows(currentRows);  // <- puedes comentar/eliminar esta línea
+  
     await loadMonthlyChecklist(dateKey);
-
+  
     const btnClear = document.getElementById('btnClearFilter');
     if (btnClear) btnClear.style.display = 'inline-block';
-
+  
     renderCalendar();
   }
 
