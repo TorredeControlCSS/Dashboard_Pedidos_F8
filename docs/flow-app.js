@@ -226,7 +226,6 @@ if (window.__FLOW_APP_LOADED__) {
       const grupo = r['GRUPO'] || '';
       const coment = r['COMENT.'] || '—';
 
-      // Fechas como Date
       const recD  = parseIsoDate(r['RECIBO F8']);
       const asgD  = parseIsoDate(r['ASIGNACIÓN']);
       const salD  = parseIsoDate(r['SALIDA']);
@@ -236,7 +235,6 @@ if (window.__FLOW_APP_LOADED__) {
       const proyD = parseIsoDate(r['PROY. ENTREGA']);
       const realD = parseIsoDate(r['ENTREGA REAL']);
 
-      // Texto formateado
       const rec  = recD  ? formatDateShort(recD)  : '—';
       const asg  = asgD  ? formatDateShort(asgD)  : '—';
       const sal  = salD  ? formatDateShort(salD)  : '—';
@@ -264,7 +262,6 @@ if (window.__FLOW_APP_LOADED__) {
 
       const etapaHoy = stageToday ? stageToday : '—';
 
-      // data-index para poder recuperar la fila al hacer clic
       return `
         <div class="order-card" data-row-index="${idx}">
           <div class="order-card-header">
@@ -320,10 +317,10 @@ if (window.__FLOW_APP_LOADED__) {
 
     container.innerHTML = html;
 
-    // ENLACE: clic en tarjeta → abrir editor si editMode ON
+    // Aquí se engancha el click para abrir el modal EN MODO EDICIÓN
     container.querySelectorAll('.order-card').forEach(card => {
       card.addEventListener('click', () => {
-        if (!editMode) return; // solo en modo edición
+        if (!editMode) return;
         const idx = parseInt(card.getAttribute('data-row-index'), 10);
         const rows = currentRows || [];
         if (!rows[idx]) return;
