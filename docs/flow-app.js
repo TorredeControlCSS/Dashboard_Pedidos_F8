@@ -168,6 +168,7 @@ if (window.__FLOW_APP_LOADED__) {
     updateQuickStatsFromRows(filtered);
     updateGapAndTimeKpisFromRows(filtered);
     updateFlowBlockCounts(filtered);
+    // ya no usamos el resumen de abajo
     // renderMonthlyGroupsSummaryFromRows(filtered);
   }
 
@@ -893,7 +894,7 @@ if (window.__FLOW_APP_LOADED__) {
       const table = document.getElementById('monthlyTableMain');
       if (!table) return;
 
-     table.addEventListener('click', ev => {
+      table.addEventListener('click', ev => {
         const btn = ev.target.closest('.monthly-toggle-btn');
         if (!btn) return;
 
@@ -927,89 +928,12 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   // ============================
-  //  RESUMEN POR UNIDAD Y GRUPO (FRONT-END)
+  //  (SIN USO AHORA) RESUMEN POR UNIDAD Y GRUPO SEPARADO
   // ============================
   function renderMonthlyGroupsSummaryFromRows(rows) {
-    const cont = document.getElementById('monthlyGroupsSummary');
-    if (!cont) return;
-
-    if (!rows || !rows.length) {
-      cont.innerHTML = '<p class="loading-message">No hay requisiciones para este día o para estos filtros.</p>';
-      return;
-    }
-
-    const map = new Map();
-    rows.forEach(r => {
-      const unidad = String(r['UNIDAD'] || '').trim() || '(sin unidad)';
-      const grupo  = String(r['GRUPO']  || '').trim() || '(sin grupo)';
-      const key = unidad + '|||'+ grupo;
-      if (!map.has(key)) {
-        map.set(key, {
-          unidad,
-          grupo,
-          total: 0,
-          conAsignacion: 0,
-          conSalida: 0,
-          conFact: 0,
-          conEmpacado: 0,
-          conProy: 0,
-          conEntregaReal: 0
-        });
-      }
-      const acc = map.get(key);
-      acc.total++;
-      if (r['ASIGNACIÓN'])   acc.conAsignacion++;
-      if (r['SALIDA'])       acc.conSalida++;
-      if (r['FACTURACIÓN'])  acc.conFact++;
-      if (r['EMPACADO'])     acc.conEmpacado++;
-      if (r['PROY. ENTREGA'])acc.conProy++;
-      if (r['ENTREGA REAL']) acc.conEntregaReal++;
-    });
-
-    const rowsArr = Array.from(map.values()).sort((a,b) => {
-      const ua = a.unidad.localeCompare(b.unidad);
-      if (ua !== 0) return ua;
-      return a.grupo.localeCompare(b.grupo);
-    });
-
-    if (!rowsArr.length) {
-      cont.innerHTML = '<p class="loading-message">No hay datos agrupados para este día.</p>';
-      return;
-    }
-
-    const html = `
-      <table class="monthly-table">
-        <thead>
-          <tr>
-            <th>Unidad</th>
-            <th>Grupo</th>
-            <th>Requisiciones</th>
-            <th>Con Asig.</th>
-            <th>Con Salida</th>
-            <th>Con Fact.</th>
-            <th>Con Emp.</th>
-            <th>Con Proy.</th>
-            <th>Con Entrega</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rowsArr.map(g => `
-            <tr>
-              <td>${g.unidad}</td>
-              <td>${g.grupo}</td>
-              <td>${g.total}</td>
-              <td>${g.conAsignacion}</td>
-              <td>${g.conSalida}</td>
-              <td>${g.conFact}</td>
-              <td>${g.conEmpacado}</td>
-              <td>${g.conProy}</td>
-              <td>${g.conEntregaReal}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    `;
-    cont.innerHTML = html;
+    // Ya no se usa este bloque (tabla separada abajo).
+    // La lógica de grupos está integrada en loadMonthlyChecklist con filas expandibles.
+    return;
   }
 
   // ============================
@@ -1077,7 +1001,7 @@ if (window.__FLOW_APP_LOADED__) {
       const info = currentCalData[key] || { total: 0, byStage: {} };
       const total = info.total || 0;
 
-      // >>> NUEVO: contar RECIBO F8 a partir de byStage <<<
+      // Mini contador: documentos con RECIBO F8 este día (byStage ya viene del backend)
       const bySt = info.byStage || {};
       const reciboF8 = bySt['RECIBO F8'] || 0;
 
@@ -1086,13 +1010,13 @@ if (window.__FLOW_APP_LOADED__) {
       if (key === todayKey) cell.classList.add('today');
       if (currentDayFilter === key) cell.classList.add('selected');
 
-      // Número grande del día
+      // Número del día
       const num = document.createElement('div');
       num.className = 'calendar-day-number';
       num.textContent = day;
       cell.appendChild(num);
 
-      // Badge rojo con el total (lo que ya tenías)
+      // Badge rojo con el total de requisiciones (como antes)
       if (total > 0) {
         const big = document.createElement('div');
         big.className = 'calendar-day-badge';
@@ -1106,7 +1030,7 @@ if (window.__FLOW_APP_LOADED__) {
         cell.title = tooltip.trim();
       }
 
-      // >>> NUEVO: mini contador de Recibo F8 en esquina inferior izquierda <<<
+      // Mini contador de RECIBO F8 en esquina inferior izquierda
       if (reciboF8 > 0) {
         const mini = document.createElement('div');
         mini.className = 'calendar-mini-counter';
@@ -1121,10 +1045,10 @@ if (window.__FLOW_APP_LOADED__) {
 
   async function onCalendarDayClick(dateKey) {
     currentDayFilter = dateKey;
-  
+
     const title = document.getElementById('panel-title');
     if (title) title.textContent = `Requisiciones del ${dateKey}`;
-  
+
     const res = await jsonp(`${A}?route=calendar.daydetails&date=${dateKey}`);
     if (!res || res.status !== 'ok') {
       console.warn('calendar.daydetails error', res && res.error);
@@ -1132,16 +1056,17 @@ if (window.__FLOW_APP_LOADED__) {
     }
     const data = res.data;
     currentRows = data.rows || [];
-  
+
     populateFlowFilterOptionsFromRows(currentRows);
     applyFlowFilters();
-    // renderMonthlyGroupsSummaryFromRows(currentRows);  // <- puedes comentar/eliminar esta línea
-  
+    // ya no usamos el resumen independiente
+    // renderMonthlyGroupsSummaryFromRows(currentRows);
+
     await loadMonthlyChecklist(dateKey);
-  
+
     const btnClear = document.getElementById('btnClearFilter');
     if (btnClear) btnClear.style.display = 'inline-block';
-  
+
     renderCalendar();
   }
 
@@ -1184,7 +1109,7 @@ if (window.__FLOW_APP_LOADED__) {
 
     populateFlowFilterOptionsFromRows(currentRows);
     applyFlowFilters();
-    renderMonthlyGroupsSummaryFromRows(currentRows);
+    // renderMonthlyGroupsSummaryFromRows(currentRows);
 
     await loadMonthlyChecklist(currentDayFilter);
 
@@ -1270,7 +1195,7 @@ if (window.__FLOW_APP_LOADED__) {
 
       populateFlowFilterOptionsFromRows(currentRows);
       applyFlowFilters();
-      renderMonthlyGroupsSummaryFromRows(currentRows);
+      // renderMonthlyGroupsSummaryFromRows(currentRows);
     } catch(e) {
       console.warn('loadInitialData error', e);
       if (listEl) listEl.innerHTML = '<p class="loading-message">Error de red al cargar datos.</p>';
