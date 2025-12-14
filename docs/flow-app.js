@@ -1,5 +1,5 @@
-// flow-app.js v2.1 — Flujo por fechas + checklist de mensuales + día seleccionado + header sticky
-console.log('flow-app.js v2.5');
+// flow-app.js v2.6 — Flujo por fechas + checklist + edición inline en panel izquierdo
+console.log('flow-app.js v2.6');
 
 if (window.__FLOW_APP_LOADED__) {
   console.log('flow-app.js ya cargado, omitiendo.');
@@ -20,15 +20,37 @@ if (window.__FLOW_APP_LOADED__) {
     { key: 'PROY. ENTREGA',label: 'PROY. ENTREGA',blockId: 'count-entrega' }
   ];
 
+  const DATE_FIELDS = [
+    'ASIGNACIÓN',
+    'SALIDA',
+    'DESPACHO',
+    'FACTURACIÓN',
+    'EMPACADO',
+    'PROY. ENTREGA',
+    'ENTREGA REAL'
+  ];
+  const TXT_FIELDS = ['COMENT.'];
+
+  const COMMENT_OPTIONS = [
+    '',
+    'DISCREPANCIA DE INVENTARIO',
+    'FALTA DE PERSONAL',
+    'VIATICOS PARA VIAJES',
+    'FALTA MONTACARGA',
+    'CONGESTIONAMIENTO EN SALIDAS',
+    'FACTURACION RETRASADA',
+    'FALLAS EN SISTEMA',
+    'DEMORA EN DOCUMENTACION',
+    'ERROR DE CAPTACION',
+    'ENTREGADO'
+  ];
+
   let idToken = null;
   let editMode = false;
 
   let currentDayFilter = null;   // YYYY-MM-DD
   let currentRows = [];          // filas base (antes de filtros locales)
   let currentStatusFilter = 'ALL'; // ALL | IN_PROGRESS | COMPLETED | LATE
-
-  // Para edición en modal
-  let currentEditRow = null;
 
   // ============================
   //  HELPERS BÁSICOS
@@ -187,7 +209,7 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   // ============================
-  //  LISTA IZQUIERDA
+  //  LISTA IZQUIERDA + EDICIÓN INLINE
   // ============================
   function stageIndexForLabel(label) {
     if (!label) return FLOW_COLUMNS.length + 1;
@@ -224,7 +246,7 @@ if (window.__FLOW_APP_LOADED__) {
       const unidad = r['UNIDAD'] || '';
       const tipo = r['TIPO'] || '';
       const grupo = r['GRUPO'] || '';
-      const coment = r['COMENT.'] || '—';
+      const coment = r['COMENT.'] || '';
 
       const recD  = parseIsoDate(r['RECIBO F8']);
       const asgD  = parseIsoDate(r['ASIGNACIÓN']);
@@ -262,6 +284,7 @@ if (window.__FLOW_APP_LOADED__) {
 
       const etapaHoy = stageToday ? stageToday : '—';
 
+      // Para edición inline: marcar cada span con data-field y data-row-index
       return `
         <div class="order-card" data-row-index="${idx}">
           <div class="order-card-header">
@@ -271,7 +294,12 @@ if (window.__FLOW_APP_LOADED__) {
           <div class="order-info">
             <div>${unidad}</div>
             <div>${tipo} · ${grupo}</div>
-            <div><strong>Comentario:</strong> ${coment}</div>
+            <div>
+              <strong>Comentario:</strong>
+              <span class="editable-text" data-field="COMENT." data-row-index="${idx}">
+                ${coment || '—'}
+              </span>
+            </div>
           </div>
           <div class="order-dates">
             <div class="date-item">
@@ -280,31 +308,38 @@ if (window.__FLOW_APP_LOADED__) {
             </div>
             <div class="date-item">
               <span class="date-label">Asignación</span>
-              <span class="date-value ${isHighlight(asgD) ? 'highlight-day' : ''}">${asg}</span>
+              <span class="date-value editable-date ${isHighlight(asgD) ? 'highlight-day' : ''}"
+                    data-field="ASIGNACIÓN" data-row-index="${idx}">${asg}</span>
             </div>
             <div class="date-item">
               <span class="date-label">Salida</span>
-              <span class="date-value ${isHighlight(salD) ? 'highlight-day' : ''}">${sal}</span>
+              <span class="date-value editable-date ${isHighlight(salD) ? 'highlight-day' : ''}"
+                    data-field="SALIDA" data-row-index="${idx}">${sal}</span>
             </div>
             <div class="date-item">
               <span class="date-label">Despacho</span>
-              <span class="date-value ${isHighlight(despD) ? 'highlight-day' : ''}">${desp}</span>
+              <span class="date-value editable-date ${isHighlight(despD) ? 'highlight-day' : ''}"
+                    data-field="DESPACHO" data-row-index="${idx}">${desp}</span>
             </div>
             <div class="date-item">
               <span class="date-label">Facturación</span>
-              <span class="date-value ${isHighlight(facD) ? 'highlight-day' : ''}">${fac}</span>
+              <span class="date-value editable-date ${isHighlight(facD) ? 'highlight-day' : ''}"
+                    data-field="FACTURACIÓN" data-row-index="${idx}">${fac}</span>
             </div>
             <div class="date-item">
               <span class="date-label">Empacado</span>
-              <span class="date-value ${isHighlight(empD) ? 'highlight-day' : ''}">${emp}</span>
+              <span class="date-value editable-date ${isHighlight(empD) ? 'highlight-day' : ''}"
+                    data-field="EMPACADO" data-row-index="${idx}">${emp}</span>
             </div>
             <div class="date-item">
               <span class="date-label">Proy. Entrega</span>
-              <span class="date-value ${isHighlight(proyD) ? 'highlight-day' : ''}">${proy}</span>
+              <span class="date-value editable-date ${isHighlight(proyD) ? 'highlight-day' : ''}"
+                    data-field="PROY. ENTREGA" data-row-index="${idx}">${proy}</span>
             </div>
             <div class="date-item">
               <span class="date-label">Entrega Real</span>
-              <span class="date-value ${isHighlight(realD) ? 'highlight-day' : ''}">${real}</span>
+              <span class="date-value editable-date ${isHighlight(realD) ? 'highlight-day' : ''}"
+                    data-field="ENTREGA REAL" data-row-index="${idx}">${real}</span>
             </div>
             <div class="date-item">
               <span class="date-label">Delta</span>
@@ -317,16 +352,193 @@ if (window.__FLOW_APP_LOADED__) {
 
     container.innerHTML = html;
 
-    // Aquí se engancha el click para abrir el modal EN MODO EDICIÓN
-    container.querySelectorAll('.order-card').forEach(card => {
-      card.addEventListener('click', () => {
-        if (!editMode) return;
-        const idx = parseInt(card.getAttribute('data-row-index'), 10);
-        const rows = currentRows || [];
-        if (!rows[idx]) return;
-        openEditModalForRow(rows[idx]);
+    // Marcamos visualmente editable cuando editMode está ON (CSS puede usar esta clase)
+    container.classList.toggle('edit-mode-on', editMode);
+
+    // Delegación de eventos para edición inline
+    container.addEventListener('click', onOrdersListClick, { once: true });
+  }
+
+  // ========== LÓGICA DE EDICIÓN INLINE (adaptada de app.js clásico) ==========
+  async function handleInlineSave(rowIndex, field, newValue, displayEl) {
+    const rows = currentRows || [];
+    const row = rows[rowIndex];
+    if (!row) return;
+
+    const id = row['F8 SALMI'];
+    if (!id) {
+      alert('No se encontró F8 SALMI en la fila.');
+      return;
+    }
+
+    const oldRaw = row[field] || '';
+    const oldDisplay = displayEl.textContent || '';
+
+    if (!idToken) {
+      alert('Inicia sesión con "Acceder" antes de editar.');
+      displayEl.textContent = oldDisplay;
+      return;
+    }
+
+    // Evitar llamadas si no cambió realmente
+    if ((newValue || '').trim() === (formatDateInput(oldRaw) || '').trim() && DATE_FIELDS.includes(field)) {
+      displayEl.textContent = oldDisplay;
+      return;
+    }
+    if (!DATE_FIELDS.includes(field) && (newValue || '').trim() === String(oldRaw || '').trim()) {
+      displayEl.textContent = oldDisplay;
+      return;
+    }
+
+    displayEl.textContent = '…'; // pequeño indicador
+
+    try {
+      const url = `${B}?route=orders.update`
+        + `&idToken=${encodeURIComponent(idToken)}`
+        + `&id=${encodeURIComponent(id)}`
+        + `&field=${encodeURIComponent(field)}`
+        + `&value=${encodeURIComponent(newValue || '')}`;
+
+      const res = await jsonp(url);
+      if (!res || res.status !== 'ok') {
+        displayEl.textContent = oldDisplay;
+        alert('Error al guardar: ' + (res && res.error ? res.error : 'desconocido'));
+        return;
+      }
+
+      // Actualizar texto mostrado
+      if (DATE_FIELDS.includes(field) && newValue) {
+        // newValue viene como YYYY-MM-DD
+        const [yy, mm, dd] = newValue.split('-');
+        displayEl.textContent = `${dd}/${mm}/${yy.slice(2)}`;
+      } else {
+        displayEl.textContent = newValue || '—';
+      }
+
+      // Recargar datos del día actual para mantener todo consistente
+      if (currentDayFilter) {
+        await onCalendarDayClick(currentDayFilter);
+      } else {
+        await loadInitialData();
+      }
+    } catch (e) {
+      console.warn('handleInlineSave error', e);
+      displayEl.textContent = oldDisplay;
+      alert('Error de red al guardar.');
+    }
+  }
+
+  function onOrdersListClick(ev) {
+    if (!editMode) return;
+
+    const spanDate = ev.target.closest('.editable-date');
+    const spanText = ev.target.closest('.editable-text');
+
+    if (!spanDate && !spanText) {
+      // si se hace clic en otra cosa no editable, no hacemos nada
+      return;
+    }
+
+    if (spanDate) {
+      // Edición de fecha
+      const idx = parseInt(spanDate.getAttribute('data-row-index'), 10);
+      const field = spanDate.getAttribute('data-field');
+      if (!DATE_FIELDS.includes(field)) return;
+
+      const rows = currentRows || [];
+      const row = rows[idx];
+      if (!row) return;
+
+      const oldDisplay = spanDate.textContent || '';
+      const oldRaw = row[field] || '';
+
+      // Crear input date
+      const input = document.createElement('input');
+      input.type = 'date';
+      input.style.width = '100%';
+      input.style.boxSizing = 'border-box';
+      input.value = formatDateInput(oldRaw);
+
+      spanDate.innerHTML = '';
+      spanDate.appendChild(input);
+      input.focus();
+
+      const finish = async (commit) => {
+        if (!commit) {
+          spanDate.textContent = oldDisplay;
+          return;
+        }
+        const newVal = input.value || '';
+        await handleInlineSave(idx, field, newVal, spanDate);
+      };
+
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          finish(true);
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          finish(false);
+        }
       });
-    });
+
+      input.addEventListener('blur', () => {
+        setTimeout(() => finish(true), 50);
+      });
+
+      return;
+    }
+
+    if (spanText) {
+      // Edición de COMENT.
+      const idx = parseInt(spanText.getAttribute('data-row-index'), 10);
+      const field = 'COMENT.';
+      const rows = currentRows || [];
+      const row = rows[idx];
+      if (!row) return;
+
+      const oldRaw = row[field] || '';
+      const oldDisplay = spanText.textContent || '—';
+
+      const select = document.createElement('select');
+      select.style.width = '100%';
+      COMMENT_OPTIONS.forEach(optVal => {
+        const opt = document.createElement('option');
+        opt.value = optVal;
+        opt.textContent = optVal || '—';
+        if ((oldRaw || '') === optVal) opt.selected = true;
+        select.appendChild(opt);
+      });
+
+      spanText.innerHTML = '';
+      spanText.appendChild(select);
+      select.focus();
+
+      const finish = async (commit) => {
+        if (!commit) {
+          spanText.textContent = oldDisplay;
+          return;
+        }
+        const newVal = select.value || '';
+        await handleInlineSave(idx, field, newVal, spanText);
+      };
+
+      select.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          finish(true);
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          finish(false);
+        }
+      });
+
+      select.addEventListener('blur', () => {
+        setTimeout(() => finish(true), 50);
+      });
+
+      return;
+    }
   }
 
   // ============================
@@ -552,7 +764,6 @@ if (window.__FLOW_APP_LOADED__) {
       const data = res.data || {};
       let grupos = data.grupos || [];
 
-      // aplicar filtro de UNIDAD al checklist
       const selUnidad = document.getElementById('flowFilterUnidad');
       const selGrupo  = document.getElementById('flowFilterGrupo');
       const uVal = selUnidad ? selUnidad.value : '';
@@ -561,7 +772,6 @@ if (window.__FLOW_APP_LOADED__) {
       if (uVal) {
         grupos = grupos.filter(g => String(g.unidad) === String(uVal));
       }
-      // (sin info de grupo en g, por ahora no filtramos por gVal)
 
       if (!grupos.length) {
         contEl.innerHTML = '<p class="loading-message">No hay mensuales para esta combinación de filtros.</p>';
@@ -779,147 +989,6 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   // ============================
-  //  EDICIÓN (MODAL EN VISTA FLUJO)
-  // ============================
-  function openEditModalForRow(row) {
-    currentEditRow = row;
-
-    const modal = document.getElementById('editModal');
-    if (!modal) return;
-
-    const id = row['F8 SALMI'] || '(sin F8)';
-    const unidad = row['UNIDAD'] || '';
-    const grupo = row['GRUPO'] || '';
-    const coment = row['COMENT.'] || '';
-
-    document.getElementById('editModalTitle').textContent = `Editar requisición ${id}`;
-    document.getElementById('editFieldId').textContent = id;
-    document.getElementById('editFieldUnidad').textContent = unidad;
-    document.getElementById('editFieldGrupo').textContent = grupo;
-
-    document.getElementById('editFieldAsignacion').value = formatDateInput(row['ASIGNACIÓN']);
-    document.getElementById('editFieldSalida').value      = formatDateInput(row['SALIDA']);
-    document.getElementById('editFieldDespacho').value    = formatDateInput(row['DESPACHO']);
-    document.getElementById('editFieldFacturacion').value = formatDateInput(row['FACTURACIÓN']);
-    document.getElementById('editFieldEmpacado').value    = formatDateInput(row['EMPACADO']);
-    document.getElementById('editFieldProy').value        = formatDateInput(row['PROY. ENTREGA']);
-    document.getElementById('editFieldReal').value        = formatDateInput(row['ENTREGA REAL']);
-
-    const selComent = document.getElementById('editFieldComent');
-    if (selComent) selComent.value = coment || '';
-
-    const msgEl = document.getElementById('editModalMessage');
-    if (msgEl) msgEl.textContent = '';
-
-    modal.style.display = 'block';
-  }
-
-  function closeEditModal() {
-    const modal = document.getElementById('editModal');
-    if (modal) modal.style.display = 'none';
-    currentEditRow = null;
-  }
-
-  async function saveEditModalChanges() {
-    if (!currentEditRow) return;
-
-    if (!idToken) {
-      alert('Debe iniciar sesión para editar (botón "Acceder").');
-      return;
-    }
-
-    const id = currentEditRow['F8 SALMI'];
-    if (!id) {
-      alert('Esta fila no tiene F8 SALMI, no se puede editar.');
-      return;
-    }
-
-    const msgEl = document.getElementById('editModalMessage');
-    if (msgEl) {
-      msgEl.style.color = '#111827';
-      msgEl.textContent = 'Guardando cambios...';
-    }
-
-    // Campos a enviar (solo se envían si cambian)
-    const fieldsToCheck = [
-      { field: 'ASIGNACIÓN',    inputId: 'editFieldAsignacion' },
-      { field: 'SALIDA',        inputId: 'editFieldSalida' },
-      { field: 'DESPACHO',      inputId: 'editFieldDespacho' },
-      { field: 'FACTURACIÓN',   inputId: 'editFieldFacturacion' },
-      { field: 'EMPACADO',      inputId: 'editFieldEmpacado' },
-      { field: 'PROY. ENTREGA', inputId: 'editFieldProy' },
-      { field: 'ENTREGA REAL',  inputId: 'editFieldReal' }
-    ];
-
-    const comentInput = document.getElementById('editFieldComent');
-    const newComent = comentInput ? comentInput.value : '';
-    const oldComent = currentEditRow['COMENT.'] || '';
-
-    const updates = [];
-
-    fieldsToCheck.forEach(cfg => {
-      const inp = document.getElementById(cfg.inputId);
-      if (!inp) return;
-      const newVal = inp.value || '';
-      const oldVal = currentEditRow[cfg.field] || '';
-      const oldValNorm = formatDateInput(oldVal);
-      if (newVal !== (oldValNorm || '')) {
-        updates.push({ field: cfg.field, value: newVal }); // YYYY-MM-DD o ''
-      }
-    });
-
-    if (newComent !== oldComent) {
-      updates.push({ field: 'COMENT.', value: newComent });
-    }
-
-    if (!updates.length) {
-      if (msgEl) {
-        msgEl.style.color = '#16a34a';
-        msgEl.textContent = 'No hay cambios que guardar.';
-      }
-      return;
-    }
-
-    try {
-      for (const up of updates) {
-        const url = `${B}?route=orders.update`
-          + `&idToken=${encodeURIComponent(idToken)}`
-          + `&id=${encodeURIComponent(id)}`
-          + `&field=${encodeURIComponent(up.field)}`
-          + `&value=${encodeURIComponent(up.value || '')}`;
-
-        const res = await jsonp(url);
-        if (!res || res.status !== 'ok') {
-          throw new Error(res && res.error ? res.error : 'Error al actualizar');
-        }
-      }
-
-      if (msgEl) {
-        msgEl.style.color = '#16a34a';
-        msgEl.textContent = 'Cambios guardados correctamente.';
-      }
-
-      // volver a cargar el día actual para refrescar datos
-      if (currentDayFilter) {
-        await onCalendarDayClick(currentDayFilter);
-      } else {
-        await loadInitialData();
-      }
-
-      setTimeout(() => {
-        closeEditModal();
-      }, 800);
-
-    } catch (e) {
-      console.warn('saveEditModalChanges error', e);
-      if (msgEl) {
-        msgEl.style.color = '#b91c1c';
-        msgEl.textContent = 'Error al guardar: ' + (e.message || e);
-      }
-    }
-  }
-
-  // ============================
   //  EXPORTAR CSV
   // ============================
   function exportCurrentRowsToCSV() {
@@ -1051,7 +1120,7 @@ if (window.__FLOW_APP_LOADED__) {
               idToken = r.credential;
               if (btnEditMode) btnEditMode.disabled = false;
               btnLogin.textContent = 'Sesión iniciada';
-              alert('Sesión iniciada. Activa “Modo edición” si aplica.');
+              alert('Sesión iniciada. Activa “Modo edición”.');
             }
           });
           google.accounts.id.prompt();
@@ -1066,6 +1135,9 @@ if (window.__FLOW_APP_LOADED__) {
         editMode = !editMode;
         btnEditMode.textContent = `Modo edición: ${editMode ? 'ON' : 'OFF'}`;
         btnEditMode.classList.toggle('edit-on', editMode);
+
+        // Volver a pintar la lista para marcar visualmente modo edición
+        applyFlowFilters();
       });
     }
 
@@ -1090,7 +1162,7 @@ if (window.__FLOW_APP_LOADED__) {
         if (labelEl) labelEl.textContent = '';
         if (contEl) contEl.innerHTML = '<p class="loading-message">Seleccione un día con mensuales para ver el resumen.</p>';
         loadInitialData();
-        renderCalendar();
+        renderCalendar(); // quitar selección
       });
     }
 
@@ -1137,25 +1209,14 @@ if (window.__FLOW_APP_LOADED__) {
       });
     });
 
-    // Eventos del modal de edición
-    const mClose = document.getElementById('editModalClose');
-    const mCancel = document.getElementById('editModalCancel');
-    const mSave = document.getElementById('editModalSave');
-    const mBackdrop = document.querySelector('#editModal .flow-edit-backdrop');
-
-    if (mClose) mClose.addEventListener('click', closeEditModal);
-    if (mCancel) mCancel.addEventListener('click', closeEditModal);
-    if (mBackdrop) mBackdrop.addEventListener('click', closeEditModal);
-    if (mSave) mSave.addEventListener('click', saveEditModalChanges);
-
     // 1) Carga rápida inicial (para filtros, etc.)
     await loadInitialData();
 
-    // 2) Establecer día actual
+    // 2) Día actual
     const now = new Date();
     currentDayFilter = toDateKey(now);
 
-    // 3) Cargar mes del calendario e inmediatamente simular clic en el día actual
+    // 3) Cargar mes e ir al día actual
     await loadCalendarMonth(now.getUTCFullYear(), now.getUTCMonth()+1);
     await onCalendarDayClick(currentDayFilter);
   }
