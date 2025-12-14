@@ -905,3 +905,31 @@ h1, h2, h3 { margin: 0; }
     max-width: 100%;
   }
 }
+
+/* Checklist mensuales: filas de grupo ocultas y estilos de botón +/- */
+.monthly-row-grupo-hidden {
+  display: none;
+}
+
+.monthly-row-grupo td {
+  background-color: #f9fafb;  /* gris muy claro para distinguir grupos */
+  font-size: 12px;
+}
+
+.monthly-toggle-cell {
+  text-align: center;
+}
+
+.monthly-toggle-btn {
+  padding: 0 6px;
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  background: #f3f4f6;
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.monthly-toggle-btn:hover {
+  background: #e5e7eb;
+}
