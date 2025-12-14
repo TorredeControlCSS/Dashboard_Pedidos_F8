@@ -1039,15 +1039,19 @@ if (window.__FLOW_APP_LOADED__) {
     const year = currentCalYear;
     const month = currentCalMonth;
 
-    const firstDay = new Date(Date.UTC(year, month-1, 1));
+    const firstDay = new Date(Date.UTC(year, month - 1, 1));
     const startDow = firstDay.getUTCDay();
     const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
 
-    const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    titleEl.textContent = `${monthNames[month-1]} ${year}`;
+    const monthNames = [
+      'Enero','Febrero','Marzo','Abril','Mayo','Junio',
+      'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'
+    ];
+    titleEl.textContent = `${monthNames[month - 1]} ${year}`;
 
     calEl.innerHTML = '';
 
+    // Cabeceras L M X J V S D
     const dayNames = ['L','M','X','J','V','S','D'];
     dayNames.forEach(dn => {
       const div = document.createElement('div');
@@ -1056,8 +1060,9 @@ if (window.__FLOW_APP_LOADED__) {
       calEl.appendChild(div);
     });
 
+    // Huecos antes del día 1 (ajustado a que Lunes sea primera columna)
     let dow = (startDow + 6) % 7;
-    for (let i=0; i<dow; i++) {
+    for (let i = 0; i < dow; i++) {
       const empty = document.createElement('div');
       empty.className = 'calendar-day other-month';
       calEl.appendChild(empty);
@@ -1065,22 +1070,29 @@ if (window.__FLOW_APP_LOADED__) {
 
     const todayKey = toDateKey(new Date());
 
-    for (let day=1; day<=daysInMonth; day++) {
-      const d = new Date(Date.UTC(year, month-1, day));
+    // Días del mes
+    for (let day = 1; day <= daysInMonth; day++) {
+      const d = new Date(Date.UTC(year, month - 1, day));
       const key = toDateKey(d);
-      const info = currentCalData[key] || { total:0, byStage:{} };
+      const info = currentCalData[key] || { total: 0, byStage: {} };
       const total = info.total || 0;
+
+      // >>> NUEVO: contar RECIBO F8 a partir de byStage <<<
+      const bySt = info.byStage || {};
+      const reciboF8 = bySt['RECIBO F8'] || 0;
 
       const cell = document.createElement('div');
       cell.className = 'calendar-day';
       if (key === todayKey) cell.classList.add('today');
       if (currentDayFilter === key) cell.classList.add('selected');
 
+      // Número grande del día
       const num = document.createElement('div');
       num.className = 'calendar-day-number';
       num.textContent = day;
       cell.appendChild(num);
 
+      // Badge rojo con el total (lo que ya tenías)
       if (total > 0) {
         const big = document.createElement('div');
         big.className = 'calendar-day-badge';
@@ -1088,11 +1100,18 @@ if (window.__FLOW_APP_LOADED__) {
         cell.appendChild(big);
 
         let tooltip = `Total: ${total}\n`;
-        const bySt = info.byStage || {};
         Object.keys(bySt).sort().forEach(st => {
           tooltip += `${st}: ${bySt[st]}\n`;
         });
         cell.title = tooltip.trim();
+      }
+
+      // >>> NUEVO: mini contador de Recibo F8 en esquina inferior izquierda <<<
+      if (reciboF8 > 0) {
+        const mini = document.createElement('div');
+        mini.className = 'calendar-mini-counter';
+        mini.textContent = reciboF8;
+        cell.appendChild(mini);
       }
 
       cell.addEventListener('click', () => onCalendarDayClick(key));
