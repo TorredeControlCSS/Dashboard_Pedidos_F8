@@ -1,5 +1,5 @@
-// flow-app.js v2.6 — Flujo por fechas + checklist + edición inline en panel izquierdo
-console.log('flow-app.js v2.6');
+// flow-app.js v2.7 — Flujo por fechas + checklist + edición inline en panel izquierdo
+console.log('flow-app.js v2.7');
 
 if (window.__FLOW_APP_LOADED__) {
   console.log('flow-app.js ya cargado, omitiendo.');
@@ -284,7 +284,6 @@ if (window.__FLOW_APP_LOADED__) {
 
       const etapaHoy = stageToday ? stageToday : '—';
 
-      // Para edición inline: marcar cada span con data-field y data-row-index
       return `
         <div class="order-card" data-row-index="${idx}">
           <div class="order-card-header">
@@ -351,15 +350,12 @@ if (window.__FLOW_APP_LOADED__) {
     }).join('');
 
     container.innerHTML = html;
-
-    // Marcamos visualmente editable cuando editMode está ON (CSS puede usar esta clase)
     container.classList.toggle('edit-mode-on', editMode);
 
-    // Delegación de eventos para edición inline
     container.addEventListener('click', onOrdersListClick, { once: true });
   }
 
-  // ========== LÓGICA DE EDICIÓN INLINE (adaptada de app.js clásico) ==========
+  // ========== LÓGICA DE EDICIÓN INLINE ==========
   async function handleInlineSave(rowIndex, field, newValue, displayEl) {
     const rows = currentRows || [];
     const row = rows[rowIndex];
@@ -380,17 +376,22 @@ if (window.__FLOW_APP_LOADED__) {
       return;
     }
 
-    // Evitar llamadas si no cambió realmente
-    if ((newValue || '').trim() === (formatDateInput(oldRaw) || '').trim() && DATE_FIELDS.includes(field)) {
-      displayEl.textContent = oldDisplay;
-      return;
-    }
-    if (!DATE_FIELDS.includes(field) && (newValue || '').trim() === String(oldRaw || '').trim()) {
-      displayEl.textContent = oldDisplay;
-      return;
+    const norm = v => String(v || '').trim();
+
+    if (DATE_FIELDS.includes(field)) {
+      const oldNorm = formatDateInput(oldRaw);   // YYYY-MM-DD o ''
+      if (norm(newValue) === norm(oldNorm)) {
+        displayEl.textContent = oldDisplay;
+        return;
+      }
+    } else {
+      if (norm(newValue) === norm(oldRaw)) {
+        displayEl.textContent = oldDisplay;
+        return;
+      }
     }
 
-    displayEl.textContent = '…'; // pequeño indicador
+    displayEl.textContent = '…';
 
     try {
       const url = `${B}?route=orders.update`
@@ -406,21 +407,13 @@ if (window.__FLOW_APP_LOADED__) {
         return;
       }
 
-      // Actualizar texto mostrado
-      if (DATE_FIELDS.includes(field) && newValue) {
-        // newValue viene como YYYY-MM-DD
-        const [yy, mm, dd] = newValue.split('-');
-        displayEl.textContent = `${dd}/${mm}/${yy.slice(2)}`;
-      } else {
-        displayEl.textContent = newValue || '—';
-      }
-
-      // Recargar datos del día actual para mantener todo consistente
+      // no re-formateamos nosotros: recargamos el día
       if (currentDayFilter) {
         await onCalendarDayClick(currentDayFilter);
       } else {
         await loadInitialData();
       }
+
     } catch (e) {
       console.warn('handleInlineSave error', e);
       displayEl.textContent = oldDisplay;
@@ -434,13 +427,9 @@ if (window.__FLOW_APP_LOADED__) {
     const spanDate = ev.target.closest('.editable-date');
     const spanText = ev.target.closest('.editable-text');
 
-    if (!spanDate && !spanText) {
-      // si se hace clic en otra cosa no editable, no hacemos nada
-      return;
-    }
+    if (!spanDate && !spanText) return;
 
     if (spanDate) {
-      // Edición de fecha
       const idx = parseInt(spanDate.getAttribute('data-row-index'), 10);
       const field = spanDate.getAttribute('data-field');
       if (!DATE_FIELDS.includes(field)) return;
@@ -452,7 +441,6 @@ if (window.__FLOW_APP_LOADED__) {
       const oldDisplay = spanDate.textContent || '';
       const oldRaw = row[field] || '';
 
-      // Crear input date
       const input = document.createElement('input');
       input.type = 'date';
       input.style.width = '100%';
@@ -490,7 +478,6 @@ if (window.__FLOW_APP_LOADED__) {
     }
 
     if (spanText) {
-      // Edición de COMENT.
       const idx = parseInt(spanText.getAttribute('data-row-index'), 10);
       const field = 'COMENT.';
       const rows = currentRows || [];
@@ -519,7 +506,9 @@ if (window.__FLOW_APP_LOADED__) {
           spanText.textContent = oldDisplay;
           return;
         }
-        const newVal = select.value || '';
+        let newVal = select.value;
+        if (newVal == null) newVal = '';
+        newVal = String(newVal).trim();
         await handleInlineSave(idx, field, newVal, spanText);
       };
 
@@ -1083,14 +1072,13 @@ if (window.__FLOW_APP_LOADED__) {
     const selUnidad = document.getElementById('flowFilterUnidad');
     const selComent = document.getElementById('flowFilterComent');
 
-    // KPIs clicables
     const kTotal  = document.getElementById('stat-total');
     const kProc   = document.getElementById('stat-proceso');
     const kComp   = document.getElementById('stat-completados');
     const kRetr   = document.getElementById('stat-retraso');
 
     function setStatusFilter(status) {
-      currentStatusFilter = status; // 'ALL' | 'IN_PROGRESS' | 'COMPLETED' | 'LATE'
+      currentStatusFilter = status;
       applyFlowFilters();
     }
 
@@ -1135,8 +1123,6 @@ if (window.__FLOW_APP_LOADED__) {
         editMode = !editMode;
         btnEditMode.textContent = `Modo edición: ${editMode ? 'ON' : 'OFF'}`;
         btnEditMode.classList.toggle('edit-on', editMode);
-
-        // Volver a pintar la lista para marcar visualmente modo edición
         applyFlowFilters();
       });
     }
@@ -1162,7 +1148,7 @@ if (window.__FLOW_APP_LOADED__) {
         if (labelEl) labelEl.textContent = '';
         if (contEl) contEl.innerHTML = '<p class="loading-message">Seleccione un día con mensuales para ver el resumen.</p>';
         loadInitialData();
-        renderCalendar(); // quitar selección
+        renderCalendar();
       });
     }
 
@@ -1209,14 +1195,11 @@ if (window.__FLOW_APP_LOADED__) {
       });
     });
 
-    // 1) Carga rápida inicial (para filtros, etc.)
     await loadInitialData();
 
-    // 2) Día actual
     const now = new Date();
     currentDayFilter = toDateKey(now);
 
-    // 3) Cargar mes e ir al día actual
     await loadCalendarMonth(now.getUTCFullYear(), now.getUTCMonth()+1);
     await onCalendarDayClick(currentDayFilter);
   }
