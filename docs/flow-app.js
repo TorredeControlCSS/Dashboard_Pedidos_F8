@@ -378,17 +378,33 @@ if (window.__FLOW_APP_LOADED__) {
 
     const norm = v => String(v || '').trim();
 
+    // Valor que realmente vamos a enviar al backend
+    let valueToSend = newValue || '';
+
     if (DATE_FIELDS.includes(field)) {
       const oldNorm = formatDateInput(oldRaw);   // YYYY-MM-DD o ''
       if (norm(newValue) === norm(oldNorm)) {
         displayEl.textContent = oldDisplay;
         return;
       }
+
+      // AJUSTE: restar un día antes de enviar, para compensar offset en Apps Script
+      if (valueToSend) {
+        const [yy, mm, dd] = valueToSend.split('-');
+        const d = new Date(Date.UTC(+yy, +mm - 1, +dd));
+        d.setUTCDate(d.getUTCDate() - 1); // restar 1 día
+        const yy2 = d.getUTCFullYear();
+        const mm2 = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const dd2 = String(d.getUTCDate()).padStart(2, '0');
+        valueToSend = `${yy2}-${mm2}-${dd2}`;
+      }
     } else {
+      // Texto (COMENT.)
       if (norm(newValue) === norm(oldRaw)) {
         displayEl.textContent = oldDisplay;
         return;
       }
+      valueToSend = norm(valueToSend); // quitar espacios
     }
 
     displayEl.textContent = '…';
@@ -398,7 +414,7 @@ if (window.__FLOW_APP_LOADED__) {
         + `&idToken=${encodeURIComponent(idToken)}`
         + `&id=${encodeURIComponent(id)}`
         + `&field=${encodeURIComponent(field)}`
-        + `&value=${encodeURIComponent(newValue || '')}`;
+        + `&value=${encodeURIComponent(valueToSend)}`;
 
       const res = await jsonp(url);
       if (!res || res.status !== 'ok') {
@@ -407,7 +423,7 @@ if (window.__FLOW_APP_LOADED__) {
         return;
       }
 
-      // no re-formateamos nosotros: recargamos el día
+      // No re-formateamos nosotros: recargamos el día para que venga desde el backend
       if (currentDayFilter) {
         await onCalendarDayClick(currentDayFilter);
       } else {
