@@ -168,7 +168,7 @@ if (window.__FLOW_APP_LOADED__) {
     updateQuickStatsFromRows(filtered);
     updateGapAndTimeKpisFromRows(filtered);
     updateFlowBlockCounts(filtered);
-    renderMonthlyGroupsSummaryFromRows(filtered);
+    // renderMonthlyGroupsSummaryFromRows(filtered);
   }
 
   function populateFlowFilterOptionsFromRows(rows) {
