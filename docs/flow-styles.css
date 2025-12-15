@@ -148,7 +148,7 @@ h1, h2, h3 { margin: 0; }
   padding: 4px 6px;
   border-radius: 6px;
   border: 1px solid var(--border-color);
-  width: 300px;       /* ancho fijo para que no cambie con el texto */
+  width: 300px;
   max-width: 300px;
   box-sizing: border-box;
 }
@@ -271,7 +271,7 @@ h1, h2, h3 { margin: 0; }
   padding: 0 2px;
   display: flex;
   align-items: center;
-  line-height: 1; 
+  line-height: 1;
 }
 
 /* QUICK STATS (a la derecha) */
@@ -330,7 +330,7 @@ h1, h2, h3 { margin: 0; }
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  max-height: calc(100vh - 180px); /* altura máx relativa a la ventana */
+  max-height: calc(100vh - 180px);
 }
 
 .panel-header {
@@ -353,7 +353,7 @@ h1, h2, h3 { margin: 0; }
 
 .orders-list {
   flex: 1;
-  overflow-y: auto;      /* scroll interno */
+  overflow-y: auto;
   overflow-x: hidden;
   padding: 0 12px 12px;
 }
@@ -629,7 +629,7 @@ h1, h2, h3 { margin: 0; }
   font-weight: 600;
 }
 
-/* GAP & KPIS: base */
+/* GAP & KPIS base */
 .gap-analysis-container,
 .stage-deltas-container {
   background: white;
@@ -687,7 +687,7 @@ h1, h2, h3 { margin: 0; }
 /* Fila con los dos gráficos lado a lado */
 .charts-row {
   display: grid;
-  grid-template-columns: 1.5fr 1fr; /* línea más ancha, barras algo más estrecho */
+  grid-template-columns: 1.5fr 1fr;
   gap: 10px;
 }
 
@@ -702,7 +702,7 @@ h1, h2, h3 { margin: 0; }
 .gap-analysis-container canvas,
 .stage-deltas-container canvas {
   flex: 1;
-  max-height: none; /* dejamos que el flex mande */
+  max-height: none;
 }
 
 /* KPIs en una fila de 4 si hay espacio */
@@ -750,7 +750,7 @@ h1, h2, h3 { margin: 0; }
   }
 
   .charts-row {
-    grid-template-columns: 1fr; /* gráficos uno debajo del otro */
+    grid-template-columns: 1fr;
   }
 
   .time-kpis {
@@ -793,7 +793,6 @@ h1, h2, h3 { margin: 0; }
     padding: 6px 4px;
   }
 
-  /* Filtros arriba */
   .top-row {
     display: flex;
     flex-direction: column;
@@ -819,7 +818,6 @@ h1, h2, h3 { margin: 0; }
     max-width: 100%;
   }
 
-  /* Bloques: carrusel horizontal */
   #process-flow {
     width: 100%;
     overflow-x: auto;
@@ -841,14 +839,12 @@ h1, h2, h3 { margin: 0; }
     font-size: 16px;
   }
 
-  /* KPIs debajo */
   #quick-stats {
     width: 100%;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     margin-top: 4px;
   }
 
-  /* Contenedor principal en columna, para poder reordenar */
   .main-container {
     display: flex;
     flex-direction: column;
@@ -856,11 +852,9 @@ h1, h2, h3 { margin: 0; }
     padding: 6px 8px 12px;
   }
 
-  /* Calendario (right-panel) primero, Requisiciones después */
   .right-panel { order: 1; }
   .left-panel  { order: 2; }
 
-  /* En móvil: panel de requisiciones con altura limitada y scroll interno */
   .left-panel {
     max-height: calc(100vh - 200px);
   }
@@ -907,18 +901,14 @@ h1, h2, h3 { margin: 0; }
     grid-template-columns: 1fr;
   }
 
-  /* ===== Ajustes SOLO móvil para que calendario y checklist no se salgan ===== */
-
-  /* 1) Panel derecho: que nunca sea más ancho que la pantalla */
   .right-panel {
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
   }
 
-  /* 2) Calendario y checklist apilados, ocupando 100% */
   .calendar-and-monthly {
-    display: block;       /* uno debajo del otro en móvil */
+    display: block;
     width: 100%;
     max-width: 100%;
   }
@@ -930,18 +920,16 @@ h1, h2, h3 { margin: 0; }
     box-sizing: border-box;
   }
 
-  /* 3) Si la tabla es muy ancha, solo este bloque tendrá scroll horizontal interno */
   .monthly-checklist-container {
     overflow-x: auto;
   }
 
   .monthly-table {
-    min-width: 480px;     /* ajusta si quieres menos ancho mínimo */
+    min-width: 480px;
     table-layout: fixed;
     word-wrap: break-word;
   }
 
-  /* 4) Calendario: que no fuerce más ancho */
   .calendar-grid {
     width: 100%;
     max-width: 100%;
@@ -954,7 +942,7 @@ h1, h2, h3 { margin: 0; }
 }
 
 .monthly-row-grupo td {
-  background-color: #f9fafb;  /* gris muy claro para distinguir grupos */
+  background-color: #f9fafb;
   font-size: 12px;
 }
 
@@ -978,7 +966,7 @@ h1, h2, h3 { margin: 0; }
 
 /* Mini contador de RECIBO F8 en el calendario */
 .calendar-day {
-  position: relative; /* necesario para posicionar el mini contador dentro */
+  position: relative;
 }
 
 .calendar-mini-counter {
@@ -990,5 +978,5 @@ h1, h2, h3 { margin: 0; }
   background: rgba(255, 255, 255, 0.9);
   padding: 1px 4px;
   border-radius: 999px;
-  pointer-events: none; /* el click sigue llegando al día */
+  pointer-events: none;
 }
