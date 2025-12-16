@@ -332,14 +332,17 @@
       CLIENT_ID: '63868073848-8bfis5g0f8mt14oia3flmbqksg69tejq.apps.googleusercontent.com'
     };
 
+    // Service Worker registration with versioned cache
+    // When deploying updates, increment CACHE_NAME in sw.js and ?v= in flow-app.js script tag
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js')
-          .catch(err => console.log('SW registration failed', err));
+          .then(reg => console.log('[SW] Registered:', reg.scope))
+          .catch(err => console.log('[SW] Registration failed:', err));
       });
     }
   </script>
 
-  <script src="flow-app.js?v=2.5"></script>
+  <script src="flow-app.js?v=2.9"></script>
 </body>
 </html>

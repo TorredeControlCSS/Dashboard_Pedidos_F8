@@ -1,5 +1,32 @@
-// flow-app.js v2.8 — Flujo por fechas + checklist + edición inline y resumen por grupo
-console.log('flow-app.js v2.8');
+// flow-app.js v2.9 — Flujo por fechas + checklist + edición inline (sin offsets de fecha)
+console.log('flow-app.js v2.9 — Date handling fixed');
+
+/* ===== NOTAS SOBRE MANEJO DE FECHAS =====
+ * 
+ * Este frontend maneja fechas en formato YYYY-MM-DD (ISO 8601) con UTC para evitar 
+ * problemas de zona horaria:
+ * 
+ * 1. LECTURA desde backend (Apps Script A):
+ *    - El backend debe devolver fechas en formato 'YYYY-MM-DD' (sin hora ni zona)
+ *    - parseIsoDate() las convierte a Date UTC: new Date('YYYY-MM-DDT00:00:00Z')
+ *    - formatDateShort() las muestra como DD/MM/YY para el usuario
+ *    - formatDateInput() las convierte a YYYY-MM-DD para <input type="date">
+ * 
+ * 2. ESCRITURA al backend (Apps Script B):
+ *    - El usuario edita con <input type="date"> que devuelve 'YYYY-MM-DD'
+ *    - handleInlineSave() envía exactamente ese formato sin offsets
+ *    - El backend B debe recibir 'YYYY-MM-DD' y escribirlo en Sheets tal cual
+ * 
+ * 3. COMPATIBILIDAD CON APPS SCRIPT:
+ *    - Si el backend A tiene una función parseDateCell() que suma/resta días,
+ *      debe ELIMINARSE ese offset para que las fechas coincidan.
+ *    - Si el backend B escribe fechas con new Date(), debe usar formato ISO
+ *      o escribir strings 'YYYY-MM-DD' directamente en la celda.
+ * 
+ * 4. TODAS las funciones de fecha usan getUTCDate(), getUTCMonth(), getUTCFullYear()
+ *    en lugar de getDate(), getMonth(), getFullYear() para evitar conversiones
+ *    automáticas de zona horaria del navegador.
+ */
 
 if (window.__FLOW_APP_LOADED__) {
   console.log('flow-app.js ya cargado, omitiendo.');
@@ -81,7 +108,10 @@ if (window.__FLOW_APP_LOADED__) {
     if (v instanceof Date) return v;
     const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v));
     if (!m) return null;
-    return new Date(m[1] + '-' + m[2] + '-' + m[3] + 'T00:00:00Z');
+    // Parse date in UTC to avoid timezone offsets
+    const d = new Date(m[1] + '-' + m[2] + '-' + m[3] + 'T00:00:00Z');
+    // console.log('[FLOW-DATE] parseIsoDate:', v, '→', d); // Uncomment for debugging
+    return d;
   }
 
   function daysBetween(d1, d2) {
@@ -112,7 +142,9 @@ if (window.__FLOW_APP_LOADED__) {
     const dd = String(d.getUTCDate()).padStart(2,'0');
     const mm = String(d.getUTCMonth()+1).padStart(2,'0');
     const yy = d.getUTCFullYear();
-    return `${yy}-${mm}-${dd}`; // YYYY-MM-DD
+    const result = `${yy}-${mm}-${dd}`; // YYYY-MM-DD for <input type="date">
+    // console.log('[FLOW-DATE] formatDateInput:', v, '→', result); // Uncomment for debugging
+    return result;
   }
 
   function flowStageForDate(r, dateKey) {
@@ -367,6 +399,8 @@ if (window.__FLOW_APP_LOADED__) {
     const oldRaw = row[field] || '';
     const oldDisplay = displayEl.textContent || '';
 
+    console.log('[FLOW-EDIT] Starting save:', { id, field, oldRaw, newValue, rowIndex });
+
     if (!idToken) {
       alert('Inicia sesión con "Acceder" antes de editar.');
       displayEl.textContent = oldDisplay;
@@ -379,22 +413,26 @@ if (window.__FLOW_APP_LOADED__) {
     if (DATE_FIELDS.includes(field)) {
       const oldNorm = formatDateInput(oldRaw);
       if (norm(newValue) === norm(oldNorm)) {
+        console.log('[FLOW-EDIT] No change detected, skipping save');
         displayEl.textContent = oldDisplay;
         return;
       }
     
       if (valueToSend) {
-        // Enviamos exactamente la fecha que seleccionó el usuario (YYYY-MM-DD),
-        // sin aplicar offsets adicionales.
+        // Normalizamos la fecha para asegurar formato correcto con ceros a la izquierda.
+        // Esto es necesario porque algunos navegadores pueden devolver formatos inconsistentes
+        // del <input type="date">, y queremos asegurar YYYY-MM-DD siempre.
         const [yy, mm, dd] = valueToSend.split('-');
         const yy2 = +yy;
         const mm2 = String(+mm).padStart(2, '0');
         const dd2 = String(+dd).padStart(2, '0');
         valueToSend = `${yy2}-${mm2}-${dd2}`;
+        console.log('[FLOW-EDIT] Date field - sending value:', valueToSend);
       }
     }
     else {
       if (norm(newValue) === norm(oldRaw)) {
+        console.log('[FLOW-EDIT] No change detected, skipping save');
         displayEl.textContent = oldDisplay;
         return;
       }
@@ -410,12 +448,19 @@ if (window.__FLOW_APP_LOADED__) {
         + `&field=${encodeURIComponent(field)}`
         + `&value=${encodeURIComponent(valueToSend)}`;
 
+      console.log('[FLOW-EDIT] Sending update:', { url: url.replace(/idToken=[^&]+/, 'idToken=***'), id, field, valueToSend });
+
       const res = await jsonp(url);
+      
+      console.log('[FLOW-EDIT] Backend response:', res);
+
       if (!res || res.status !== 'ok') {
         displayEl.textContent = oldDisplay;
         alert('Error al guardar: ' + (res && res.error ? res.error : 'desconocido'));
         return;
       }
+
+      console.log('[FLOW-EDIT] Save successful, reloading data...');
 
       if (currentDayFilter) {
         await onCalendarDayClick(currentDayFilter);
@@ -424,7 +469,7 @@ if (window.__FLOW_APP_LOADED__) {
       }
 
     } catch (e) {
-      console.warn('handleInlineSave error', e);
+      console.warn('[FLOW-EDIT] handleInlineSave error', e);
       displayEl.textContent = oldDisplay;
       alert('Error de red al guardar.');
     }
