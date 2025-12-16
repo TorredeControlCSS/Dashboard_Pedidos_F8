@@ -419,9 +419,9 @@ if (window.__FLOW_APP_LOADED__) {
       }
     
       if (valueToSend) {
-        // Enviamos exactamente la fecha que seleccionó el usuario (YYYY-MM-DD),
-        // sin aplicar offsets adicionales. El backend debe recibir y almacenar
-        // la fecha tal cual sin ajustes de zona horaria.
+        // Normalizamos la fecha para asegurar formato correcto con ceros a la izquierda.
+        // Esto es necesario porque algunos navegadores pueden devolver formatos inconsistentes
+        // del <input type="date">, y queremos asegurar YYYY-MM-DD siempre.
         const [yy, mm, dd] = valueToSend.split('-');
         const yy2 = +yy;
         const mm2 = String(+mm).padStart(2, '0');

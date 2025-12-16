@@ -69,7 +69,10 @@ self.addEventListener('fetch', event => {
       if (req.url.endsWith('.js') || req.url.endsWith('.css')) {
         return fetch(req).then(res => {
           const resClone = res.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(req, resClone));
+          // Cache asíncrono - no bloqueamos la respuesta
+          caches.open(CACHE_NAME).then(cache => cache.put(req, resClone)).catch(err => {
+            console.warn('[SW] Cache put failed:', err);
+          });
           return res;
         }).catch(() => cached);
       }
@@ -79,7 +82,10 @@ self.addEventListener('fetch', event => {
 
       return fetch(req).then(res => {
         const resClone = res.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(req, resClone));
+        // Cache asíncrono - no bloqueamos la respuesta
+        caches.open(CACHE_NAME).then(cache => cache.put(req, resClone)).catch(err => {
+          console.warn('[SW] Cache put failed:', err);
+        });
         return res;
       }).catch(() => cached);
     })
