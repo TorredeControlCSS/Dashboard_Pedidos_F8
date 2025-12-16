@@ -1,11 +1,11 @@
 // sw.js — Service Worker básico para PWA del Dashboard F8
 // Cachea recursos estáticos (HTML, CSS, JS, imágenes) para carga rápida y modo offline básico.
 
-const CACHE_NAME = 'f8-dashboard-v1';
+const CACHE_NAME = 'f8-dashboard-v2';
 
 const URLS_TO_CACHE = [
   './',
-  './Dashboard_Pedidos_F8/flow-dashboard.html',
+  './flow-dashboard.html',
   './flow-styles.css',
   './flow-app.js',
   './manifest.json',
@@ -53,3 +53,4 @@ self.addEventListener('fetch', event => {
     })
   );
 });
+
