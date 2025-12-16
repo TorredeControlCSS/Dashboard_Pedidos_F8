@@ -52,14 +52,8 @@ self.addEventListener('fetch', event => {
   const req = event.request;
 
   // Solo cacheamos peticiones GET de nuestro propio origen
+  // Esto automáticamente excluye script.google.com, accounts.google.com, etc.
   if (req.method !== 'GET' || !req.url.startsWith(self.location.origin)) {
-    return;
-  }
-
-  // No cachear peticiones a APIs externas (script.google.com, accounts.google.com, etc.)
-  if (req.url.includes('script.google.com') || 
-      req.url.includes('accounts.google.com') ||
-      req.url.includes('googleapis.com')) {
     return;
   }
 
