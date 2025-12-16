@@ -382,17 +382,18 @@ if (window.__FLOW_APP_LOADED__) {
         displayEl.textContent = oldDisplay;
         return;
       }
-
+    
       if (valueToSend) {
+        // Enviamos exactamente la fecha que seleccionó el usuario (YYYY-MM-DD),
+        // sin aplicar offsets adicionales.
         const [yy, mm, dd] = valueToSend.split('-');
-        const d = new Date(Date.UTC(+yy, +mm - 1, +dd));
-        d.setUTCDate(d.getUTCDate() - 1); // compensar offset en Apps Script
-        const yy2 = d.getUTCFullYear();
-        const mm2 = String(d.getUTCMonth() + 1).padStart(2, '0');
-        const dd2 = String(d.getUTCDate()).padStart(2, '0');
+        const yy2 = +yy;
+        const mm2 = String(+mm).padStart(2, '0');
+        const dd2 = String(+dd).padStart(2, '0');
         valueToSend = `${yy2}-${mm2}-${dd2}`;
       }
-    } else {
+    }
+    else {
       if (norm(newValue) === norm(oldRaw)) {
         displayEl.textContent = oldDisplay;
         return;
