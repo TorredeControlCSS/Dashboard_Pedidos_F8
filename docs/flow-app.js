@@ -381,7 +381,6 @@ if (window.__FLOW_APP_LOADED__) {
 
     container.innerHTML = html;
     container.classList.toggle('edit-mode-on', editMode);
-    container.addEventListener('click', onOrdersListClick, { once: true });
   }
 
   // ========== LÓGICA DE EDICIÓN INLINE ==========
@@ -1386,6 +1385,12 @@ if (window.__FLOW_APP_LOADED__) {
         onFlowBlockClick(stageKey);
       });
     });
+
+    // Add permanent event listener for edit mode clicks on orders list
+    const ordersListEl = document.getElementById('ordersList');
+    if (ordersListEl) {
+      ordersListEl.addEventListener('click', onOrdersListClick);
+    }
 
     await loadInitialData();
 
