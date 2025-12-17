@@ -72,6 +72,9 @@ if (window.__FLOW_APP_LOADED__) {
     'ENTREGADO'
   ];
 
+  // Debug flag - set to false in production
+  const DEBUG = false;
+
   let idToken = null;
   let editMode = false;
 
@@ -110,7 +113,7 @@ if (window.__FLOW_APP_LOADED__) {
     if (!m) return null;
     // Parse date in UTC to avoid timezone offsets
     const d = new Date(m[1] + '-' + m[2] + '-' + m[3] + 'T00:00:00Z');
-    console.log('[FLOW-DATE] parseIsoDate:', v, '→', d); // Debug logging enabled
+    if (DEBUG) console.log('[FLOW-DATE] parseIsoDate:', v, '→', d);
     return d;
   }
 
@@ -143,7 +146,7 @@ if (window.__FLOW_APP_LOADED__) {
     const mm = String(d.getUTCMonth()+1).padStart(2,'0');
     const yy = d.getUTCFullYear();
     const result = `${yy}-${mm}-${dd}`; // YYYY-MM-DD for <input type="date">
-    console.log('[FLOW-DATE] formatDateInput:', v, '→', result); // Debug logging enabled
+    if (DEBUG) console.log('[FLOW-DATE] formatDateInput:', v, '→', result);
     return result;
   }
 
@@ -489,7 +492,7 @@ if (window.__FLOW_APP_LOADED__) {
     if (spanDate) {
       const f8Id = spanDate.getAttribute('data-f8-id');
       const field = spanDate.getAttribute('data-field');
-      console.log('[FLOW-EDIT-CLICK] Clicked date field:', { f8Id, field }); // Debug
+      if (DEBUG) console.log('[FLOW-EDIT-CLICK] Clicked date field:', { f8Id, field });
       
       if (!DATE_FIELDS.includes(field)) return;
 
@@ -502,27 +505,27 @@ if (window.__FLOW_APP_LOADED__) {
 
       const oldDisplay = spanDate.textContent || '';
       const oldRaw = row[field] || '';
-      console.log('[FLOW-EDIT-CLICK] Date values:', { oldDisplay, oldRaw, row }); // Debug
+      if (DEBUG) console.log('[FLOW-EDIT-CLICK] Date values:', { oldDisplay, oldRaw, row });
 
       const input = document.createElement('input');
       input.type = 'date';
       input.style.width = '100%';
       input.style.boxSizing = 'border-box';
       input.value = formatDateInput(oldRaw);
-      console.log('[FLOW-EDIT-CLICK] Set input.value to:', input.value); // Debug
+      if (DEBUG) console.log('[FLOW-EDIT-CLICK] Set input.value to:', input.value);
 
       spanDate.innerHTML = '';
       spanDate.appendChild(input);
       input.focus();
 
       const finish = async (commit) => {
-        console.log('[FLOW-EDIT-CLICK] finish called:', { commit, inputValue: input.value }); // Debug
+        if (DEBUG) console.log('[FLOW-EDIT-CLICK] finish called:', { commit, inputValue: input.value });
         if (!commit) {
           spanDate.textContent = oldDisplay;
           return;
         }
         const newVal = input.value || '';
-        console.log('[FLOW-EDIT-CLICK] Calling handleInlineSave with:', { f8Id, field, newVal }); // Debug
+        if (DEBUG) console.log('[FLOW-EDIT-CLICK] Calling handleInlineSave with:', { f8Id, field, newVal });
         await handleInlineSave(f8Id, field, newVal, spanDate);
       };
 
