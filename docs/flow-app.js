@@ -1401,11 +1401,27 @@ if (window.__FLOW_APP_LOADED__) {
             callback: r => {
               idToken = r.credential;
               if (btnEditMode) btnEditMode.disabled = false;
-              btnLogin.textContent = 'Sesión iniciada';
+              btnLogin.style.display = 'none';
               alert('Sesión iniciada. Activa “Modo edición”.');
+              const loginStatus = document.createElement('span');
+              loginStatus.textContent = '✓ Sesión iniciada';
+              loginStatus.style.color = '#10b981';
+              loginStatus.style.fontWeight = 'bold';
+              loginStatus.style.marginRight = '1rem';
+              btnLogin.parentNode.insertBefore(loginStatus, btnLogin);
             }
           });
-          google.accounts.id.prompt();
+          // Use renderButton instead of prompt to avoid FedCM errors
+          btnLogin.textContent = '';
+          btnLogin.style.padding = '0';
+          btnLogin.style.border = 'none';
+          btnLogin.style.background = 'transparent';
+          google.accounts.id.renderButton(btnLogin, {
+            theme: 'outline',
+            size: 'large',
+            text: 'signin_with',
+            width: 200
+          });
         } else {
           alert('Falta librería de Google Identity');
         }
