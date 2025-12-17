@@ -1,5 +1,5 @@
-// flow-app.js v2.9 — Flujo por fechas + checklist + edición inline (sin offsets de fecha)
-console.log('flow-app.js v2.9 — Date handling fixed');
+// flow-app.js v3.0 — Fixed edit mode using F8 SALMI id instead of array index
+console.log('flow-app.js v3.0 — Edit mode fixed with stable identifiers');
 
 /* ===== NOTAS SOBRE MANEJO DE FECHAS =====
  * 
@@ -110,7 +110,7 @@ if (window.__FLOW_APP_LOADED__) {
     if (!m) return null;
     // Parse date in UTC to avoid timezone offsets
     const d = new Date(m[1] + '-' + m[2] + '-' + m[3] + 'T00:00:00Z');
-    // console.log('[FLOW-DATE] parseIsoDate:', v, '→', d); // Uncomment for debugging
+    console.log('[FLOW-DATE] parseIsoDate:', v, '→', d); // Debug logging enabled
     return d;
   }
 
@@ -143,7 +143,7 @@ if (window.__FLOW_APP_LOADED__) {
     const mm = String(d.getUTCMonth()+1).padStart(2,'0');
     const yy = d.getUTCFullYear();
     const result = `${yy}-${mm}-${dd}`; // YYYY-MM-DD for <input type="date">
-    // console.log('[FLOW-DATE] formatDateInput:', v, '→', result); // Uncomment for debugging
+    console.log('[FLOW-DATE] formatDateInput:', v, '→', result); // Debug logging enabled
     return result;
   }
 
@@ -315,7 +315,7 @@ if (window.__FLOW_APP_LOADED__) {
       const etapaHoy = stageToday ? stageToday : '—';
 
       return `
-        <div class="order-card" data-row-index="${idx}">
+        <div class="order-card" data-f8-id="${id}">
           <div class="order-card-header">
             <span class="order-id">${id}</span>
             <span class="order-stage">${etapaHoy}</span>
@@ -325,7 +325,7 @@ if (window.__FLOW_APP_LOADED__) {
             <div>${tipo} · ${grupo}</div>
             <div>
               <strong>Comentario:</strong>
-              <span class="editable-text" data-field="COMENT." data-row-index="${idx}">
+              <span class="editable-text" data-field="COMENT." data-f8-id="${id}">
                 ${coment || '—'}
               </span>
             </div>
@@ -338,37 +338,37 @@ if (window.__FLOW_APP_LOADED__) {
             <div class="date-item">
               <span class="date-label">Asignación</span>
               <span class="date-value editable-date ${isHighlight(asgD) ? 'highlight-day' : ''}"
-                    data-field="ASIGNACIÓN" data-row-index="${idx}">${asg}</span>
+                    data-field="ASIGNACIÓN" data-f8-id="${id}">${asg}</span>
             </div>
             <div class="date-item">
               <span class="date-label">Salida</span>
               <span class="date-value editable-date ${isHighlight(salD) ? 'highlight-day' : ''}"
-                    data-field="SALIDA" data-row-index="${idx}">${sal}</span>
+                    data-field="SALIDA" data-f8-id="${id}">${sal}</span>
             </div>
             <div class="date-item">
               <span class="date-label">Despacho</span>
               <span class="date-value editable-date ${isHighlight(despD) ? 'highlight-day' : ''}"
-                    data-field="DESPACHO" data-row-index="${idx}">${desp}</span>
+                    data-field="DESPACHO" data-f8-id="${id}">${desp}</span>
             </div>
             <div class="date-item">
               <span class="date-label">Facturación</span>
               <span class="date-value editable-date ${isHighlight(facD) ? 'highlight-day' : ''}"
-                    data-field="FACTURACIÓN" data-row-index="${idx}">${fac}</span>
+                    data-field="FACTURACIÓN" data-f8-id="${id}">${fac}</span>
             </div>
             <div class="date-item">
               <span class="date-label">Empacado</span>
               <span class="date-value editable-date ${isHighlight(empD) ? 'highlight-day' : ''}"
-                    data-field="EMPACADO" data-row-index="${idx}">${emp}</span>
+                    data-field="EMPACADO" data-f8-id="${id}">${emp}</span>
             </div>
             <div class="date-item">
               <span class="date-label">Proy. Entrega</span>
               <span class="date-value editable-date ${isHighlight(proyD) ? 'highlight-day' : ''}"
-                    data-field="PROY. ENTREGA" data-row-index="${idx}">${proy}</span>
+                    data-field="PROY. ENTREGA" data-f8-id="${id}">${proy}</span>
             </div>
             <div class="date-item">
               <span class="date-label">Entrega Real</span>
               <span class="date-value editable-date ${isHighlight(realD) ? 'highlight-day' : ''}"
-                    data-field="ENTREGA REAL" data-row-index="${idx}">${real}</span>
+                    data-field="ENTREGA REAL" data-f8-id="${id}">${real}</span>
             </div>
             <div class="date-item">
               <span class="date-label">Delta</span>
@@ -384,10 +384,14 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   // ========== LÓGICA DE EDICIÓN INLINE ==========
-  async function handleInlineSave(rowIndex, field, newValue, displayEl) {
+  async function handleInlineSave(f8Id, field, newValue, displayEl) {
     const rows = currentRows || [];
-    const row = rows[rowIndex];
-    if (!row) return;
+    const row = rows.find(r => r['F8 SALMI'] === f8Id);
+    if (!row) {
+      console.error('[FLOW-EDIT] Row not found for F8 SALMI:', f8Id);
+      alert('No se encontró la fila correspondiente.');
+      return;
+    }
 
     const id = row['F8 SALMI'];
     if (!id) {
@@ -398,7 +402,7 @@ if (window.__FLOW_APP_LOADED__) {
     const oldRaw = row[field] || '';
     const oldDisplay = displayEl.textContent || '';
 
-    console.log('[FLOW-EDIT] Starting save:', { id, field, oldRaw, newValue, rowIndex });
+    console.log('[FLOW-EDIT] Starting save:', { id, field, oldRaw, newValue });
 
     if (!idToken) {
       alert('Inicia sesión con "Acceder" antes de editar.');
@@ -483,34 +487,43 @@ if (window.__FLOW_APP_LOADED__) {
     if (!spanDate && !spanText) return;
 
     if (spanDate) {
-      const idx = parseInt(spanDate.getAttribute('data-row-index'), 10);
+      const f8Id = spanDate.getAttribute('data-f8-id');
       const field = spanDate.getAttribute('data-field');
+      console.log('[FLOW-EDIT-CLICK] Clicked date field:', { f8Id, field }); // Debug
+      
       if (!DATE_FIELDS.includes(field)) return;
 
       const rows = currentRows || [];
-      const row = rows[idx];
-      if (!row) return;
+      const row = rows.find(r => r['F8 SALMI'] === f8Id);
+      if (!row) {
+        console.error('[FLOW-EDIT-CLICK] Row not found for F8 SALMI:', f8Id);
+        return;
+      }
 
       const oldDisplay = spanDate.textContent || '';
       const oldRaw = row[field] || '';
+      console.log('[FLOW-EDIT-CLICK] Date values:', { oldDisplay, oldRaw, row }); // Debug
 
       const input = document.createElement('input');
       input.type = 'date';
       input.style.width = '100%';
       input.style.boxSizing = 'border-box';
       input.value = formatDateInput(oldRaw);
+      console.log('[FLOW-EDIT-CLICK] Set input.value to:', input.value); // Debug
 
       spanDate.innerHTML = '';
       spanDate.appendChild(input);
       input.focus();
 
       const finish = async (commit) => {
+        console.log('[FLOW-EDIT-CLICK] finish called:', { commit, inputValue: input.value }); // Debug
         if (!commit) {
           spanDate.textContent = oldDisplay;
           return;
         }
         const newVal = input.value || '';
-        await handleInlineSave(idx, field, newVal, spanDate);
+        console.log('[FLOW-EDIT-CLICK] Calling handleInlineSave with:', { f8Id, field, newVal }); // Debug
+        await handleInlineSave(f8Id, field, newVal, spanDate);
       };
 
       input.addEventListener('keydown', e => {
@@ -531,11 +544,14 @@ if (window.__FLOW_APP_LOADED__) {
     }
 
     if (spanText) {
-      const idx = parseInt(spanText.getAttribute('data-row-index'), 10);
+      const f8Id = spanText.getAttribute('data-f8-id');
       const field = 'COMENT.';
       const rows = currentRows || [];
-      const row = rows[idx];
-      if (!row) return;
+      const row = rows.find(r => r['F8 SALMI'] === f8Id);
+      if (!row) {
+        console.error('[FLOW-EDIT-CLICK] Row not found for F8 SALMI:', f8Id);
+        return;
+      }
 
       const oldRaw = row[field] || '';
       const oldDisplay = spanText.textContent || '—';
@@ -562,7 +578,7 @@ if (window.__FLOW_APP_LOADED__) {
         let newVal = select.value;
         if (newVal == null) newVal = '';
         newVal = String(newVal).trim();
-        await handleInlineSave(idx, field, newVal, spanText);
+        await handleInlineSave(f8Id, field, newVal, spanText);
       };
 
       select.addEventListener('keydown', e => {
