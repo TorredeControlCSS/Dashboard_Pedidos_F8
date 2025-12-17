@@ -157,19 +157,19 @@ h1, h2, h3 { margin: 0; }
 #process-flow {
   display: flex;
   align-items: stretch;
-  justify-content: flex-start;
+  justify-content: center;
   padding: 0;
   background: transparent;
   overflow-x: auto;
-  overflow-y: visible;
-  gap: 8px;
+  overflow-y: hidden;
+  gap: 6px;
   min-width: 0; /* Allow flex item to shrink below content size */
 }
 
 .flow-block {
-  flex: 0 0 160px;
-  min-width: 140px;
-  max-width: 160px;
+  flex: 0 0 120px;
+  min-width: 110px;
+  max-width: 150px;
   background: white;
   border: 2px solid var(--border-color);
   border-radius: 10px;
