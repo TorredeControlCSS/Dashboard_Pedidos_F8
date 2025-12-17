@@ -1,5 +1,5 @@
-// flow-app.js v3.1 — Fixed date picker and dropdown interaction (change event instead of blur)
-console.log('flow-app.js v3.1 — Date picker and dropdown interaction fixed');
+// flow-app.js v3.2 — Fixed mouse click on date picker and dropdown by removing blur event
+console.log('flow-app.js v3.2 — Mouse click on date picker and dropdown fixed');
 
 /* ===== NOTAS SOBRE MANEJO DE FECHAS =====
  * 
@@ -555,14 +555,33 @@ if (window.__FLOW_APP_LOADED__) {
         finish(true);
       });
 
-      input.addEventListener('blur', (e) => {
-        if (DEBUG) console.log('[FLOW-EDIT-CLICK] Input blur event, shouldSaveOnBlur:', shouldSaveOnBlur);
-        // Only save on blur if change event hasn't already saved
-        // and user didn't press Escape
-        if (shouldSaveOnBlur) {
-          setTimeout(() => finish(true), 150);
+      // REMOVED: blur event was causing premature closing of date picker
+      // The change event properly handles saving when user selects a date
+      // For clicking away without selection, we rely on document click handler below
+      
+      // Detect clicks outside the input to close without saving
+      const handleClickOutside = (e) => {
+        if (!input || !input.parentNode) {
+          document.removeEventListener('click', handleClickOutside, true);
+          return;
         }
-      });
+        // Check if click is outside the input and its parent span
+        if (!input.contains(e.target) && !spanDate.contains(e.target)) {
+          document.removeEventListener('click', handleClickOutside, true);
+          if (shouldSaveOnBlur) {
+            // If user hasn't selected a date, close without saving (revert)
+            if (input.value === formatDateInput(oldRaw)) {
+              finish(false); // No change, just close
+            } else {
+              finish(true); // Save if there's a change
+            }
+          }
+        }
+      };
+      // Use capture phase and add slight delay to let the input get properly added to DOM
+      setTimeout(() => {
+        document.addEventListener('click', handleClickOutside, true);
+      }, 100);
       
       // Focus after appending to DOM - use queueMicrotask for reliable timing
       queueMicrotask(() => input.focus());
@@ -634,14 +653,33 @@ if (window.__FLOW_APP_LOADED__) {
         finish(true);
       });
 
-      select.addEventListener('blur', () => {
-        if (DEBUG) console.log('[FLOW-EDIT-CLICK] Select blur event, shouldSaveOnBlur:', shouldSaveOnBlur);
-        // Only save on blur if change event hasn't already saved
-        // and user didn't press Escape
-        if (shouldSaveOnBlur) {
-          setTimeout(() => finish(true), 150);
+      // REMOVED: blur event was causing premature closing of dropdown
+      // The change event properly handles saving when user selects an option
+      // For clicking away without selection, we rely on document click handler below
+      
+      // Detect clicks outside the select to close without saving
+      const handleClickOutside = (e) => {
+        if (!select || !select.parentNode) {
+          document.removeEventListener('click', handleClickOutside, true);
+          return;
         }
-      });
+        // Check if click is outside the select and its parent span
+        if (!select.contains(e.target) && !spanText.contains(e.target)) {
+          document.removeEventListener('click', handleClickOutside, true);
+          if (shouldSaveOnBlur) {
+            // If user hasn't changed the value, close without saving
+            if (select.value === oldRaw) {
+              finish(false); // No change, just close
+            } else {
+              finish(true); // Save if there's a change
+            }
+          }
+        }
+      };
+      // Use capture phase and add slight delay to let the select get properly added to DOM
+      setTimeout(() => {
+        document.addEventListener('click', handleClickOutside, true);
+      }, 100);
       
       // Focus after appending to DOM - use queueMicrotask for reliable timing
       queueMicrotask(() => select.focus());

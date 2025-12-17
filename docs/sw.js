@@ -2,7 +2,7 @@
 // Cachea recursos estáticos (HTML, CSS, JS, imágenes) para carga rápida y modo offline básico.
 // IMPORTANTE: Incrementar la versión del cache al hacer cambios en JS/CSS para forzar actualización
 
-const CACHE_NAME = 'f8-dashboard-v3.1';
+const CACHE_NAME = 'f8-dashboard-v3.2';
 
 const URLS_TO_CACHE = [
   './',
