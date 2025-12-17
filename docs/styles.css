@@ -45,7 +45,9 @@ h1,h3 { margin: 0; }
 
 /* Filtros */
 #filters{
-  padding: 8px 16px 0;
+  padding: 8px 16px 12px;
+  position: relative;
+  z-index: 10;
 }
 
 #filters .row{
@@ -149,6 +151,8 @@ h1,h3 { margin: 0; }
   display: flex;
   flex-direction: column;
   gap: 8px;
+  position: relative;
+  z-index: 1;
 }
 
 /* Fila superior: evolución ancho completo */
@@ -162,6 +166,8 @@ h1,h3 { margin: 0; }
   border-radius:8px;
   padding:10px;
   background:#fff;
+  position: relative;
+  overflow: hidden;
 }
 
 .card-evol{
@@ -201,11 +207,15 @@ h1,h3 { margin: 0; }
 .card-evol canvas{
   width:100% !important;
   height:210px !important;
+  max-width: 100%;
+  display: block;
 }
 .card-coment canvas,
 .card-grupos canvas{
   width:100% !important;
   height:185px !important;
+  max-width: 100%;
+  display: block;
 }
 
 /* Panel de colas dentro de la tercera tarjeta */
