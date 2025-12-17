@@ -1,5 +1,5 @@
-// flow-app.js v3.0 — Fixed edit mode using F8 SALMI id instead of array index
-console.log('flow-app.js v3.0 — Edit mode fixed with stable identifiers');
+// flow-app.js v3.1 — Fixed date picker and dropdown interaction (change event instead of blur)
+console.log('flow-app.js v3.1 — Date picker and dropdown interaction fixed');
 
 /* ===== NOTAS SOBRE MANEJO DE FECHAS =====
  * 
@@ -516,9 +516,15 @@ if (window.__FLOW_APP_LOADED__) {
 
       spanDate.innerHTML = '';
       spanDate.appendChild(input);
-      input.focus();
+      
+      // Track if we should save on blur
+      let shouldSaveOnBlur = true;
+      let isFinished = false;
 
       const finish = async (commit) => {
+        if (isFinished) return; // Prevent multiple calls
+        isFinished = true;
+        
         if (DEBUG) console.log('[FLOW-EDIT-CLICK] finish called:', { commit, inputValue: input.value });
         if (!commit) {
           spanDate.textContent = oldDisplay;
@@ -532,16 +538,34 @@ if (window.__FLOW_APP_LOADED__) {
       input.addEventListener('keydown', e => {
         if (e.key === 'Enter') {
           e.preventDefault();
+          shouldSaveOnBlur = false; // Prevent double save
           finish(true);
         } else if (e.key === 'Escape') {
           e.preventDefault();
+          shouldSaveOnBlur = false; // Prevent save on blur
           finish(false);
         }
       });
 
-      input.addEventListener('blur', () => {
-        setTimeout(() => finish(true), 50);
+      // Use change event instead of blur for date inputs
+      // This fires when user selects a date from the calendar
+      input.addEventListener('change', () => {
+        if (DEBUG) console.log('[FLOW-EDIT-CLICK] Date changed, saving...');
+        shouldSaveOnBlur = false; // Prevent double save from blur
+        finish(true);
       });
+
+      input.addEventListener('blur', (e) => {
+        if (DEBUG) console.log('[FLOW-EDIT-CLICK] Input blur event, shouldSaveOnBlur:', shouldSaveOnBlur);
+        // Only save on blur if change event hasn't already saved
+        // and user didn't press Escape
+        if (shouldSaveOnBlur) {
+          setTimeout(() => finish(true), 150);
+        }
+      });
+      
+      // Focus after appending to DOM - use queueMicrotask for reliable timing
+      queueMicrotask(() => input.focus());
 
       return;
     }
@@ -571,9 +595,15 @@ if (window.__FLOW_APP_LOADED__) {
 
       spanText.innerHTML = '';
       spanText.appendChild(select);
-      select.focus();
+      
+      // Track if we should save on blur
+      let shouldSaveOnBlur = true;
+      let isFinished = false;
 
       const finish = async (commit) => {
+        if (isFinished) return; // Prevent multiple calls
+        isFinished = true;
+        
         if (!commit) {
           spanText.textContent = oldDisplay;
           return;
@@ -587,16 +617,34 @@ if (window.__FLOW_APP_LOADED__) {
       select.addEventListener('keydown', e => {
         if (e.key === 'Enter') {
           e.preventDefault();
+          shouldSaveOnBlur = false; // Prevent double save
           finish(true);
         } else if (e.key === 'Escape') {
           e.preventDefault();
+          shouldSaveOnBlur = false; // Prevent save on blur
           finish(false);
         }
       });
 
-      select.addEventListener('blur', () => {
-        setTimeout(() => finish(true), 50);
+      // Use change event instead of blur for select dropdowns
+      // This fires when user selects an option from the dropdown
+      select.addEventListener('change', () => {
+        if (DEBUG) console.log('[FLOW-EDIT-CLICK] Select changed, saving...');
+        shouldSaveOnBlur = false; // Prevent double save from blur
+        finish(true);
       });
+
+      select.addEventListener('blur', () => {
+        if (DEBUG) console.log('[FLOW-EDIT-CLICK] Select blur event, shouldSaveOnBlur:', shouldSaveOnBlur);
+        // Only save on blur if change event hasn't already saved
+        // and user didn't press Escape
+        if (shouldSaveOnBlur) {
+          setTimeout(() => finish(true), 150);
+        }
+      });
+      
+      // Focus after appending to DOM - use queueMicrotask for reliable timing
+      queueMicrotask(() => select.focus());
 
       return;
     }
