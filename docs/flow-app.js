@@ -564,8 +564,8 @@ if (window.__FLOW_APP_LOADED__) {
         }
       });
       
-      // Focus after appending to DOM
-      setTimeout(() => input.focus(), 0);
+      // Focus after appending to DOM - use queueMicrotask for reliable timing
+      queueMicrotask(() => input.focus());
 
       return;
     }
@@ -643,8 +643,8 @@ if (window.__FLOW_APP_LOADED__) {
         }
       });
       
-      // Focus after appending to DOM
-      setTimeout(() => select.focus(), 0);
+      // Focus after appending to DOM - use queueMicrotask for reliable timing
+      queueMicrotask(() => select.focus());
 
       return;
     }
