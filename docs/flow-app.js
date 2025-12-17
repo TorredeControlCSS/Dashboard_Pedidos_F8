@@ -1,5 +1,5 @@
-// flow-app.js v3.2 — Fixed mouse click on date picker and dropdown by removing blur event
-console.log('flow-app.js v3.2 — Mouse click on date picker and dropdown fixed');
+// flow-app.js v3.3 — Fixed Google Sign-In login by replacing prompt() with renderButton()
+console.log('flow-app.js v3.3 — Google Sign-In login fixed (using renderButton instead of prompt)');
 
 /* ===== NOTAS SOBRE MANEJO DE FECHAS =====
  * 
