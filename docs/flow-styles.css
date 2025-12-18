@@ -620,7 +620,8 @@ h1, h2, h3 { margin: 0; }
 /* Unidad: mucho más angosta */
 .monthly-table th:nth-child(2),
 .monthly-table td:nth-child(2) {
-  max-width: 120px;
+  width: 50px;
+  max-width: 60px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1276,7 +1277,7 @@ h1, h2, h3 { margin: 0; }
 .flow-table td:nth-child(10), /* Proy. Entrega */
 .flow-table td:nth-child(11)  /* Entrega Real */
 {
-  width: 60px;
+  width: 30px;
   text-align: center;
 }
 
