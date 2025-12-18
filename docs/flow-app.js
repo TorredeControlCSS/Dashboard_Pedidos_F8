@@ -458,12 +458,16 @@ if (window.__FLOW_APP_LOADED__) {
         return;
       }
 
-      console.log('[FLOW-EDIT] Save successful, reloading data...');
+      console.log('[FLOW-EDIT] Save successful');
 
-      if (currentDayFilter) {
-        await onCalendarDayClick(currentDayFilter);
+      // Actualizamos la fila en memoria sin recargar todo el dashboard
+      row[field] = valueToSend;
+
+      // Actualizamos solo el display de la celda
+      if (DATE_FIELDS.includes(field)) {
+        displayEl.textContent = formatDateShort(valueToSend);
       } else {
-        await loadInitialData();
+        displayEl.textContent = valueToSend || '—';
       }
 
     } catch (e) {
