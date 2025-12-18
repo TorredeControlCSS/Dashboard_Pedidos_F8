@@ -481,15 +481,13 @@ if (window.__FLOW_APP_LOADED__) {
     }
   }
 
-  function onOrdersListClick(ev) {
+    function onOrdersListClick(ev) {
     if (!editMode) return;
 
     const spanDate = ev.target.closest('.editable-date');
     const spanText = ev.target.closest('.editable-text');
 
     if (!spanDate && !spanText) return;
-
-    // No usamos manejadores globales ni timeouts: lógica simple.
 
     // === EDICIÓN DE FECHAS ===
     if (spanDate) {
@@ -526,6 +524,7 @@ if (window.__FLOW_APP_LOADED__) {
         await handleInlineSave(f8Id, field, newVal, spanDate);
       };
 
+      // Guardar con Enter / cancelar con Escape
       input.addEventListener('keydown', e => {
         if (e.key === 'Enter') {
           e.preventDefault();
@@ -536,10 +535,9 @@ if (window.__FLOW_APP_LOADED__) {
         }
       });
 
-      // Guardar automáticamente al perder el foco si cambió el valor
+      // Guardar al salir si cambió el valor, si no, cancelar
       input.addEventListener('blur', () => {
         const newVal = input.value || '';
-        // Si no cambió, simplemente restauramos
         if (newVal === formatDateInput(oldRaw)) {
           finish(false);
         } else {
@@ -589,6 +587,7 @@ if (window.__FLOW_APP_LOADED__) {
         await handleInlineSave(f8Id, field, newVal, spanText);
       };
 
+      // Guardar con Enter / cancelar con Escape
       select.addEventListener('keydown', e => {
         if (e.key === 'Enter') {
           e.preventDefault();
@@ -599,7 +598,7 @@ if (window.__FLOW_APP_LOADED__) {
         }
       });
 
-      // Guardar al perder el foco si cambió el valor
+      // Guardar al salir si cambió el valor
       select.addEventListener('blur', () => {
         if (select.value === oldRaw) {
           finish(false);
@@ -611,7 +610,7 @@ if (window.__FLOW_APP_LOADED__) {
       return;
     }
   }
-
+  
   // ============================
   //  QUICK STATS
   // ============================
