@@ -542,7 +542,7 @@ h1, h2, h3 { margin: 0; }
 
 /* Números del calendario más grandes para legibilidad */
 .calendar-day-number {
-  font-size: 12px;
+  font-size: 18px;
   font-weight: 600;
 }
 
@@ -552,7 +552,7 @@ h1, h2, h3 { margin: 0; }
   right: 1px;
   background: var(--danger-color);
   color: white;
-  font-size: 9px;
+  font-size: 12px;
   border-radius: 8px;
   padding: 0 4px;
   font-weight: 700;
