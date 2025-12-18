@@ -218,14 +218,14 @@ h1, h2, h3 { margin: 0; }
   background: linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%);
   border-color: #34d399;
 }
-.flow-block[data-stage="ENTREGA"] {
-  background: linear-gradient(135deg, #67e8f9 0%, #06b6d4 100%);
-  border-color: #0891b2;
-}
 /* Bloque de ENTREGRA REAL con verde más puro */
-.flow-block[data-stage="ENTREGA_REAL"] {
+.flow-block[data-stage="ENTREGA"] {
   background: linear-gradient(135deg, #bbf7d0 0%, #22c55e 100%);
   border-color: #16a34a; /* un poco más oscuro que el relleno puro */
+}
+.flow-block[data-stage="ENTREGA_REAL"] {
+  background: linear-gradient(135deg, #67e8f9 0%, #06b6d4 100%);
+  border-color: #0891b2;
 }
 
 .flow-block:hover {
