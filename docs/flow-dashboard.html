@@ -334,13 +334,14 @@
 
     // Service Worker registration with versioned cache
     // When deploying updates, increment CACHE_NAME in sw.js and ?v= in flow-app.js script tag
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
-          .then(reg => console.log('[SW] Registered:', reg.scope))
-          .catch(err => console.log('[SW] Registration failed:', err));
-      });
-    }
+    //<!--
+    //if ('serviceWorker' in navigator) {
+      //window.addEventListener('load', () => {
+        //navigator.serviceWorker.register('sw.js')
+          //.catch(err => console.log('SW registration failed', err));
+      //});
+    //}
+    //-->
   </script>
 
   <script src="flow-app.js?v=3.4"></script>
