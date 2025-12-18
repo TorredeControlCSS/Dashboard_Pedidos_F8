@@ -489,117 +489,75 @@ if (window.__FLOW_APP_LOADED__) {
 
     if (!spanDate && !spanText) return;
 
-    // Stop propagation to prevent this click from triggering click-outside handlers
-    ev.stopPropagation();
+    // No usamos manejadores globales ni timeouts: lógica simple.
 
+    // === EDICIÓN DE FECHAS ===
     if (spanDate) {
       const f8Id = spanDate.getAttribute('data-f8-id');
       const field = spanDate.getAttribute('data-field');
-      if (DEBUG) console.log('[FLOW-EDIT-CLICK] Clicked date field:', { f8Id, field });
-      
       if (!DATE_FIELDS.includes(field)) return;
 
       const rows = currentRows || [];
       const row = rows.find(r => r['F8 SALMI'] === f8Id);
       if (!row) {
-        console.error('[FLOW-EDIT-CLICK] Row not found for F8 SALMI:', f8Id);
+        console.error('[FLOW-EDIT] Row not found for F8 SALMI:', f8Id);
         return;
       }
 
       const oldDisplay = spanDate.textContent || '';
       const oldRaw = row[field] || '';
-      if (DEBUG) console.log('[FLOW-EDIT-CLICK] Date values:', { oldDisplay, oldRaw, row });
 
       const input = document.createElement('input');
       input.type = 'date';
       input.style.width = '100%';
       input.style.boxSizing = 'border-box';
-      input.value = formatDateInput(oldRaw);
-      if (DEBUG) console.log('[FLOW-EDIT-CLICK] Set input.value to:', input.value);
+      input.value = formatDateInput(oldRaw);  // YYYY-MM-DD
 
       spanDate.innerHTML = '';
       spanDate.appendChild(input);
-      
-      // Track if we should save on blur
-      let shouldSaveOnBlur = true;
-      let isFinished = false;
+      input.focus();
 
       const finish = async (commit) => {
-        if (isFinished) return; // Prevent multiple calls
-        isFinished = true;
-        
-        if (DEBUG) console.log('[FLOW-EDIT-CLICK] finish called:', { commit, inputValue: input.value });
         if (!commit) {
           spanDate.textContent = oldDisplay;
           return;
         }
         const newVal = input.value || '';
-        if (DEBUG) console.log('[FLOW-EDIT-CLICK] Calling handleInlineSave with:', { f8Id, field, newVal });
         await handleInlineSave(f8Id, field, newVal, spanDate);
       };
 
       input.addEventListener('keydown', e => {
         if (e.key === 'Enter') {
           e.preventDefault();
-          shouldSaveOnBlur = false; // Prevent double save
           finish(true);
         } else if (e.key === 'Escape') {
           e.preventDefault();
-          shouldSaveOnBlur = false; // Prevent save on blur
           finish(false);
         }
       });
 
-      // Use change event instead of blur for date inputs
-      // This fires when user selects a date from the calendar
-      input.addEventListener('change', () => {
-        if (DEBUG) console.log('[FLOW-EDIT-CLICK] Date changed, saving...');
-        shouldSaveOnBlur = false; // Prevent double save from blur
-        finish(true);
+      // Guardar automáticamente al perder el foco si cambió el valor
+      input.addEventListener('blur', () => {
+        const newVal = input.value || '';
+        // Si no cambió, simplemente restauramos
+        if (newVal === formatDateInput(oldRaw)) {
+          finish(false);
+        } else {
+          finish(true);
+        }
       });
-
-      // REMOVED: blur event was causing premature closing of date picker
-      // The change event properly handles saving when user selects a date
-      // For clicking away without selection, we rely on document click handler below
-      
-      // Detect clicks outside the input to close without saving
-      const handleClickOutside = (e) => {
-        if (!input || !input.parentNode) {
-          document.removeEventListener('click', handleClickOutside, true);
-          return;
-        }
-        // Check if click is outside the input and its parent span
-        if (!input.contains(e.target) && !spanDate.contains(e.target)) {
-          document.removeEventListener('click', handleClickOutside, true);
-          if (shouldSaveOnBlur) {
-            // If user hasn't selected a date, close without saving (revert)
-            if (input.value === formatDateInput(oldRaw)) {
-              finish(false); // No change, just close
-            } else {
-              finish(true); // Save if there's a change
-            }
-          }
-        }
-      };
-      // Use capture phase and add delay to ensure we don't catch the opening click
-      // The opening click is stopped via stopPropagation() but we add extra safety
-      setTimeout(() => {
-        document.addEventListener('click', handleClickOutside, true);
-      }, 200);
-      
-      // Focus after appending to DOM - use queueMicrotask for reliable timing
-      queueMicrotask(() => input.focus());
 
       return;
     }
 
+    // === EDICIÓN DE COMENTARIO ===
     if (spanText) {
       const f8Id = spanText.getAttribute('data-f8-id');
       const field = 'COMENT.';
       const rows = currentRows || [];
       const row = rows.find(r => r['F8 SALMI'] === f8Id);
       if (!row) {
-        console.error('[FLOW-EDIT-CLICK] Row not found for F8 SALMI:', f8Id);
+        console.error('[FLOW-EDIT] Row not found for F8 SALMI:', f8Id);
         return;
       }
 
@@ -618,15 +576,9 @@ if (window.__FLOW_APP_LOADED__) {
 
       spanText.innerHTML = '';
       spanText.appendChild(select);
-      
-      // Track if we should save on blur
-      let shouldSaveOnBlur = true;
-      let isFinished = false;
+      select.focus();
 
       const finish = async (commit) => {
-        if (isFinished) return; // Prevent multiple calls
-        isFinished = true;
-        
         if (!commit) {
           spanText.textContent = oldDisplay;
           return;
@@ -640,54 +592,21 @@ if (window.__FLOW_APP_LOADED__) {
       select.addEventListener('keydown', e => {
         if (e.key === 'Enter') {
           e.preventDefault();
-          shouldSaveOnBlur = false; // Prevent double save
           finish(true);
         } else if (e.key === 'Escape') {
           e.preventDefault();
-          shouldSaveOnBlur = false; // Prevent save on blur
           finish(false);
         }
       });
 
-      // Use change event instead of blur for select dropdowns
-      // This fires when user selects an option from the dropdown
-      select.addEventListener('change', () => {
-        if (DEBUG) console.log('[FLOW-EDIT-CLICK] Select changed, saving...');
-        shouldSaveOnBlur = false; // Prevent double save from blur
-        finish(true);
+      // Guardar al perder el foco si cambió el valor
+      select.addEventListener('blur', () => {
+        if (select.value === oldRaw) {
+          finish(false);
+        } else {
+          finish(true);
+        }
       });
-
-      // REMOVED: blur event was causing premature closing of dropdown
-      // The change event properly handles saving when user selects an option
-      // For clicking away without selection, we rely on document click handler below
-      
-      // Detect clicks outside the select to close without saving
-      const handleClickOutside = (e) => {
-        if (!select || !select.parentNode) {
-          document.removeEventListener('click', handleClickOutside, true);
-          return;
-        }
-        // Check if click is outside the select and its parent span
-        if (!select.contains(e.target) && !spanText.contains(e.target)) {
-          document.removeEventListener('click', handleClickOutside, true);
-          if (shouldSaveOnBlur) {
-            // If user hasn't changed the value, close without saving
-            if (select.value === oldRaw) {
-              finish(false); // No change, just close
-            } else {
-              finish(true); // Save if there's a change
-            }
-          }
-        }
-      };
-      // Use capture phase and add delay to ensure we don't catch the opening click
-      // The opening click is stopped via stopPropagation() but we add extra safety
-      setTimeout(() => {
-        document.addEventListener('click', handleClickOutside, true);
-      }, 200);
-      
-      // Focus after appending to DOM - use queueMicrotask for reliable timing
-      queueMicrotask(() => select.focus());
 
       return;
     }
