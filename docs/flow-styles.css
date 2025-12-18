@@ -218,12 +218,12 @@ h1, h2, h3 { margin: 0; }
   background: linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%);
   border-color: #34d399;
 }
-/* ENTREGRA REAL con verde más puro */
+/* ENTREGRA REAL con verde más puro (etapa PROY. ENTREGA) */
 .flow-block[data-stage="ENTREGA"] {
   background: linear-gradient(135deg, #bbf7d0 0%, #22c55e 100%);
   border-color: #16a34a;
 }
-/* PROY. ENTREGA más intenso (turquesa) */
+/* PROY. ENTREGA más intenso (turquesa) para el último bloque */
 .flow-block[data-stage="ENTREGA_REAL"] {
   background: linear-gradient(135deg, #67e8f9 0%, #06b6d4 100%);
   border-color: #0891b2;
@@ -368,7 +368,7 @@ h1, h2, h3 { margin: 0; }
 }
 
 .orders-list {
-  max-height: 220px;
+  max-height: 220px;      /* más baja, sube visualmente la tabla */
   overflow-y: auto;
   overflow-x: auto;
   padding: 0 6px 6px;
@@ -540,7 +540,7 @@ h1, h2, h3 { margin: 0; }
   background: #fafafa;
 }
 
-/* Números del calendario más grandes para legibilidad */
+/* Números del calendario grandes */
 .calendar-day-number {
   font-size: 18px;
   font-weight: 600;
@@ -588,8 +588,8 @@ h1, h2, h3 { margin: 0; }
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 10px;
-  max-height: 320px;       /* altura similar al calendario */
-  overflow-y: auto;        /* scroll interno, no se estira infinito */
+  max-height: 320px;
+  overflow-y: auto;
 }
 
 .monthly-checklist-container h3 {
@@ -606,21 +606,29 @@ h1, h2, h3 { margin: 0; }
 .monthly-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 10px;       /* más pequeño */
-  margin-top: 4px;
-  table-layout: fixed;   /* respetar anchos */
+  font-size: 11px;
+  margin-top: 6px;
 }
 
 .monthly-table th,
 .monthly-table td {
   border: 1px solid var(--border-color);
-  padding: 2px 3px;      /* menos padding */
+  padding: 3px 4px;
   text-align: right;
 }
 
-/* Columnas numéricas del checklist muy compactas */
+/* Unidad: mucho más angosta */
+.monthly-table th:nth-child(2),
+.monthly-table td:nth-child(2) {
+  max-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Requisiciones + columnas numéricas muy compactas */
 .monthly-table th:nth-child(3),
-.monthly-table td:nth-child(3),  /* Requisiciones */
+.monthly-table td:nth-child(3),
 .monthly-table th:nth-child(4),
 .monthly-table td:nth-child(4),
 .monthly-table th:nth-child(5),
@@ -641,12 +649,7 @@ h1, h2, h3 { margin: 0; }
 .monthly-table td:nth-child(12),
 .monthly-table th:nth-child(13),
 .monthly-table td:nth-child(13) {
-  width: 40px;           /* caben 1–3 dígitos sin problema */
-}
-
-.monthly-table th {
-  background: var(--bg-light);
-  font-weight: 600;
+  width: 38px;
 }
 
 .monthly-table th:first-child,
@@ -1219,40 +1222,61 @@ h1, h2, h3 { margin: 0; }
   background: var(--bg-light);
 }
 
+/* Tabla de flujo */
 .flow-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 10px;         /* un poco más pequeño */
+  font-size: 11px;
   table-layout: fixed;
 }
 
 .flow-table th,
 .flow-table td {
   border: 1px solid var(--border-color);
-  padding: 2px 4px;        /* menos padding vertical y horizontal */
+  padding: 4px 6px;
   vertical-align: top;
 }
 
-.flow-table td:nth-child(2) { /* Unidad / Tipo / Grupo */
-  min-width: 150px;
-  max-width: 190px;
+.flow-table th {
+  background: var(--bg-light);
+  font-weight: 600;
+  text-align: left;
 }
 
-.flow-table td:nth-child(3) { /* Comentario */
+.flow-table td:nth-child(1) {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+/* Unidad / Tipo / Grupo: más angosto */
+.flow-table td:nth-child(2) {
   min-width: 140px;
-  max-width: 180px;
+  max-width: 170px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Columnas de fecha super compactas */
-.flow-table td:nth-child(4),
-.flow-table td:nth-child(5),
-.flow-table td:nth-child(6),
-.flow-table td:nth-child(7),
-.flow-table td:nth-child(8),
-.flow-table td:nth-child(9),
-.flow-table td:nth-child(10),
-.flow-table td:nth-child(11) {
-  width: 58px;             /* antes 70px */
+/* Comentario: más angosto */
+.flow-table td:nth-child(3) {
+  min-width: 130px;
+  max-width: 170px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Columnas de fecha: dd/mm/aa, no necesitan más ancho */
+.flow-table td:nth-child(4),  /* Recibo F8 */
+.flow-table td:nth-child(5),  /* Asignación */
+.flow-table td:nth-child(6),  /* Salida */
+.flow-table td:nth-child(7),  /* Despacho */
+.flow-table td:nth-child(8),  /* Facturación */
+.flow-table td:nth-child(9),  /* Empacado */
+.flow-table td:nth-child(10), /* Proy. Entrega */
+.flow-table td:nth-child(11)  /* Entrega Real */
+{
+  width: 60px;
   text-align: center;
 }
 
