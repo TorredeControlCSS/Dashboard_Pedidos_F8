@@ -1,31 +1,10 @@
-// flow-app.js v3.4 — Fixed date/comment editing by preventing opening click from closing editor
-console.log('flow-app.js v3.4 — Date and comment editing fixed (stopPropagation on opening click)');
+// flow-app.js v3.4 — Vista flujo con edición inline tipo clásica en tabla
+console.log('flow-app.js v3.4 — Flow view with table inline editing');
 
 /* ===== NOTAS SOBRE MANEJO DE FECHAS =====
- * 
- * Este frontend maneja fechas en formato YYYY-MM-DD (ISO 8601) con UTC para evitar 
- * problemas de zona horaria:
- * 
- * 1. LECTURA desde backend (Apps Script A):
- *    - El backend debe devolver fechas en formato 'YYYY-MM-DD' (sin hora ni zona)
- *    - parseIsoDate() las convierte a Date UTC: new Date('YYYY-MM-DDT00:00:00Z')
- *    - formatDateShort() las muestra como DD/MM/YY para el usuario
- *    - formatDateInput() las convierte a YYYY-MM-DD para <input type="date">
- * 
- * 2. ESCRITURA al backend (Apps Script B):
- *    - El usuario edita con <input type="date"> que devuelve 'YYYY-MM-DD'
- *    - handleInlineSave() envía exactamente ese formato sin offsets
- *    - El backend B debe recibir 'YYYY-MM-DD' y escribirlo en Sheets tal cual
- * 
- * 3. COMPATIBILIDAD CON APPS SCRIPT:
- *    - Si el backend A tiene una función parseDateCell() que suma/resta días,
- *      debe ELIMINARSE ese offset para que las fechas coincidan.
- *    - Si el backend B escribe fechas con new Date(), debe usar formato ISO
- *      o escribir strings 'YYYY-MM-DD' directamente en la celda.
- * 
- * 4. TODAS las funciones de fecha usan getUTCDate(), getUTCMonth(), getUTCFullYear()
- *    en lugar de getDate(), getMonth(), getFullYear() para evitar conversiones
- *    automáticas de zona horaria del navegador.
+ *
+ * Este frontend maneja fechas en formato YYYY-MM-DD (ISO 8601) con UTC para evitar
+ * problemas de zona horaria.
  */
 
 if (window.__FLOW_APP_LOADED__) {
@@ -72,7 +51,6 @@ if (window.__FLOW_APP_LOADED__) {
     'ENTREGADO'
   ];
 
-  // Debug flag - set to false in production
   const DEBUG = false;
 
   let idToken = null;
@@ -111,7 +89,6 @@ if (window.__FLOW_APP_LOADED__) {
     if (v instanceof Date) return v;
     const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v));
     if (!m) return null;
-    // Parse date in UTC to avoid timezone offsets
     const d = new Date(m[1] + '-' + m[2] + '-' + m[3] + 'T00:00:00Z');
     if (DEBUG) console.log('[FLOW-DATE] parseIsoDate:', v, '→', d);
     return d;
@@ -145,7 +122,7 @@ if (window.__FLOW_APP_LOADED__) {
     const dd = String(d.getUTCDate()).padStart(2,'0');
     const mm = String(d.getUTCMonth()+1).padStart(2,'0');
     const yy = d.getUTCFullYear();
-    const result = `${yy}-${mm}-${dd}`; // YYYY-MM-DD for <input type="date">
+    const result = `${yy}-${mm}-${dd}`;
     if (DEBUG) console.log('[FLOW-DATE] formatDateInput:', v, '→', result);
     return result;
   }
@@ -203,8 +180,6 @@ if (window.__FLOW_APP_LOADED__) {
     updateQuickStatsFromRows(filtered);
     updateGapAndTimeKpisFromRows(filtered);
     updateFlowBlockCounts(filtered);
-    // ya no usamos el resumen de abajo
-    // renderMonthlyGroupsSummaryFromRows(filtered);
   }
 
   function populateFlowFilterOptionsFromRows(rows) {
@@ -242,7 +217,7 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   // ============================
-  //  LISTA IZQUIERDA + EDICIÓN INLINE
+  //  LISTA (TABLA) + RENDER
   // ============================
   function stageIndexForLabel(label) {
     if (!label) return FLOW_COLUMNS.length + 1;
@@ -408,7 +383,7 @@ if (window.__FLOW_APP_LOADED__) {
     container.classList.toggle('edit-mode-on', editMode);
   }
 
-  // ========== LÓGICA DE EDICIÓN INLINE ==========
+  // ========== LÓGICA DE EDICIÓN INLINE (usa handleInlineSave) ==========
   async function handleInlineSave(f8Id, field, newValue, displayEl) {
     const rows = currentRows || [];
     const row = rows.find(r => r['F8 SALMI'] === f8Id);
@@ -445,11 +420,7 @@ if (window.__FLOW_APP_LOADED__) {
         displayEl.textContent = oldDisplay;
         return;
       }
-    
       if (valueToSend) {
-        // Normalizamos la fecha para asegurar formato correcto con ceros a la izquierda.
-        // Esto es necesario porque algunos navegadores pueden devolver formatos inconsistentes
-        // del <input type="date">, y queremos asegurar YYYY-MM-DD siempre.
         const [yy, mm, dd] = valueToSend.split('-');
         const yy2 = +yy;
         const mm2 = String(+mm).padStart(2, '0');
@@ -457,8 +428,7 @@ if (window.__FLOW_APP_LOADED__) {
         valueToSend = `${yy2}-${mm2}-${dd2}`;
         console.log('[FLOW-EDIT] Date field - sending value:', valueToSend);
       }
-    }
-    else {
+    } else {
       if (norm(newValue) === norm(oldRaw)) {
         console.log('[FLOW-EDIT] No change detected, skipping save');
         displayEl.textContent = oldDisplay;
@@ -479,7 +449,7 @@ if (window.__FLOW_APP_LOADED__) {
       console.log('[FLOW-EDIT] Sending update:', { url: url.replace(/idToken=[^&]+/, 'idToken=***'), id, field, valueToSend });
 
       const res = await jsonp(url);
-      
+
       console.log('[FLOW-EDIT] Backend response:', res);
 
       if (!res || res.status !== 'ok') {
@@ -503,19 +473,27 @@ if (window.__FLOW_APP_LOADED__) {
     }
   }
 
-  function onOrdersListClick(ev) {
-    if (!editMode) return;
+  // Editor tipo clásica sobre la tabla flow-table
+  function attachFlowTableEditor() {
+    const container = document.getElementById('ordersList');
+    if (!container) return;
 
-    const spanDate = ev.target.closest('.editable-date');
-    const spanText = ev.target.closest('.editable-text');
+    container.addEventListener('click', (ev) => {
+      if (!editMode) return;
 
-    if (!spanDate && !spanText) return;
+      const td = ev.target.closest('td');
+      const table = ev.target.closest('.flow-table');
+      if (!td || !table) return;
 
-    // === EDICIÓN DE FECHAS ===
-    if (spanDate) {
-      const f8Id = spanDate.getAttribute('data-f8-id');
-      const field = spanDate.getAttribute('data-field');
-      if (!DATE_FIELDS.includes(field)) return;
+      const spanDate = td.querySelector('.editable-date');
+      const spanText = td.querySelector('.editable-text');
+      if (!spanDate && !spanText) return;
+
+      if (td.querySelector('.cell-editor')) return;
+
+      const tr = td.closest('tr');
+      const f8Id = tr ? tr.getAttribute('data-f8-id') : null;
+      if (!f8Id) return;
 
       const rows = currentRows || [];
       const row = rows.find(r => r['F8 SALMI'] === f8Id);
@@ -524,130 +502,134 @@ if (window.__FLOW_APP_LOADED__) {
         return;
       }
 
-      const oldDisplay = spanDate.textContent || '';
-      const oldRaw = row[field] || '';
+      // Comentario
+      if (spanText) {
+        const field = 'COMENT.';
+        const oldRaw = row[field] || '';
+        const oldDisplay = spanText.textContent || '—';
 
-      const input = document.createElement('input');
-      input.type = 'date';
-      input.style.width = '100%';
-      input.style.boxSizing = 'border-box';
-      input.value = formatDateInput(oldRaw);  // YYYY-MM-DD
+        const wrapper = document.createElement('div');
+        wrapper.className = 'cell-editor';
 
-      spanDate.innerHTML = '';
-      spanDate.appendChild(input);
-      input.focus();
+        const select = document.createElement('select');
+        select.style.width = '100%';
+        COMMENT_OPTIONS.forEach(optVal => {
+          const opt = document.createElement('option');
+          opt.value = optVal;
+          opt.textContent = optVal || '—';
+          if ((oldRaw || '') === optVal) opt.selected = true;
+          select.appendChild(opt);
+        });
 
-      const finish = async (commit) => {
-        if (!commit) {
-          spanDate.textContent = oldDisplay;
-          return;
-        }
-        const newVal = input.value || '';
-        await handleInlineSave(f8Id, field, newVal, spanDate);
-      };
+        wrapper.appendChild(select);
+        td.innerHTML = '';
+        td.appendChild(wrapper);
 
-      // Guardar con Enter / cancelar con Escape
-      input.addEventListener('keydown', e => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          finish(true);
-        } else if (e.key === 'Escape') {
-          e.preventDefault();
-          finish(false);
-        }
-      });
+        select.focus();
 
-      // Guardar cuando el usuario cambia la fecha desde el calendario
-      input.addEventListener('change', () => {
-        const newVal = input.value || '';
-        if (newVal !== formatDateInput(oldRaw)) {
-          finish(true);
-        }
-      });
+        let finished = false;
+        const finish = async (commit) => {
+          if (finished) return;
+          finished = true;
+          if (!commit) {
+            td.textContent = oldDisplay;
+            return;
+          }
+          let newVal = select.value;
+          if (newVal == null) newVal = '';
+          newVal = String(newVal).trim();
+          await handleInlineSave(f8Id, field, newVal, td);
+        };
 
-      // En blur NO guardamos ni cancelamos, solo restauramos si no hubo cambios
-      input.addEventListener('blur', () => {
-        const newVal = input.value || '';
-        if (newVal === formatDateInput(oldRaw)) {
-          // sin cambios: restaurar texto original
-          spanDate.textContent = oldDisplay;
-        }
-        // si hubo cambios, ya se guardó por change o Enter
-      });
+        select.addEventListener('keydown', e => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            finish(true);
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            finish(false);
+          }
+        });
 
-      return;
-    }
+        select.addEventListener('change', () => {
+          if (select.value !== oldRaw) {
+            finish(true);
+          }
+        });
 
-    // === EDICIÓN DE COMENTARIO ===
-    if (spanText) {
-      const f8Id = spanText.getAttribute('data-f8-id');
-      const field = 'COMENT.';
-      const rows = currentRows || [];
-      const row = rows.find(r => r['F8 SALMI'] === f8Id);
-      if (!row) {
-        console.error('[FLOW-EDIT] Row not found for F8 SALMI:', f8Id);
+        select.addEventListener('blur', () => {
+          if (select.value === oldRaw) {
+            td.textContent = oldDisplay;
+          }
+        });
+
         return;
       }
 
-      const oldRaw = row[field] || '';
-      const oldDisplay = spanText.textContent || '—';
+      // Fechas
+      if (spanDate) {
+        const field = spanDate.getAttribute('data-field');
+        if (!DATE_FIELDS.includes(field)) return;
 
-      const select = document.createElement('select');
-      select.style.width = '100%';
-      COMMENT_OPTIONS.forEach(optVal => {
-        const opt = document.createElement('option');
-        opt.value = optVal;
-        opt.textContent = optVal || '—';
-        if ((oldRaw || '') === optVal) opt.selected = true;
-        select.appendChild(opt);
-      });
+        const oldRaw = row[field] || '';
+        const oldDisplay = spanDate.textContent || '';
 
-      spanText.innerHTML = '';
-      spanText.appendChild(select);
-      select.focus();
+        const wrapper = document.createElement('div');
+        wrapper.className = 'cell-editor';
 
-      const finish = async (commit) => {
-        if (!commit) {
-          spanText.textContent = oldDisplay;
-          return;
-        }
-        let newVal = select.value;
-        if (newVal == null) newVal = '';
-        newVal = String(newVal).trim();
-        await handleInlineSave(f8Id, field, newVal, spanText);
-      };
+        const input = document.createElement('input');
+        input.type = 'date';
+        input.style.width = '100%';
+        input.style.boxSizing = 'border-box';
+        input.value = formatDateInput(oldRaw);
 
-      // Guardar con Enter / cancelar con Escape
-      select.addEventListener('keydown', e => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          finish(true);
-        } else if (e.key === 'Escape') {
-          e.preventDefault();
-          finish(false);
-        }
-      });
+        wrapper.appendChild(input);
+        td.innerHTML = '';
+        td.appendChild(wrapper);
 
-      // Guardar cuando el usuario cambia la opción con el mouse
-      select.addEventListener('change', () => {
-        if (select.value !== oldRaw) {
-          finish(true);
-        }
-      });
+        input.focus();
 
-      // En blur NO forzamos guardar; solo restauramos si no hubo cambio
-      select.addEventListener('blur', () => {
-        if (select.value === oldRaw) {
-          // sin cambios: restaurar texto original
-          spanText.textContent = oldDisplay;
-        }
-        // si hubo cambios, ya se guardó por change o Enter
-      });
+        let finished = false;
+        const finish = async (commit) => {
+          if (finished) return;
+          finished = true;
+          if (!commit) {
+            td.textContent = oldDisplay;
+            return;
+          }
+          const newVal = input.value || '';
+          await handleInlineSave(f8Id, field, newVal, td);
+        };
 
-      return;
-    }
+        input.addEventListener('keydown', e => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            finish(true);
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            finish(false);
+          }
+        });
+
+        input.addEventListener('change', () => {
+          const newVal = input.value || '';
+          if (newVal !== formatDateInput(oldRaw)) {
+            finish(true);
+          }
+        });
+
+        input.addEventListener('blur', () => {
+          const newVal = input.value || '';
+          if (newVal === formatDateInput(oldRaw)) {
+            td.textContent = oldDisplay;
+          }
+        });
+
+        return;
+      }
+    });
   }
-  
+
   // ============================
   //  QUICK STATS
   // ============================
@@ -849,7 +831,7 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   // ============================
-  //  CHECKLIST MENSUALES (UNIDAD + GRUPOS EXPANDIBLES)
+  //  CHECKLIST MENSUALES
   // ============================
   async function loadMonthlyChecklist(dateKey) {
     const labelEl = document.getElementById('monthlyDateLabel');
@@ -868,28 +850,25 @@ if (window.__FLOW_APP_LOADED__) {
       }
 
       const data = res.data || {};
-      const unidadesResumen = data.grupos || []; // ya viene del backend
+      const unidadesResumen = data.grupos || [];
 
       if (!unidadesResumen.length) {
         contEl.innerHTML = '<p class="loading-message">No hay mensuales para esta fecha.</p>';
         return;
       }
 
-      // ==== 1) Construimos mapa de detalle por UNIDAD + GRUPO usando currentRows ====
       const detallePorUnidad = new Map();
       const rows = currentRows || [];
 
       rows.forEach(r => {
         const unidad = String(r['UNIDAD'] || '').trim();
         const grupo  = String(r['GRUPO']  || '').trim();
-
         if (!unidad || !grupo) return;
 
-        const keyUnidad = unidad;
-        if (!detallePorUnidad.has(keyUnidad)) {
-          detallePorUnidad.set(keyUnidad, new Map());
+        if (!detallePorUnidad.has(unidad)) {
+          detallePorUnidad.set(unidad, new Map());
         }
-        const mapGrupos = detallePorUnidad.get(keyUnidad);
+        const mapGrupos = detallePorUnidad.get(unidad);
 
         if (!mapGrupos.has(grupo)) {
           mapGrupos.set(grupo, {
@@ -914,7 +893,6 @@ if (window.__FLOW_APP_LOADED__) {
         if (r['ENTREGA REAL'])  acc.conEntregaReal++;
       });
 
-      // ==== 2) Renderizamos tabla con filas de UNIDAD y filas ocultas de GRUPO ====
       const html = `
         <table class="monthly-table" id="monthlyTableMain">
           <thead>
@@ -935,7 +913,7 @@ if (window.__FLOW_APP_LOADED__) {
             </tr>
           </thead>
           <tbody>
-            ${unidadesResumen.map((u, idx) => {
+            ${unidadesResumen.map(u => {
               const inco = u.incoherencias || {};
               const hayErr = (inco.factAntesSalida || inco.soloFact);
               const hayWarn = inco.factMuyTarde || inco.soloSalida || u.conSalida === 0;
@@ -944,7 +922,6 @@ if (window.__FLOW_APP_LOADED__) {
               const unidad = String(u.unidad || '').trim();
               const tieneDetalle = detallePorUnidad.has(unidad);
 
-              // Fila resumen de unidad
               let filas = `
                 <tr class="monthly-row-unidad" data-unidad="${unidad.replace(/"/g,'&quot;')}">
                   <td class="monthly-toggle-cell">
@@ -965,7 +942,6 @@ if (window.__FLOW_APP_LOADED__) {
                 </tr>
               `;
 
-              // Filas de detalle por grupo (ocultas por defecto)
               if (tieneDetalle) {
                 const gruposMap = detallePorUnidad.get(unidad);
                 const gruposArr = Array.from(gruposMap.values())
@@ -1000,7 +976,6 @@ if (window.__FLOW_APP_LOADED__) {
 
       contEl.innerHTML = html;
 
-      // ==== 3) Comportamiento expandir/colapsar ====
       const table = document.getElementById('monthlyTableMain');
       if (!table) return;
 
@@ -1010,24 +985,18 @@ if (window.__FLOW_APP_LOADED__) {
 
         const unidad = btn.getAttribute('data-unidad') || '';
 
-        // Buscar todas las filas de grupo que tengan ese data-unidad
         const rowsGrupo = table.querySelectorAll('tr.monthly-row-grupo');
         const targetRows = [];
         rowsGrupo.forEach(tr => {
-          if (tr.getAttribute('data-unidad') === unidad) {
-            targetRows.push(tr);
-          }
+          if (tr.getAttribute('data-unidad') === unidad) targetRows.push(tr);
         });
 
         const isCollapsed = btn.textContent.trim() === '+';
         btn.textContent = isCollapsed ? '−' : '+';
 
         targetRows.forEach(tr => {
-          if (isCollapsed) {
-            tr.classList.remove('monthly-row-grupo-hidden');
-          } else {
-            tr.classList.add('monthly-row-grupo-hidden');
-          }
+          if (isCollapsed) tr.classList.remove('monthly-row-grupo-hidden');
+          else tr.classList.add('monthly-row-grupo-hidden');
         });
       });
 
@@ -1038,20 +1007,10 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   // ============================
-  //  (SIN USO AHORA) RESUMEN POR UNIDAD Y GRUPO SEPARADO
-  // ============================
-  function renderMonthlyGroupsSummaryFromRows(rows) {
-    // Ya no se usa este bloque (tabla separada abajo).
-    // La lógica de grupos está integrada en loadMonthlyChecklist con filas expandibles.
-    return;
-  }
-
-  // ============================
   //  CALENDARIO
   // ============================
   let currentCalYear, currentCalMonth;
   let currentCalData = {};
-    // Exponer datos de calendario para depuración
   window.__CAL_DATA__ = currentCalData;
 
   async function loadCalendarMonth(year, month) {
@@ -1064,7 +1023,7 @@ if (window.__FLOW_APP_LOADED__) {
       return;
     }
     currentCalData = res.data || {};
-    window.__CAL_DATA__ = currentCalData;   // <<< AÑADE ESTA LÍNEA
+    window.__CAL_DATA__ = currentCalData;
     renderCalendar();
   }
 
@@ -1088,7 +1047,6 @@ if (window.__FLOW_APP_LOADED__) {
 
     calEl.innerHTML = '';
 
-    // Cabeceras L M X J V S D
     const dayNames = ['L','M','X','J','V','S','D'];
     dayNames.forEach(dn => {
       const div = document.createElement('div');
@@ -1097,7 +1055,6 @@ if (window.__FLOW_APP_LOADED__) {
       calEl.appendChild(div);
     });
 
-    // Huecos antes del día 1 (ajustado a que Lunes sea primera columna)
     let dow = (startDow + 6) % 7;
     for (let i = 0; i < dow; i++) {
       const empty = document.createElement('div');
@@ -1107,15 +1064,12 @@ if (window.__FLOW_APP_LOADED__) {
 
     const todayKey = toDateKey(new Date());
 
-    // Días del mes
     for (let day = 1; day <= daysInMonth; day++) {
       const d = new Date(Date.UTC(year, month - 1, day));
       const key = toDateKey(d);
       const info = currentCalData[key] || { total: 0, byStage: {}, reciboF8: 0 };
       const total = info.total || 0;
-      
       const bySt = info.byStage || {};
-      // AHORA el backend nos da un campo directo reciboF8
       const reciboF8 = info.reciboF8 || 0;
 
       const cell = document.createElement('div');
@@ -1123,13 +1077,11 @@ if (window.__FLOW_APP_LOADED__) {
       if (key === todayKey) cell.classList.add('today');
       if (currentDayFilter === key) cell.classList.add('selected');
 
-      // Número del día
       const num = document.createElement('div');
       num.className = 'calendar-day-number';
       num.textContent = day;
       cell.appendChild(num);
 
-      // Badge rojo con el total de requisiciones (como antes)
       if (total > 0) {
         const big = document.createElement('div');
         big.className = 'calendar-day-badge';
@@ -1143,7 +1095,6 @@ if (window.__FLOW_APP_LOADED__) {
         cell.title = tooltip.trim();
       }
 
-      // Mini contador de RECIBO F8 en esquina inferior izquierda
       if (reciboF8 > 0) {
         const mini = document.createElement('div');
         mini.className = 'calendar-mini-counter';
@@ -1172,8 +1123,6 @@ if (window.__FLOW_APP_LOADED__) {
 
     populateFlowFilterOptionsFromRows(currentRows);
     applyFlowFilters();
-    // ya no usamos el resumen independiente
-    // renderMonthlyGroupsSummaryFromRows(currentRows);
 
     await loadMonthlyChecklist(dateKey);
 
@@ -1222,7 +1171,6 @@ if (window.__FLOW_APP_LOADED__) {
 
     populateFlowFilterOptionsFromRows(currentRows);
     applyFlowFilters();
-    // renderMonthlyGroupsSummaryFromRows(currentRows);
 
     await loadMonthlyChecklist(currentDayFilter);
 
@@ -1308,7 +1256,6 @@ if (window.__FLOW_APP_LOADED__) {
 
       populateFlowFilterOptionsFromRows(currentRows);
       applyFlowFilters();
-      // renderMonthlyGroupsSummaryFromRows(currentRows);
     } catch(e) {
       console.warn('loadInitialData error', e);
       if (listEl) listEl.innerHTML = '<p class="loading-message">Error de red al cargar datos.</p>';
@@ -1371,7 +1318,6 @@ if (window.__FLOW_APP_LOADED__) {
               btnLogin.parentNode.insertBefore(loginStatus, btnLogin);
             }
           });
-          // Use renderButton instead of prompt to avoid FedCM errors
           btnLogin.textContent = '';
           btnLogin.style.padding = '0';
           btnLogin.style.border = 'none';
@@ -1467,13 +1413,10 @@ if (window.__FLOW_APP_LOADED__) {
       });
     });
 
-    // Add permanent event listener for edit mode clicks on orders list
-    const ordersListEl = document.getElementById('ordersList');
-    if (ordersListEl) {
-      ordersListEl.addEventListener('click', onOrdersListClick);
-    }
-
     await loadInitialData();
+
+    // Activar editor sobre la tabla
+    attachFlowTableEditor();
 
     const now = new Date();
     currentDayFilter = toDateKey(now);
