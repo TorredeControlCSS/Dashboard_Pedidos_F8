@@ -107,7 +107,7 @@ h1, h2, h3 { margin: 0; }
   justify-content: flex-start;
 }
 
-/* Columna izquierda: filtros como en tu captura */
+/* Columna izquierda: filtros */
 .top-filters {
   display: flex;
   flex-direction: column;
@@ -326,6 +326,23 @@ h1, h2, h3 { margin: 0; }
   display: none;
 }
 
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Panel inferior para lista de requisiciones */
+.bottom-panel {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .panel-header {
   position: sticky;
   top: 0;
@@ -427,13 +444,6 @@ h1, h2, h3 { margin: 0; }
 .date-delta.positive { color: var(--danger-color); }
 .date-delta.negative { color: var(--success-color); }
 .date-delta.zero     { color: var(--text-light); }
-
-/* RIGHT PANEL */
-.right-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
 
 /* CALENDAR + CHECKLIST GRID */
 .calendar-and-monthly {
@@ -646,7 +656,7 @@ h1, h2, h3 { margin: 0; }
   max-width: 1200px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -698,15 +708,6 @@ h1, h2, h3 { margin: 0; }
   max-height: none;
 }
 
-/* KPIs en una fila de 4 si hay espacio */
-.time-kpis {
-  max-width: 1000px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-}
-
 /* =========================
    RESPONSIVE TABLET
    ========================= */
@@ -734,7 +735,6 @@ h1, h2, h3 { margin: 0; }
   }
 
   .main-container {
-    grid-template-columns: 1fr;
     padding: 8px;
   }
 
@@ -845,55 +845,6 @@ h1, h2, h3 { margin: 0; }
     padding: 6px 8px 12px;
   }
 
-  .right-panel { order: 1; }
-  .left-panel  { order: 2; }
-
-  .left-panel {
-    max-height: calc(100vh - 200px);
-  }
-
-  .orders-list {
-    max-height: 100%;
-    padding: 0 8px 8px;
-  }
-
-  .left-panel,
-  .right-panel,
-  .calendar-container,
-  .monthly-checklist-container,
-  .gap-analysis-container,
-  .stage-deltas-container {
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  .calendar-container,
-  .monthly-checklist-container,
-  .gap-analysis-container,
-  .stage-deltas-container {
-    padding: 8px;
-  }
-
-  .calendar-grid {
-    gap: 2px;
-  }
-
-  .calendar-day-number {
-    font-size: 11px;
-  }
-
-  .calendar-day-badge {
-    font-size: 9px;
-  }
-
-  .order-dates {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .time-kpis {
-    grid-template-columns: 1fr;
-  }
-
   .right-panel {
     width: 100%;
     max-width: 100%;
@@ -926,6 +877,23 @@ h1, h2, h3 { margin: 0; }
   .calendar-grid {
     width: 100%;
     max-width: 100%;
+    gap: 2px;
+  }
+
+  .calendar-day-number {
+    font-size: 11px;
+  }
+
+  .calendar-day-badge {
+    font-size: 9px;
+  }
+
+  .order-dates {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .time-kpis {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1019,7 +987,7 @@ h1, h2, h3 { margin: 0; }
   border-color: var(--primary-color);
 }
 
-/* Modal styles for edit modal (if needed in future) */
+/* Modal styles for edit modal (si se usa en el futuro) */
 .flow-edit-modal {
   position: fixed;
   top: 0;
