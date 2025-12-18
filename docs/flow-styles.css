@@ -222,6 +222,10 @@ h1, h2, h3 { margin: 0; }
   background: linear-gradient(135deg, #99f6e4 0%, #5eead4 100%);
   border-color: #2dd4bf;
 }
+.flow-block[data-stage="ENTREGA_REAL"] {
+  background: linear-gradient(135deg, #d1fae5 0%, #6ee7b7 100%);
+  border-color: #10b981;
+}
 
 .flow-block:hover {
   transform: translateY(-3px);
