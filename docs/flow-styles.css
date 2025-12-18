@@ -219,8 +219,8 @@ h1, h2, h3 { margin: 0; }
   border-color: #34d399;
 }
 .flow-block[data-stage="ENTREGA"] {
-  background: linear-gradient(135deg, #99f6e4 0%, #5eead4 100%);
-  border-color: #2dd4bf;
+  background: linear-gradient(135deg, #67e8f9 0%, #06b6d4 100%);
+  border-color: #0891b2;
 }
 /* Bloque de ENTREGRA REAL con verde más puro */
 .flow-block[data-stage="ENTREGA_REAL"] {
