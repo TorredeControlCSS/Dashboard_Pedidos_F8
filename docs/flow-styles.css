@@ -380,7 +380,7 @@ h1, h2, h3 { margin: 0; }
   padding: 30px 20px;
 }
 
-/* ORDER CARDS (ya no se usan en la lista, pero se conservan por si acaso) */
+/* ORDER CARDS (no usados, pero conservados) */
 .order-card {
   background: var(--bg-light);
   border: 1px solid var(--border-color);
@@ -464,7 +464,7 @@ h1, h2, h3 { margin: 0; }
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 6px;
-  transform: scale(0.85);       /* calendario más compacto */
+  transform: scale(0.85);       /* calendario compacto */
   transform-origin: top left;
 }
 
@@ -540,8 +540,9 @@ h1, h2, h3 { margin: 0; }
   background: #fafafa;
 }
 
+/* Números del calendario más grandes para legibilidad */
 .calendar-day-number {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -587,6 +588,8 @@ h1, h2, h3 { margin: 0; }
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 10px;
+  max-height: 320px;       /* altura similar al calendario */
+  overflow-y: auto;        /* scroll interno, no se estira infinito */
 }
 
 .monthly-checklist-container h3 {
@@ -951,7 +954,6 @@ h1, h2, h3 { margin: 0; }
    EDIT MODE STYLES
    ========================= */
 
-/* Editable fields styling */
 .editable-date,
 .editable-text {
   cursor: default;
@@ -959,7 +961,6 @@ h1, h2, h3 { margin: 0; }
   min-width: 60px;
 }
 
-/* When edit mode is ON, show cursor pointer on editable fields */
 .orders-list.edit-mode-on .editable-date,
 .orders-list.edit-mode-on .editable-text {
   cursor: pointer;
@@ -974,7 +975,6 @@ h1, h2, h3 { margin: 0; }
   outline: 1px dashed var(--warning-color);
 }
 
-/* Input styling when editing inline */
 .orders-list.edit-mode-on .editable-date input,
 .orders-list.edit-mode-on .editable-text select {
   font-size: inherit;
@@ -992,7 +992,7 @@ h1, h2, h3 { margin: 0; }
   border-color: var(--primary-color);
 }
 
-/* Modal styles para un posible modal futuro */
+/* Modal (si se usa en el futuro) */
 .flow-edit-modal {
   position: fixed;
   top: 0;
