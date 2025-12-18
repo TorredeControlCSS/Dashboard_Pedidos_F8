@@ -1118,6 +1118,7 @@ if (window.__FLOW_APP_LOADED__) {
     const title = document.getElementById('panel-title');
     if (title) title.textContent = `Requisiciones del ${dateKey}`;
 
+    // 1) Cargamos las filas del día (tabla) y mostramos lo antes posible
     const res = await jsonp(`${A}?route=calendar.daydetails&date=${dateKey}`);
     if (!res || res.status !== 'ok') {
       console.warn('calendar.daydetails error', res && res.error);
@@ -1127,14 +1128,17 @@ if (window.__FLOW_APP_LOADED__) {
     currentRows = data.rows || [];
 
     populateFlowFilterOptionsFromRows(currentRows);
-    applyFlowFilters();
-
-    await loadMonthlyChecklist(dateKey);
+    applyFlowFilters(); // esto ya pinta la tabla
 
     const btnClear = document.getElementById('btnClearFilter');
     if (btnClear) btnClear.style.display = 'inline-block';
 
     renderCalendar();
+
+    // 2) Checklist mensuales EN SEGUNDO PLANO
+    loadMonthlyChecklist(dateKey).catch(e => {
+      console.warn('loadMonthlyChecklist error', e);
+    });
   }
 
   // ============================
