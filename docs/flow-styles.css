@@ -462,7 +462,9 @@ h1, h2, h3 { margin: 0; }
   background: white;
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  padding: 10px;
+  padding: 6px;
+  transform: scale(0.85);
+  transform-origin: top left;
 }
 
 .calendar-header {
