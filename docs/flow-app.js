@@ -481,7 +481,7 @@ if (window.__FLOW_APP_LOADED__) {
     }
   }
 
-    function onOrdersListClick(ev) {
+  function onOrdersListClick(ev) {
     if (!editMode) return;
 
     const spanDate = ev.target.closest('.editable-date');
@@ -554,6 +554,7 @@ if (window.__FLOW_APP_LOADED__) {
       });
 
       return;
+    }
 
     // === EDICIÓN DE COMENTARIO ===
     if (spanText) {
@@ -594,7 +595,7 @@ if (window.__FLOW_APP_LOADED__) {
         await handleInlineSave(f8Id, field, newVal, spanText);
       };
 
-          // Guardar con Enter / cancelar con Escape
+      // Guardar con Enter / cancelar con Escape
       select.addEventListener('keydown', e => {
         if (e.key === 'Enter') {
           e.preventDefault();
