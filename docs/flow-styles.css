@@ -1212,12 +1212,26 @@ h1, h2, h3 { margin: 0; }
   font-weight: 600;
 }
 
-.flow-table td:nth-child(2) {
-  min-width: 180px;
+.flow-table td:nth-child(2) { /* Unidad / Tipo / Grupo */
+  min-width: 220px;
+  max-width: 260px;
 }
 
-.flow-table td:nth-child(3) {
-  min-width: 160px;
+.flow-table td:nth-child(3) { /* Comentario */
+  min-width: 180px;
+  max-width: 260px;
+}
+
+.flow-table td:nth-child(4),
+.flow-table td:nth-child(5),
+.flow-table td:nth-child(6),
+.flow-table td:nth-child(7),
+.flow-table td:nth-child(8),
+.flow-table td:nth-child(9),
+.flow-table td:nth-child(10),
+.flow-table td:nth-child(11) {
+  width: 70px;
+  text-align: center;
 }
 
 .flow-table td {
