@@ -535,15 +535,17 @@ if (window.__FLOW_APP_LOADED__) {
         }
       });
 
-      // Guardar al salir si cambió el valor, si no, cancelar
-      input.addEventListener('blur', () => {
-        const newVal = input.value || '';
-        if (newVal === formatDateInput(oldRaw)) {
-          finish(false);
-        } else {
-          finish(true);
-        }
-      });
+    // NO guardamos en blur para no interferir con el calendario.
+    // Solo si no hay cambios, restauramos silenciosamente.
+    input.addEventListener('blur', () => {
+      const newVal = input.value || '';
+      if (newVal === formatDateInput(oldRaw)) {
+        // Sin cambios: solo restauramos el texto, sin llamar al backend
+        spanDate.textContent = oldDisplay;
+      }
+      // Si hubo cambios, esperamos a que el usuario confirme con Enter
+      // o con el evento change (si lo quieres añadir).
+    });
 
       return;
     }
@@ -598,14 +600,13 @@ if (window.__FLOW_APP_LOADED__) {
         }
       });
 
-      // Guardar al salir si cambió el valor
-      select.addEventListener('blur', () => {
-        if (select.value === oldRaw) {
-          finish(false);
-        } else {
-          finish(true);
-        }
-      });
+    // En blur no forzamos guardar; solo restauramos si no hubo cambio.
+    select.addEventListener('blur', () => {
+      if (select.value === oldRaw) {
+        spanText.textContent = oldDisplay;
+      }
+      // Si cambió, se guardará con Enter o con change (si lo añadimos).
+    });
 
       return;
     }
