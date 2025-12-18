@@ -1,5 +1,5 @@
-// flow-app.js v3.3 — Fixed Google Sign-In login by replacing prompt() with renderButton()
-console.log('flow-app.js v3.3 — Google Sign-In login fixed (using renderButton instead of prompt)');
+// flow-app.js v3.4 — Fixed date/comment editing by preventing opening click from closing editor
+console.log('flow-app.js v3.4 — Date and comment editing fixed (stopPropagation on opening click)');
 
 /* ===== NOTAS SOBRE MANEJO DE FECHAS =====
  * 
@@ -489,6 +489,9 @@ if (window.__FLOW_APP_LOADED__) {
 
     if (!spanDate && !spanText) return;
 
+    // Stop propagation to prevent this click from triggering click-outside handlers
+    ev.stopPropagation();
+
     if (spanDate) {
       const f8Id = spanDate.getAttribute('data-f8-id');
       const field = spanDate.getAttribute('data-field');
@@ -578,10 +581,11 @@ if (window.__FLOW_APP_LOADED__) {
           }
         }
       };
-      // Use capture phase and add slight delay to let the input get properly added to DOM
+      // Use capture phase and add delay to ensure we don't catch the opening click
+      // The opening click is stopped via stopPropagation() but we add extra safety
       setTimeout(() => {
         document.addEventListener('click', handleClickOutside, true);
-      }, 100);
+      }, 200);
       
       // Focus after appending to DOM - use queueMicrotask for reliable timing
       queueMicrotask(() => input.focus());
@@ -676,10 +680,11 @@ if (window.__FLOW_APP_LOADED__) {
           }
         }
       };
-      // Use capture phase and add slight delay to let the select get properly added to DOM
+      // Use capture phase and add delay to ensure we don't catch the opening click
+      // The opening click is stopped via stopPropagation() but we add extra safety
       setTimeout(() => {
         document.addEventListener('click', handleClickOutside, true);
-      }, 100);
+      }, 200);
       
       // Focus after appending to DOM - use queueMicrotask for reliable timing
       queueMicrotask(() => select.focus());
