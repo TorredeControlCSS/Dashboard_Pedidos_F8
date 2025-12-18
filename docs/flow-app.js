@@ -253,8 +253,10 @@ if (window.__FLOW_APP_LOADED__) {
   function renderOrdersList(rows) {
     const container = document.getElementById('ordersList');
     if (!container) return;
+
     if (!rows || !rows.length) {
       container.innerHTML = '<p class="loading-message">Sin requisiciones para este criterio.</p>';
+      container.classList.remove('edit-mode-on');
       return;
     }
 
@@ -274,12 +276,12 @@ if (window.__FLOW_APP_LOADED__) {
       return ida.localeCompare(idb);
     });
 
-    const html = sorted.map(({r, stageToday}, idx) => {
-      const id = r['F8 SALMI'] || '(sin F8)';
-      const unidad = r['UNIDAD'] || '';
-      const tipo = r['TIPO'] || '';
-      const grupo = r['GRUPO'] || '';
-      const coment = r['COMENT.'] || '';
+    const htmlRows = sorted.map(({r, stageToday}) => {
+      const id     = r['F8 SALMI'] || '(sin F8)';
+      const unidad = r['UNIDAD']   || '';
+      const tipo   = r['TIPO']     || '';
+      const grupo  = r['GRUPO']    || '';
+      const coment = r['COMENT.']  || '';
 
       const recD  = parseIsoDate(r['RECIBO F8']);
       const asgD  = parseIsoDate(r['ASIGNACIÓN']);
@@ -305,82 +307,102 @@ if (window.__FLOW_APP_LOADED__) {
       const proyForDelta = proyD;
       const realForDelta = realD;
 
-      const teor  = (recForDelta && proyForDelta) ? Math.round(daysBetween(recForDelta, proyForDelta)) : null;
-      const realT = (recForDelta && realForDelta) ? Math.round(daysBetween(recForDelta, realForDelta)) : null;
+      const teor  = (recForDelta && proyForDelta)
+        ? Math.round(daysBetween(recForDelta, proyForDelta))
+        : null;
+      const realT = (recForDelta && realForDelta)
+        ? Math.round(daysBetween(recForDelta, realForDelta))
+        : null;
 
-      let deltaHtml = '<span class="date-delta zero">—</span>';
+      let deltaText = '—';
+      let deltaClass = 'zero';
       if (teor != null && realT != null) {
         const d = realT - teor;
-        const cls = d > 0 ? 'positive' : (d < 0 ? 'negative' : 'zero');
-        deltaHtml = `<span class="date-delta ${cls}">${d > 0 ? '+'+d : d} días</span>`;
+        deltaText = (d > 0 ? '+'+d : d) + ' días';
+        deltaClass = d > 0 ? 'positive' : (d < 0 ? 'negative' : 'zero');
       }
 
       const etapaHoy = stageToday ? stageToday : '—';
 
       return `
-        <div class="order-card" data-f8-id="${id}">
-          <div class="order-card-header">
-            <span class="order-id">${id}</span>
-            <span class="order-stage">${etapaHoy}</span>
-          </div>
-          <div class="order-info">
-            <div>${unidad}</div>
-            <div>${tipo} · ${grupo}</div>
-            <div>
-              <strong>Comentario:</strong>
-              <span class="editable-text" data-field="COMENT." data-f8-id="${id}">
-                ${coment || '—'}
-              </span>
-            </div>
-          </div>
-          <div class="order-dates">
-            <div class="date-item">
-              <span class="date-label">Recibo F8</span>
-              <span class="date-value ${isHighlight(recD) ? 'highlight-day' : ''}">${rec}</span>
-            </div>
-            <div class="date-item">
-              <span class="date-label">Asignación</span>
-              <span class="date-value editable-date ${isHighlight(asgD) ? 'highlight-day' : ''}"
-                    data-field="ASIGNACIÓN" data-f8-id="${id}">${asg}</span>
-            </div>
-            <div class="date-item">
-              <span class="date-label">Salida</span>
-              <span class="date-value editable-date ${isHighlight(salD) ? 'highlight-day' : ''}"
-                    data-field="SALIDA" data-f8-id="${id}">${sal}</span>
-            </div>
-            <div class="date-item">
-              <span class="date-label">Despacho</span>
-              <span class="date-value editable-date ${isHighlight(despD) ? 'highlight-day' : ''}"
-                    data-field="DESPACHO" data-f8-id="${id}">${desp}</span>
-            </div>
-            <div class="date-item">
-              <span class="date-label">Facturación</span>
-              <span class="date-value editable-date ${isHighlight(facD) ? 'highlight-day' : ''}"
-                    data-field="FACTURACIÓN" data-f8-id="${id}">${fac}</span>
-            </div>
-            <div class="date-item">
-              <span class="date-label">Empacado</span>
-              <span class="date-value editable-date ${isHighlight(empD) ? 'highlight-day' : ''}"
-                    data-field="EMPACADO" data-f8-id="${id}">${emp}</span>
-            </div>
-            <div class="date-item">
-              <span class="date-label">Proy. Entrega</span>
-              <span class="date-value editable-date ${isHighlight(proyD) ? 'highlight-day' : ''}"
-                    data-field="PROY. ENTREGA" data-f8-id="${id}">${proy}</span>
-            </div>
-            <div class="date-item">
-              <span class="date-label">Entrega Real</span>
-              <span class="date-value editable-date ${isHighlight(realD) ? 'highlight-day' : ''}"
-                    data-field="ENTREGA REAL" data-f8-id="${id}">${real}</span>
-            </div>
-            <div class="date-item">
-              <span class="date-label">Delta</span>
-              ${deltaHtml}
-            </div>
-          </div>
-        </div>
+        <tr data-f8-id="${id}">
+          <td>${id}</td>
+          <td>
+            ${unidad}
+            <br><small>${tipo} · ${grupo}</small>
+          </td>
+          <td>
+            <span class="editable-text" data-field="COMENT." data-f8-id="${id}">
+              ${coment || '—'}
+            </span>
+          </td>
+          <td class="${isHighlight(recD)  ? 'highlight-day' : ''}">${rec}</td>
+          <td class="${isHighlight(asgD)  ? 'highlight-day' : ''}">
+            <span class="editable-date"
+                  data-field="ASIGNACIÓN"
+                  data-f8-id="${id}">${asg}</span>
+          </td>
+          <td class="${isHighlight(salD)  ? 'highlight-day' : ''}">
+            <span class="editable-date"
+                  data-field="SALIDA"
+                  data-f8-id="${id}">${sal}</span>
+          </td>
+          <td class="${isHighlight(despD) ? 'highlight-day' : ''}">
+            <span class="editable-date"
+                  data-field="DESPACHO"
+                  data-f8-id="${id}">${desp}</span>
+          </td>
+          <td class="${isHighlight(facD)  ? 'highlight-day' : ''}">
+            <span class="editable-date"
+                  data-field="FACTURACIÓN"
+                  data-f8-id="${id}">${fac}</span>
+          </td>
+          <td class="${isHighlight(empD)  ? 'highlight-day' : ''}">
+            <span class="editable-date"
+                  data-field="EMPACADO"
+                  data-f8-id="${id}">${emp}</span>
+          </td>
+          <td class="${isHighlight(proyD) ? 'highlight-day' : ''}">
+            <span class="editable-date"
+                  data-field="PROY. ENTREGA"
+                  data-f8-id="${id}">${proy}</span>
+          </td>
+          <td class="${isHighlight(realD) ? 'highlight-day' : ''}">
+            <span class="editable-date"
+                  data-field="ENTREGA REAL"
+                  data-f8-id="${id}">${real}</span>
+          </td>
+          <td>
+            <span class="date-delta ${deltaClass}">${deltaText}</span>
+            <br><small>${etapaHoy}</small>
+          </td>
+        </tr>
       `;
     }).join('');
+
+    const html = `
+      <table class="flow-table">
+        <thead>
+          <tr>
+            <th>F8 SALMI</th>
+            <th>Unidad / Tipo / Grupo</th>
+            <th>Comentario</th>
+            <th>Recibo F8</th>
+            <th>Asignación</th>
+            <th>Salida</th>
+            <th>Despacho</th>
+            <th>Facturación</th>
+            <th>Empacado</th>
+            <th>Proy. Entrega</th>
+            <th>Entrega Real</th>
+            <th>Delta / Etapa</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${htmlRows}
+        </tbody>
+      </table>
+    `;
 
     container.innerHTML = html;
     container.classList.toggle('edit-mode-on', editMode);
