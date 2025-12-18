@@ -317,23 +317,13 @@ h1, h2, h3 { margin: 0; }
    ========================= */
 
 .main-container {
-  display: grid;
-  grid-template-columns: 380px 1fr;
-  gap: 14px;
   padding: 8px 16px 16px;
   min-height: calc(100vh - 200px);
 }
 
-/* LEFT PANEL CON SCROLL INTERNO */
+/* Ya no usamos left-panel; la lista va en bottom-panel */
 .left-panel {
-  background: white;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  max-height: calc(100vh - 180px);
+  display: none;
 }
 
 .panel-header {
