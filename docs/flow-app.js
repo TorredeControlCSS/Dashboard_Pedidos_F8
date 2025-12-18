@@ -23,7 +23,8 @@ if (window.__FLOW_APP_LOADED__) {
     { key: 'DESPACHO',     label: 'DESPACHO',     blockId: 'count-despacho' },
     { key: 'FACTURACIÓN',  label: 'FACTURACIÓN',  blockId: 'count-facturacion' },
     { key: 'EMPACADO',     label: 'EMPACADO',     blockId: 'count-empacado' },
-    { key: 'PROY. ENTREGA',label: 'PROY. ENTREGA',blockId: 'count-entrega' }
+    { key: 'PROY. ENTREGA',label: 'PROY. ENTREGA',blockId: 'count-entrega' },
+    { key: 'ENTREGA REAL', label: 'ENTREGA REAL', blockId: 'count-entrega-real' } // NUEVO
   ];
 
   const DATE_FIELDS = [
@@ -1158,7 +1159,8 @@ if (window.__FLOW_APP_LOADED__) {
       'DESPACHO':'DESPACHO',
       'FACTURACION':'FACTURACIÓN',
       'EMPACADO':'EMPACADO',
-      'ENTREGA':'PROY. ENTREGA'
+      'ENTREGA':'PROY. ENTREGA',
+      'ENTREGA_REAL':'ENTREGA REAL'          // NUEVO
     };
     const colKey = map[stageKey] || 'RECIBO F8';
 
