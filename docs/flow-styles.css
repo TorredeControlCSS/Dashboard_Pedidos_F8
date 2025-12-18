@@ -1186,3 +1186,40 @@ h1, h2, h3 { margin: 0; }
 .flow-edit-cancel:hover {
   background: var(--bg-light);
 }
+
+/* Tabla de flujo (debajo del checklist) con los mismos campos de la vista flujo */
+.flow-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.flow-table th,
+.flow-table td {
+  border: 1px solid var(--border-color);
+  padding: 4px 6px;
+  vertical-align: top;
+}
+
+.flow-table th {
+  background: var(--bg-light);
+  font-weight: 600;
+  text-align: left;
+}
+
+.flow-table td:nth-child(1) {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.flow-table td:nth-child(2) {
+  min-width: 180px;
+}
+
+.flow-table td:nth-child(3) {
+  min-width: 160px;
+}
+
+.flow-table td {
+  line-height: 1.3;
+}
