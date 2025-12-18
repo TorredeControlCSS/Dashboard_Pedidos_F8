@@ -535,20 +535,25 @@ if (window.__FLOW_APP_LOADED__) {
         }
       });
 
-    // NO guardamos en blur para no interferir con el calendario.
-    // Solo si no hay cambios, restauramos silenciosamente.
-    input.addEventListener('blur', () => {
-      const newVal = input.value || '';
-      if (newVal === formatDateInput(oldRaw)) {
-        // Sin cambios: solo restauramos el texto, sin llamar al backend
-        spanDate.textContent = oldDisplay;
-      }
-      // Si hubo cambios, esperamos a que el usuario confirme con Enter
-      // o con el evento change (si lo quieres añadir).
-    });
+      // Guardar cuando el usuario cambia la fecha desde el calendario
+      input.addEventListener('change', () => {
+        const newVal = input.value || '';
+        if (newVal !== formatDateInput(oldRaw)) {
+          finish(true);
+        }
+      });
+
+      // En blur NO guardamos ni cancelamos, solo restauramos si no hubo cambios
+      input.addEventListener('blur', () => {
+        const newVal = input.value || '';
+        if (newVal === formatDateInput(oldRaw)) {
+          // sin cambios: restaurar texto original
+          spanDate.textContent = oldDisplay;
+        }
+        // si hubo cambios, ya se guardó por change o Enter
+      });
 
       return;
-    }
 
     // === EDICIÓN DE COMENTARIO ===
     if (spanText) {
@@ -589,7 +594,7 @@ if (window.__FLOW_APP_LOADED__) {
         await handleInlineSave(f8Id, field, newVal, spanText);
       };
 
-      // Guardar con Enter / cancelar con Escape
+          // Guardar con Enter / cancelar con Escape
       select.addEventListener('keydown', e => {
         if (e.key === 'Enter') {
           e.preventDefault();
@@ -600,13 +605,21 @@ if (window.__FLOW_APP_LOADED__) {
         }
       });
 
-    // En blur no forzamos guardar; solo restauramos si no hubo cambio.
-    select.addEventListener('blur', () => {
-      if (select.value === oldRaw) {
-        spanText.textContent = oldDisplay;
-      }
-      // Si cambió, se guardará con Enter o con change (si lo añadimos).
-    });
+      // Guardar cuando el usuario cambia la opción con el mouse
+      select.addEventListener('change', () => {
+        if (select.value !== oldRaw) {
+          finish(true);
+        }
+      });
+
+      // En blur NO forzamos guardar; solo restauramos si no hubo cambio
+      select.addEventListener('blur', () => {
+        if (select.value === oldRaw) {
+          // sin cambios: restaurar texto original
+          spanText.textContent = oldDisplay;
+        }
+        // si hubo cambios, ya se guardó por change o Enter
+      });
 
       return;
     }
