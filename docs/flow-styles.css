@@ -490,6 +490,12 @@ h1, h2, h3 { margin: 0; }
 .monthly-checklist-container h3 {
   font-size: 15px;
   margin-bottom: 4px;
+  position: sticky;      /* título fijo al hacer scroll */
+  top: 0;
+  z-index: 2;
+  background: white;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 
 #monthlyDateLabel {
@@ -569,7 +575,7 @@ h1, h2, h3 { margin: 0; }
 /* Encabezado fijo en checklist mensuales */
 .monthly-table thead th {
   position: sticky;
-  top: 0;
+  top: 30px; /* debajo del título h3 */
   z-index: 1;
   background: #f1f5f9;
   border-bottom: 2px solid var(--border-color);
@@ -753,7 +759,7 @@ h1, h2, h3 { margin: 0; }
 
 .gap-analysis-container canvas,
 .stage-deltas-container canvas {
-  max-height: 200px;
+  max-height: 210px;
 }
 
 /* Contenedor general:
@@ -762,21 +768,21 @@ h1, h2, h3 { margin: 0; }
 .time-kpis-wrapper {
   margin-top: 10px;
   display: grid;
-  grid-template-columns: 3.2fr 0.9fr;
-  gap: 10px;
+  grid-template-columns: 4.2fr 0.8fr;  /* más ancho para gráficos, menos para tarjetas */
+  gap: 6px;
   align-items: stretch;
 }
 
 /* Dos gráficos uno al lado del otro */
 .charts-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: 1.1fr 1fr; /* ligero énfasis al primer gráfico */
+  gap: 6px;
 }
 
 .gap-analysis-container,
 .stage-deltas-container {
-  height: 260px;
+  height: 270px;          /* más alto para dar aire a la leyenda */
   display: flex;
   flex-direction: column;
 }
@@ -787,9 +793,7 @@ h1, h2, h3 { margin: 0; }
   max-height: none;
 }
 
-/* === Override tarjetas KPI: todas mismo tamaño === */
-
-/* Columna derecha: solo organiza las tarjetas en filas, sin estirarlas */
+/* Tarjetas KPI apiladas a la derecha: todas mismo tamaño */
 .time-kpis {
   display: grid;
   grid-auto-flow: row;
@@ -798,7 +802,6 @@ h1, h2, h3 { margin: 0; }
   gap: 8px;
 }
 
-/* Cada tarjeta: ancho fijo, igual para todas */
 .time-kpi {
   background: white;
   border: 1px solid var(--border-color);
@@ -1285,13 +1288,4 @@ h1, h2, h3 { margin: 0; }
 
 .flow-edit-cancel:hover {
   background: var(--bg-light);
-}
-
-/* override proporción gráficos / tarjetas */
-.time-kpis-wrapper {
-  margin-top: 10px;
-  display: grid;
-  grid-template-columns: 4fr 0.8fr;  /* más ancho para gráficos, menos para tarjetas */
-  gap: 10px;
-  align-items: stretch;
 }
