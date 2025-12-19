@@ -335,8 +335,8 @@ h1, h2, h3 { margin: 0; }
 
 .calendar-checklist-orders {
   display: grid;
-  grid-template-columns: 1.1fr 2.1fr 2.3fr; /* calendario más angosto, checklist más ancho */
-  gap: 0;                                   /* sin espacio entre cajas */
+  grid-template-columns: 1.1fr 2.1fr 2.3fr;
+  gap: 0;
   align-items: stretch;
 }
 
@@ -345,8 +345,8 @@ h1, h2, h3 { margin: 0; }
   background: white;
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  padding: 4px 4px 6px;   /* menos padding lateral */
-  transform: scale(0.85);
+  padding: 4px 4px 6px;
+  transform: scale(0.95);     /* antes 0.85 */
   transform-origin: top left;
 }
 
@@ -558,12 +558,21 @@ h1, h2, h3 { margin: 0; }
 .monthly-table td:nth-child(12),
 .monthly-table th:nth-child(13),
 .monthly-table td:nth-child(13) {
-  width: 38px;   /* bajamos un poco para ayudar a quitar scroll horizontal */
+  width: 38px;
 }
 
 .monthly-table th:first-child,
 .monthly-table td:first-child {
   text-align: left;
+}
+
+/* Encabezado fijo en checklist mensuales */
+.monthly-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f1f5f9;
+  border-bottom: 2px solid var(--border-color);
 }
 
 /* Colores de cuello de botella */
@@ -656,7 +665,7 @@ h1, h2, h3 { margin: 0; }
   max-width: 150px;
 }
 
-/* Unidad / Tipo / Grupo: bastante más ancha */
+/* Unidad / Tipo / Grupo: más ancha */
 .flow-table td:nth-child(2) {
   min-width: 260px;
   max-width: 300px;
