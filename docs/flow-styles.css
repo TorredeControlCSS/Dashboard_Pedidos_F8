@@ -99,7 +99,7 @@ h1, h2, h3 { margin: 0; }
 
 .top-row {
   display: grid;
-  grid-template-columns: auto 1fr auto; /* filtros | bloques | KPIs */
+  grid-template-columns: auto 1fr auto;
   align-items: stretch;
   gap: 8px;
   justify-content: flex-start;
@@ -113,7 +113,6 @@ h1, h2, h3 { margin: 0; }
   gap: 4px;
 }
 
-/* Fila superior: botones */
 .filters-buttons-row {
   display: flex;
   align-items: center;
@@ -133,7 +132,6 @@ h1, h2, h3 { margin: 0; }
   background: var(--bg-light);
 }
 
-/* Fila inferior: selects uno debajo del otro */
 .filters-selects-column {
   display: flex;
   flex-direction: column;
@@ -151,7 +149,7 @@ h1, h2, h3 { margin: 0; }
   box-sizing: border-box;
 }
 
-/* PROCESS FLOW (bloques centrales) */
+/* PROCESS FLOW */
 #process-flow {
   display: flex;
   align-items: stretch;
@@ -216,12 +214,10 @@ h1, h2, h3 { margin: 0; }
   background: linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%);
   border-color: #34d399;
 }
-/* PROY. ENTREGA (verde intenso) */
 .flow-block[data-stage="ENTREGA"] {
   background: linear-gradient(135deg, #bbf7d0 0%, #22c55e 100%);
   border-color: #16a34a;
 }
-/* ENTREGRA REAL (turquesa intenso) */
 .flow-block[data-stage="ENTREGA_REAL"] {
   background: linear-gradient(135deg, #67e8f9 0%, #06b6d4 100%);
   border-color: #0891b2;
@@ -339,8 +335,8 @@ h1, h2, h3 { margin: 0; }
 
 .calendar-checklist-orders {
   display: grid;
-  grid-template-columns: 1.5fr 1.7fr 2.3fr; /* calendario | checklist | tabla (más anchas) */
-  gap: 8px;
+  grid-template-columns: 1.5fr 1.7fr 2.3fr;
+  gap: 4px;           /* casi pegado */
   align-items: stretch;
 }
 
@@ -487,8 +483,8 @@ h1, h2, h3 { margin: 0; }
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 10px;
-  max-height: 340px;          /* más alto */
-  overflow-y: auto;
+  max-height: 360px;     /* similar al calendario */
+  overflow-y: auto;      /* solo vertical */
 }
 
 .monthly-checklist-container h3 {
@@ -516,7 +512,7 @@ h1, h2, h3 { margin: 0; }
   text-align: right;
 }
 
-/* Unidad: más ancha para mostrar nombre completo */
+/* Unidad: más ancha */
 .monthly-table th:nth-child(2),
 .monthly-table td:nth-child(2) {
   width: 180px;
@@ -526,10 +522,15 @@ h1, h2, h3 { margin: 0; }
   text-overflow: ellipsis;
 }
 
-/* Requisiciones: abreviado, muy compacto */
+/* Requisiciones: compacta */
 .monthly-table th:nth-child(3),
 .monthly-table td:nth-child(3) {
   width: 40px;
+}
+
+/* Mostrar encabezado como "Req" */
+.monthly-table th:nth-child(3)::before {
+  content: "Req";
 }
 
 /* Otras columnas numéricas compactas */
@@ -589,7 +590,7 @@ h1, h2, h3 { margin: 0; }
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  max-height: 340px;          /* más alto para menos scroll */
+  max-height: 360px;      /* similar al checklist */
 }
 
 .panel-header.inline {
@@ -610,7 +611,7 @@ h1, h2, h3 { margin: 0; }
 }
 
 .orders-list {
-  max-height: 300px;          /* más alto */
+  max-height: 320px;
   overflow-y: auto;
   overflow-x: auto;
   padding: 0 6px 6px;
@@ -643,30 +644,33 @@ h1, h2, h3 { margin: 0; }
   text-align: left;
 }
 
+/* F8 SALMI */
 .flow-table td:nth-child(1) {
   white-space: nowrap;
   font-weight: 600;
+  min-width: 110px;
+  max-width: 130px;
 }
 
 /* Unidad / Tipo / Grupo: un poco más ancha */
 .flow-table td:nth-child(2) {
-  min-width: 190px;
-  max-width: 210px;
+  min-width: 220px;
+  max-width: 250px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Comentario */
+/* Comentario: más ancha */
 .flow-table td:nth-child(3) {
-  min-width: 130px;
-  max-width: 170px;
+  min-width: 150px;
+  max-width: 190px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Columnas de fecha con ancho fijo estrecho */
+/* Columnas de fecha con ancho fijo */
 .flow-table th:nth-child(4),
 .flow-table td:nth-child(4),
 .flow-table th:nth-child(5),
