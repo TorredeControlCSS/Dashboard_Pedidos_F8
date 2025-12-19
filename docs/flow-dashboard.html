@@ -18,7 +18,7 @@
   <!-- PWA manifest -->
   <link rel="manifest" href="manifest.json"/>
 
-  <link rel="stylesheet" href="flow-styles.css?v=2.5"/>
+  <link rel="stylesheet" href="flow-styles.css?v=2.6"/>
 </head>
 <body>
   <header class="app-header">
@@ -37,7 +37,7 @@
     </div>
   </header>
 
-  <!-- Franja superior: FILTROS + BLOQUES + KPIs TODO EN UNA SOLA FILA -->
+  <!-- Franja superior: FILTROS + BLOQUES + KPIs -->
   <div class="top-wrapper">
     <div class="top-row">
       <!-- Columna izquierda: filtros -->
@@ -174,10 +174,13 @@
     </div>
   </div>
 
-  <!-- Contenedor principal NUEVO -->
+  <!-- Contenedor principal -->
   <div class="main-container">
     <section class="right-panel">
-      <div class="calendar-and-monthly">
+
+      <!-- Fila: CALENDARIO + CHECKLIST + TABLA REQUISICIONES -->
+      <div class="calendar-checklist-orders">
+        <!-- Calendario -->
         <div class="calendar-container">
           <div class="calendar-header">
             <button id="btnPrevMonth">◀</button>
@@ -201,25 +204,26 @@
           </div>
         </div>
 
+        <!-- Checklist mensuales -->
         <div class="monthly-checklist-container">
           <h3>Checklist Mensuales <span id="monthlyDateLabel"></span></h3>
           <div id="monthlyChecklist">
             <p class="loading-message">Seleccione un día con mensuales para ver el resumen.</p>
           </div>
         </div>
+
+        <!-- Tabla de requisiciones (MISMO CONTENEDOR LÓGICO, SOLO REUBICADA) -->
+        <section class="orders-panel-inline">
+          <div class="panel-header inline">
+            <h2 id="panel-title">Requisiciones del 2025-12-12</h2>
+          </div>
+          <div class="orders-list" id="ordersList">
+            <p class="loading-message">Cargando requisiciones...</p>
+          </div>
+        </section>
       </div>
 
-      <!-- NUEVO: lista de requisiciones debajo del checklist, ancho completo -->
-      <section class="bottom-panel">
-        <div class="panel-header">
-          <h2 id="panel-title">Requisiciones del 2025-12-12</h2>
-        </div>
-        <div class="orders-list" id="ordersList">
-          <p class="loading-message">Cargando requisiciones...</p>
-        </div>
-      </section>
-
-      <!-- BLOQUE COMPACTO: GRÁFICOS EN UNA FILA + KPIs ABAJO -->
+      <!-- BLOQUE: GRÁFICOS + KPIs -->
       <div class="time-kpis-wrapper">
         <div class="charts-row">
           <div class="gap-analysis-container">
@@ -255,7 +259,7 @@
     </section>
   </div>
 
-  <!-- MODAL DE EDICIÓN PARA VISTA FLUJO -->
+  <!-- MODAL DE EDICIÓN PARA VISTA FLUJO (SIN CAMBIOS) -->
   <div id="editModal" class="flow-edit-modal" style="display:none;">
     <div class="flow-edit-backdrop"></div>
     <div class="flow-edit-dialog">
@@ -342,17 +346,6 @@
       B_URL: 'https://script.google.com/macros/s/AKfycbysdeYW1g-l1p6ZOyk9aPaUIdx5H4GbzYFVeD1T8_SsyQoODqo-dSzjQMeu7lZzYmQ/exec',
       CLIENT_ID: '63868073848-8bfis5g0f8mt14oia3flmbqksg69tejq.apps.googleusercontent.com'
     };
-
-    // Service Worker registration with versioned cache
-    // When deploying updates, increment CACHE_NAME in sw.js and ?v= in flow-app.js script tag
-    //<!--
-    //if ('serviceWorker' in navigator) {
-      //window.addEventListener('load', () => {
-        //navigator.serviceWorker.register('sw.js')
-          //.catch(err => console.log('SW registration failed', err));
-      //});
-    //}
-    //-->
   </script>
 
   <script src="flow-app.js?v=3.4"></script>
