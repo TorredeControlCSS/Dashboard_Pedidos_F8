@@ -434,7 +434,7 @@ h1, h2, h3 { margin: 0; }
   right: 1px;
   background: var(--danger-color);
   color: white;
-  font-size: 10px;
+  font-size: 11px;
   border-radius: 8px;
   padding: 0 4px;
   font-weight: 700;
@@ -469,7 +469,7 @@ h1, h2, h3 { margin: 0; }
   position: absolute;
   bottom: 2px;
   left: 2px;
-  font-size: 10px;
+  font-size: 11px;
   color: #4b5563;
   background: rgba(255, 255, 255, 0.9);
   padding: 0 3px;
@@ -572,10 +572,10 @@ h1, h2, h3 { margin: 0; }
   text-align: left;
 }
 
-/* Encabezado fijo en checklist mensuales */
+/* Encabezado fijo en checklist mensuales (debajo del título) */
 .monthly-table thead th {
   position: sticky;
-  top: 30px; /* debajo del título h3 */
+  top: 32px; /* altura aprox. del h3 + margen */
   z-index: 1;
   background: #f1f5f9;
   border-bottom: 2px solid var(--border-color);
@@ -759,7 +759,7 @@ h1, h2, h3 { margin: 0; }
 
 .gap-analysis-container canvas,
 .stage-deltas-container canvas {
-  max-height: 210px;
+  max-height: 220px;
 }
 
 /* Contenedor general:
@@ -768,21 +768,21 @@ h1, h2, h3 { margin: 0; }
 .time-kpis-wrapper {
   margin-top: 10px;
   display: grid;
-  grid-template-columns: 4.2fr 0.8fr;  /* más ancho para gráficos, menos para tarjetas */
-  gap: 6px;
+  grid-template-columns: 4.4fr 0.8fr;
+  gap: 8px;
   align-items: stretch;
 }
 
-/* Dos gráficos uno al lado del otro */
+/* Dos gráficos uno al lado del otro, con el de etapas un poco más ancho */
 .charts-row {
   display: grid;
-  grid-template-columns: 1.1fr 1fr; /* ligero énfasis al primer gráfico */
-  gap: 6px;
+  grid-template-columns: 1.05fr 1.25fr; /* Deltas por Etapa del Proceso más ancho */
+  gap: 8px;
 }
 
 .gap-analysis-container,
 .stage-deltas-container {
-  height: 270px;          /* más alto para dar aire a la leyenda */
+  height: 280px;          /* más alto para dar aire a la leyenda */
   display: flex;
   flex-direction: column;
 }
@@ -798,7 +798,7 @@ h1, h2, h3 { margin: 0; }
   display: grid;
   grid-auto-flow: row;
   grid-template-rows: repeat(4, auto);
-  justify-items: end;        /* todas alineadas al borde derecho */
+  justify-items: end;
   gap: 8px;
 }
 
@@ -809,7 +809,7 @@ h1, h2, h3 { margin: 0; }
   padding: 10px;
   text-align: center;
 
-  width: 210px;              /* mismo ancho para todas */
+  width: 210px;
   max-width: 210px;
 }
 
@@ -1064,7 +1064,7 @@ h1, h2, h3 { margin: 0; }
   cursor: pointer;
   padding: 2px 4px;
   border-radius: 3px;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .orders-list.edit-mode-on .editable-date:hover,
