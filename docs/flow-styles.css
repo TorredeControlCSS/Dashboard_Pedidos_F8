@@ -335,8 +335,8 @@ h1, h2, h3 { margin: 0; }
 
 .calendar-checklist-orders {
   display: grid;
-  grid-template-columns: 1.5fr 1.7fr 2.3fr;
-  gap: 4px;           /* casi pegado */
+  grid-template-columns: 1.3fr 1.9fr 2.3fr; /* calendario un poco más angosto, checklist más ancho */
+  gap: 2px;                                  /* separación mínima */
   align-items: stretch;
 }
 
@@ -482,9 +482,9 @@ h1, h2, h3 { margin: 0; }
   background: white;
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  padding: 10px;
-  max-height: 360px;     /* similar al calendario */
-  overflow-y: auto;      /* solo vertical */
+  padding: 8px 8px 10px;
+  max-height: 360px;
+  overflow-y: auto;
 }
 
 .monthly-checklist-container h3 {
@@ -512,7 +512,7 @@ h1, h2, h3 { margin: 0; }
   text-align: right;
 }
 
-/* Unidad: más ancha */
+/* Unidad: más ancha para mostrar casi completo */
 .monthly-table th:nth-child(2),
 .monthly-table td:nth-child(2) {
   width: 180px;
@@ -522,15 +522,19 @@ h1, h2, h3 { margin: 0; }
   text-overflow: ellipsis;
 }
 
-/* Requisiciones: compacta */
+/* Requisiciones: columna compacta */
 .monthly-table th:nth-child(3),
 .monthly-table td:nth-child(3) {
   width: 40px;
 }
 
-/* Mostrar encabezado como "Req" */
-.monthly-table th:nth-child(3)::before {
+/* Mostrar encabezado visualmente como "Req" */
+.monthly-table th:nth-child(3) {
+  font-size: 0;             /* oculta el texto original ("Requisiciones") */
+}
+.monthly-table th:nth-child(3)::after {
   content: "Req";
+  font-size: 11px;
 }
 
 /* Otras columnas numéricas compactas */
@@ -554,7 +558,7 @@ h1, h2, h3 { margin: 0; }
 .monthly-table td:nth-child(12),
 .monthly-table th:nth-child(13),
 .monthly-table td:nth-child(13) {
-  width: 40px;
+  width: 38px;   /* bajamos un poco para ayudar a quitar scroll horizontal */
 }
 
 .monthly-table th:first-child,
@@ -590,7 +594,7 @@ h1, h2, h3 { margin: 0; }
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  max-height: 360px;      /* similar al checklist */
+  max-height: 360px;
 }
 
 .panel-header.inline {
@@ -661,7 +665,7 @@ h1, h2, h3 { margin: 0; }
   text-overflow: ellipsis;
 }
 
-/* Comentario: más ancha */
+/* Comentario: un poco más ancho */
 .flow-table td:nth-child(3) {
   min-width: 150px;
   max-width: 190px;
@@ -1013,10 +1017,7 @@ h1, h2, h3 { margin: 0; }
   background: #e5e7eb;
 }
 
-/* =========================
-   EDIT MODE STYLES
-   ========================= */
-
+/* EDIT MODE STYLES */
 .editable-date,
 .editable-text {
   cursor: default;
