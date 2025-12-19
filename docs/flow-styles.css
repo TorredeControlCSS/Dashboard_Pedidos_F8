@@ -91,14 +91,12 @@ h1, h2, h3 { margin: 0; }
    FRANJA SUPERIOR
    ========================= */
 
-/* Franja completa debajo del header */
 .top-wrapper {
   width: 100%;
   margin: 0;
   padding: 8px 8px 4px;
 }
 
-/* Una sola fila: filtros | bloques | KPIs */
 .top-row {
   display: grid;
   grid-template-columns: auto 1fr auto; /* filtros | bloques | KPIs */
@@ -163,7 +161,7 @@ h1, h2, h3 { margin: 0; }
   overflow-x: auto;
   overflow-y: hidden;
   gap: 6px;
-  min-width: 0; /* Allow flex item to shrink below content size */
+  min-width: 0;
 }
 
 .flow-block {
@@ -218,12 +216,12 @@ h1, h2, h3 { margin: 0; }
   background: linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%);
   border-color: #34d399;
 }
-/* ENTREGRA REAL con verde más puro (etapa PROY. ENTREGA) */
+/* PROY. ENTREGA (verde intenso) */
 .flow-block[data-stage="ENTREGA"] {
   background: linear-gradient(135deg, #bbf7d0 0%, #22c55e 100%);
   border-color: #16a34a;
 }
-/* PROY. ENTREGA más intenso (turquesa) para el último bloque */
+/* ENTREGRA REAL (turquesa intenso) */
 .flow-block[data-stage="ENTREGA_REAL"] {
   background: linear-gradient(135deg, #67e8f9 0%, #06b6d4 100%);
   border-color: #0891b2;
@@ -327,10 +325,7 @@ h1, h2, h3 { margin: 0; }
   min-height: calc(100vh - 200px);
 }
 
-/* Ya no usamos left-panel; la lista va en bottom-panel */
-.left-panel {
-  display: none;
-}
+.left-panel { display: none; }
 
 .right-panel {
   display: flex;
@@ -338,133 +333,24 @@ h1, h2, h3 { margin: 0; }
   gap: 12px;
 }
 
-/* Panel inferior para lista de requisiciones */
-.bottom-panel {
-  background: white;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  margin-top: 12px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
+/* =========================
+   FILA: CALENDARIO + CHECKLIST + TABLA
+   ========================= */
 
-.panel-header {
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  background: white;
-  padding: 6px 10px;
-  margin: 0;
-  border-bottom: 2px solid var(--border-color);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.panel-header h2 {
-  font-size: 15px;
-  color: var(--text-dark);
-}
-
-.orders-list {
-  max-height: 220px;      /* más baja, sube visualmente la tabla */
-  overflow-y: auto;
-  overflow-x: auto;
-  padding: 0 6px 6px;
-}
-
-.loading-message {
-  text-align: center;
-  color: var(--text-light);
-  padding: 30px 20px;
-}
-
-/* ORDER CARDS (no usados, pero conservados) */
-.order-card {
-  background: var(--bg-light);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 8px;
-  margin: 6px 0;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.order-card:hover {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  border-color: var(--secondary-color);
-}
-
-.order-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 4px;
-}
-
-.order-id {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.order-stage {
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 10px;
-  background: var(--secondary-color);
-  color: white;
-  font-weight: 600;
-}
-
-.order-info {
-  font-size: 11px;
-  color: var(--text-light);
-  margin: 2px 0;
-}
-
-.order-dates {
+.calendar-checklist-orders {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  margin-top: 4px;
-  padding-top: 4px;
-  border-top: 1px solid var(--border-color);
-  font-size: 10px;
+  grid-template-columns: 1.4fr 1.4fr 2.2fr; /* calendario | checklist | tabla */
+  gap: 8px;
+  align-items: start;
 }
 
-.date-item { display: flex; flex-direction: column; }
-.date-label { color: var(--text-light); margin-bottom: 1px; }
-.date-value { font-weight: 600; }
-
-/* Resaltado de día analizado */
-.date-value.highlight-day {
-  background: #fee2e2;
-  color: #b91c1c;
-  font-weight: 700;
-  padding: 1px 3px;
-  border-radius: 4px;
-}
-
-.date-delta { font-size: 10px; font-weight: 600; margin-top: 2px; }
-.date-delta.positive { color: var(--danger-color); }
-.date-delta.negative { color: var(--success-color); }
-.date-delta.zero     { color: var(--text-light); }
-
-/* CALENDAR + CHECKLIST GRID */
-.calendar-and-monthly {
-  display: grid;
-  grid-template-columns: 2fr 3fr;
-  gap: 10px;
-}
-
-/* CALENDAR */
+/* Calendario */
 .calendar-container {
   background: white;
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 6px;
-  transform: scale(0.85);       /* calendario compacto */
+  transform: scale(0.85);
   transform-origin: top left;
 }
 
@@ -540,7 +426,7 @@ h1, h2, h3 { margin: 0; }
   background: #fafafa;
 }
 
-/* Números del calendario grandes */
+/* Números del calendario */
 .calendar-day-number {
   font-size: 18px;
   font-weight: 600;
@@ -558,7 +444,7 @@ h1, h2, h3 { margin: 0; }
   font-weight: 700;
 }
 
-/* LEGEND */
+/* Leyenda */
 .calendar-legend {
   display: flex;
   gap: 10px;
@@ -582,13 +468,26 @@ h1, h2, h3 { margin: 0; }
   border: 1px solid var(--border-color);
 }
 
-/* CHECKLIST MENSUALES */
+/* Mini contador de RECIBO F8 en el calendario */
+.calendar-mini-counter {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  font-size: 13px;
+  color: #4b5563;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0 3px;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+/* Checklist mensuales */
 .monthly-checklist-container {
   background: white;
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 10px;
-  max-height: 320px;
+  max-height: 260px;
   overflow-y: auto;
 }
 
@@ -617,17 +516,17 @@ h1, h2, h3 { margin: 0; }
   text-align: right;
 }
 
-/* Unidad: mucho más angosta */
+/* Unidad: más angosta */
 .monthly-table th:nth-child(2),
 .monthly-table td:nth-child(2) {
-  width: 50px;
-  max-width: 60px;
+  width: 110px;
+  max-width: 110px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Requisiciones + columnas numéricas muy compactas */
+/* Columnas numéricas muy compactas */
 .monthly-table th:nth-child(3),
 .monthly-table td:nth-child(3),
 .monthly-table th:nth-child(4),
@@ -650,7 +549,7 @@ h1, h2, h3 { margin: 0; }
 .monthly-table td:nth-child(12),
 .monthly-table th:nth-child(13),
 .monthly-table td:nth-child(13) {
-  width: 38px;
+  width: 40px;
 }
 
 .monthly-table th:first-child,
@@ -673,6 +572,147 @@ h1, h2, h3 { margin: 0; }
   color: #991b1b;
   background: #fee2e2;
   font-weight: 600;
+}
+
+/* =========================
+   TABLA DE REQUISICIONES (INLINE ARRIBA)
+   ========================= */
+
+.orders-panel-inline {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: 260px;
+}
+
+.panel-header.inline {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: white;
+  padding: 4px 8px;
+  margin: 0;
+  border-bottom: 2px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel-header.inline h2 {
+  font-size: 14px;
+}
+
+.orders-list {
+  max-height: 220px;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 0 6px 6px;
+}
+
+.loading-message {
+  text-align: center;
+  color: var(--text-light);
+  padding: 30px 20px;
+}
+
+/* Tabla de flujo */
+.flow-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  table-layout: fixed;
+}
+
+.flow-table th,
+.flow-table td {
+  border: 1px solid var(--border-color);
+  padding: 3px 4px;
+  vertical-align: top;
+}
+
+.flow-table th {
+  background: var(--bg-light);
+  font-weight: 600;
+  text-align: left;
+}
+
+.flow-table td:nth-child(1) {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+/* Unidad / Tipo / Grupo */
+.flow-table td:nth-child(2) {
+  min-width: 150px;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Comentario */
+.flow-table td:nth-child(3) {
+  min-width: 130px;
+  max-width: 170px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Columnas de fecha con ancho fijo estrecho */
+.flow-table th:nth-child(4),
+.flow-table td:nth-child(4),  /* Recibo F8 */
+.flow-table th:nth-child(5),
+.flow-table td:nth-child(5),  /* Asignación */
+.flow-table th:nth-child(6),
+.flow-table td:nth-child(6),  /* Salida */
+.flow-table th:nth-child(7),
+.flow-table td:nth-child(7),  /* Despacho */
+.flow-table th:nth-child(8),
+.flow-table td:nth-child(8),  /* Facturación */
+.flow-table th:nth-child(9),
+.flow-table td:nth-child(9),  /* Empacado */
+.flow-table th:nth-child(10),
+.flow-table td:nth-child(10), /* Proy. Entrega */
+.flow-table th:nth-child(11),
+.flow-table td:nth-child(11)  /* Entrega Real */
+{
+  width: 60px;
+  max-width: 60px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Delta / Etapa */
+.flow-table td:nth-child(12) {
+  min-width: 80px;
+  max-width: 100px;
+}
+
+.flow-table td {
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Estilo moderno para tabla de flujo */
+.flow-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f1f5f9;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.flow-table tbody tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+.flow-table tbody tr:hover {
+  background-color: #e5f0ff;
 }
 
 /* GAP & KPIS base */
@@ -722,7 +762,7 @@ h1, h2, h3 { margin: 0; }
   font-weight: 700;
 }
 
-/* Layout compacto de gráficos + KPIs */
+/* Layout compacto gráficos + KPIs */
 .time-kpis-wrapper {
   margin-top: 10px;
   display: flex;
@@ -730,14 +770,12 @@ h1, h2, h3 { margin: 0; }
   gap: 10px;
 }
 
-/* Fila con los dos gráficos lado a lado */
 .charts-row {
   display: grid;
   grid-template-columns: 1.5fr 1fr;
   gap: 10px;
 }
 
-/* Ajustamos altura de los contenedores de gráficos */
 .gap-analysis-container,
 .stage-deltas-container {
   height: 260px;
@@ -781,7 +819,7 @@ h1, h2, h3 { margin: 0; }
     padding: 8px;
   }
 
-  .calendar-and-monthly {
+  .calendar-checklist-orders {
     grid-template-columns: 1fr;
   }
 
@@ -894,17 +932,17 @@ h1, h2, h3 { margin: 0; }
     overflow-x: hidden;
   }
 
-  .calendar-and-monthly {
+  .calendar-checklist-orders {
     display: block;
-    width: 100%;
-    max-width: 100%;
   }
 
   .calendar-container,
-  .monthly-checklist-container {
+  .monthly-checklist-container,
+  .orders-panel-inline {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
+    margin-bottom: 8px;
   }
 
   .monthly-checklist-container {
@@ -968,21 +1006,8 @@ h1, h2, h3 { margin: 0; }
   background: #e5e7eb;
 }
 
-/* Mini contador de RECIBO F8 en el calendario */
-.calendar-mini-counter {
-  position: absolute;
-  bottom: 2px;
-  left: 2px;
-  font-size: 13px;
-  color: #4b5563;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 0 3px;
-  border-radius: 999px;
-  pointer-events: none;
-}
-
 /* =========================
-   EDIT MODE STYLES
+   EDIT MODE STYLES (tal como ya usamos)
    ========================= */
 
 .editable-date,
@@ -1023,7 +1048,7 @@ h1, h2, h3 { margin: 0; }
   border-color: var(--primary-color);
 }
 
-/* Modal (si se usa en el futuro) */
+/* Modal (sin cambios funcionales) */
 .flow-edit-modal {
   position: fixed;
   top: 0;
@@ -1221,95 +1246,4 @@ h1, h2, h3 { margin: 0; }
 
 .flow-edit-cancel:hover {
   background: var(--bg-light);
-}
-
-/* Tabla de flujo */
-.flow-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 11px;
-  table-layout: fixed;
-}
-
-.flow-table th,
-.flow-table td {
-  border: 1px solid var(--border-color);
-  padding: 4px 6px;
-  vertical-align: top;
-}
-
-.flow-table th {
-  background: var(--bg-light);
-  font-weight: 600;
-  text-align: left;
-}
-
-.flow-table td:nth-child(1) {
-  white-space: nowrap;
-  font-weight: 600;
-}
-
-/* Unidad / Tipo / Grupo: más angosto */
-.flow-table td:nth-child(2) {
-  min-width: 140px;
-  max-width: 170px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Comentario: más angosto */
-.flow-table td:nth-child(3) {
-  min-width: 130px;
-  max-width: 170px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Columnas de fecha: dd/mm/aa, ancho fijo estrecho */
-.flow-table th:nth-child(4),
-.flow-table td:nth-child(4),  /* Recibo F8 */
-.flow-table th:nth-child(5),
-.flow-table td:nth-child(5),  /* Asignación */
-.flow-table th:nth-child(6),
-.flow-table td:nth-child(6),  /* Salida */
-.flow-table th:nth-child(7),
-.flow-table td:nth-child(7),  /* Despacho */
-.flow-table th:nth-child(8),
-.flow-table td:nth-child(8),  /* Facturación */
-.flow-table th:nth-child(9),
-.flow-table td:nth-child(9),  /* Empacado */
-.flow-table th:nth-child(10),
-.flow-table td:nth-child(10), /* Proy. Entrega */
-.flow-table th:nth-child(11),
-.flow-table td:nth-child(11)  /* Entrega Real */
-{
-  width: 50px;            /* prueba con 55; luego puedes bajar a 50 */
-  max-width: 50px;
-  text-align: center;
-  white-space: nowrap;
-}
-
-.flow-table td {
-  line-height: 1.3;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Estilo moderno para tabla de flujo */
-.flow-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: #f1f5f9;
-  border-bottom: 2px solid var(--border-color);
-}
-
-.flow-table tbody tr:nth-child(even) {
-  background-color: #f9fafb;
-}
-
-.flow-table tbody tr:hover {
-  background-color: #e5f0ff;
 }
