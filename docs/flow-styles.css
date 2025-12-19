@@ -346,7 +346,7 @@ h1, h2, h3 { margin: 0; }
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 4px 4px 6px;
-  transform: scale(0.95);     /* antes 0.85 */
+  transform: scale(1.05);     /* MÁS grande para cerrar gap */
   transform-origin: top left;
 }
 
@@ -530,7 +530,7 @@ h1, h2, h3 { margin: 0; }
 
 /* Mostrar encabezado visualmente como "Req" */
 .monthly-table th:nth-child(3) {
-  font-size: 0;             /* oculta el texto original ("Requisiciones") */
+  font-size: 0;
 }
 .monthly-table th:nth-child(3)::after {
   content: "Req";
