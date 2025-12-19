@@ -1285,8 +1285,8 @@ h1, h2, h3 { margin: 0; }
 .flow-table th:nth-child(11),
 .flow-table td:nth-child(11)  /* Entrega Real */
 {
-  width: 30px;            /* prueba con 55; luego puedes bajar a 50 */
-  max-width: 30px;
+  width: 50px;            /* prueba con 55; luego puedes bajar a 50 */
+  max-width: 50px;
   text-align: center;
   white-space: nowrap;
 }
