@@ -8,7 +8,8 @@
   <link rel="icon" href="assets/logo.png"/>
 
   <!-- Librerías -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Usamos unpkg en lugar de jsDelivr para evitar el error de conexión -->
+  <script src="https://unpkg.com/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <!-- Iconos tipo texto (Material Symbols) -->
@@ -222,24 +223,26 @@
           </div>
         </section>
       </div>
+
+      <!-- Fila: GRÁFICOS + KPIs TIEMPO -->
       <div class="time-kpis-wrapper">
         <div class="charts-row">
           <div class="gap-analysis-container">
             <h3>Análisis de Deltas (Teórico vs Real)</h3>
             <canvas id="gapChart"></canvas>
           </div>
-      
+
           <div class="stage-deltas-container">
             <h3>Deltas por Etapa del Proceso</h3>
             <canvas id="stageDeltas"></canvas>
           </div>
-      
+
           <div class="comments-chart-container">
             <h3>Comentarios (conteo de pedidos)</h3>
             <canvas id="commentsChart"></canvas>
           </div>
         </div>
-      
+
         <div class="time-kpis">
           <div class="time-kpi">
             <div class="kpi-label">Tiempo promedio teórico</div>
