@@ -1267,18 +1267,28 @@ h1, h2, h3 { margin: 0; }
   text-overflow: ellipsis;
 }
 
-/* Columnas de fecha: dd/mm/aa, no necesitan más ancho */
+/* Columnas de fecha: dd/mm/aa, ancho fijo estrecho */
+.flow-table th:nth-child(4),
 .flow-table td:nth-child(4),  /* Recibo F8 */
+.flow-table th:nth-child(5),
 .flow-table td:nth-child(5),  /* Asignación */
+.flow-table th:nth-child(6),
 .flow-table td:nth-child(6),  /* Salida */
+.flow-table th:nth-child(7),
 .flow-table td:nth-child(7),  /* Despacho */
+.flow-table th:nth-child(8),
 .flow-table td:nth-child(8),  /* Facturación */
+.flow-table th:nth-child(9),
 .flow-table td:nth-child(9),  /* Empacado */
+.flow-table th:nth-child(10),
 .flow-table td:nth-child(10), /* Proy. Entrega */
+.flow-table th:nth-child(11),
 .flow-table td:nth-child(11)  /* Entrega Real */
 {
-  width: 10px;
+  width: 30px;            /* prueba con 55; luego puedes bajar a 50 */
+  max-width: 30px;
   text-align: center;
+  white-space: nowrap;
 }
 
 .flow-table td {
