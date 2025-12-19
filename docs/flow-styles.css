@@ -762,7 +762,7 @@ h1, h2, h3 { margin: 0; }
 .time-kpis-wrapper {
   margin-top: 10px;
   display: grid;
-  grid-template-columns: 2.2fr 1fr;
+  grid-template-columns: 3fr 0.9fr;
   gap: 10px;
   align-items: stretch;
 }
@@ -801,6 +801,9 @@ h1, h2, h3 { margin: 0; }
   border-radius: 8px;
   padding: 10px;
   text-align: center;
+
+  max-width: 200px;   /* limita lo que “invaden” hacia la izquierda */
+  margin-left: auto;  /* pegadas al borde derecho de su columna */
 }
 
 .kpi-label {
