@@ -1277,7 +1277,7 @@ h1, h2, h3 { margin: 0; }
 .flow-table td:nth-child(10), /* Proy. Entrega */
 .flow-table td:nth-child(11)  /* Entrega Real */
 {
-  width: 30px;
+  width: 10px;
   text-align: center;
 }
 
