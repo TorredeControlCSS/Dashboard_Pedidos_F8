@@ -490,7 +490,7 @@ h1, h2, h3 { margin: 0; }
 .monthly-checklist-container h3 {
   font-size: 15px;
   margin-bottom: 4px;
-  position: sticky;      /* título fijo al hacer scroll */
+  position: sticky;
   top: 0;
   z-index: 2;
   background: white;
@@ -575,7 +575,7 @@ h1, h2, h3 { margin: 0; }
 /* Encabezado fijo en checklist mensuales (debajo del título) */
 .monthly-table thead th {
   position: sticky;
-  top: 32px; /* altura aprox. del h3 + margen */
+  top: 32px;
   z-index: 1;
   background: #f1f5f9;
   border-bottom: 2px solid var(--border-color);
@@ -642,7 +642,7 @@ h1, h2, h3 { margin: 0; }
   padding: 30px 20px;
 }
 
-/* Tabla de flujo */
+/* Tabla de flujo (Requisiciones) */
 .flow-table {
   width: 100%;
   border-collapse: collapse;
@@ -657,61 +657,64 @@ h1, h2, h3 { margin: 0; }
   vertical-align: top;
 }
 
+/* Encabezado: permitir 2 líneas para optimizar espacio horizontal */
 .flow-table th {
   background: var(--bg-light);
   font-weight: 600;
   text-align: left;
-  white-space: normal;     /* permite salto de línea */
-  line-height: 1.2;        /* más compacto en vertical */
+  white-space: normal;      /* permite saltos de línea */
+  line-height: 1.2;         /* encabezado compacto en vertical */
 }
 
-/* F8 SALMI: más ancho */
+/* F8 SALMI */
 .flow-table td:nth-child(1) {
   white-space: nowrap;
   font-weight: 600;
-  min-width: 130px;
-  max-width: 150px;
+  min-width: 120px;
+  max-width: 140px;
 }
 
-/* Unidad / Tipo / Grupo: más ancha */
+/* Unidad / Tipo / Grupo: ampliada */
 .flow-table td:nth-child(2) {
-  min-width: 300px;
-  max-width: 400px;
+  min-width: 280px;          /* antes 260 */
+  max-width: 320px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Comentario: más ancha */
+/* Comentario */
 .flow-table td:nth-child(3) {
-  min-width: 180px;
-  max-width: 220px;
+  min-width: 170px;
+  max-width: 210px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Columnas de fecha con ancho fijo */
+/* Columnas de fecha: encabezado con 2 líneas, celdas en una sola línea */
 .flow-table th:nth-child(4),
-.flow-table td:nth-child(4),
 .flow-table th:nth-child(5),
-.flow-table td:nth-child(5),
 .flow-table th:nth-child(6),
-.flow-table td:nth-child(6),
 .flow-table th:nth-child(7),
-.flow-table td:nth-child(7),
 .flow-table th:nth-child(8),
-.flow-table td:nth-child(8),
 .flow-table th:nth-child(9),
-.flow-table td:nth-child(9),
 .flow-table th:nth-child(10),
+.flow-table th:nth-child(11) {
+  width: 56px;
+  max-width: 56px;
+}
+
+.flow-table td:nth-child(4),
+.flow-table td:nth-child(5),
+.flow-table td:nth-child(6),
+.flow-table td:nth-child(7),
+.flow-table td:nth-child(8),
+.flow-table td:nth-child(9),
 .flow-table td:nth-child(10),
-.flow-table th:nth-child(11),
 .flow-table td:nth-child(11) {
-  width: 60px;
-  max-width: 60px;
-  text-align: center;
   white-space: nowrap;
+  text-align: center;
 }
 
 /* Delta / Etapa */
@@ -746,7 +749,8 @@ h1, h2, h3 { margin: 0; }
 /* ====== GRÁFICOS + KPIS ====== */
 
 .gap-analysis-container,
-.stage-deltas-container {
+.stage-deltas-container,
+.comments-chart-container {
   background: white;
   border: 1px solid var(--border-color);
   border-radius: 8px;
@@ -754,13 +758,15 @@ h1, h2, h3 { margin: 0; }
 }
 
 .gap-analysis-container h3,
-.stage-deltas-container h3 {
+.stage-deltas-container h3,
+.comments-chart-container h3 {
   font-size: 15px;
   margin-bottom: 8px;
 }
 
 .gap-analysis-container canvas,
-.stage-deltas-container canvas {
+.stage-deltas-container canvas,
+.comments-chart-container canvas {
   max-height: 220px;
 }
 
@@ -775,22 +781,24 @@ h1, h2, h3 { margin: 0; }
   align-items: stretch;
 }
 
-/* Dos gráficos uno al lado del otro, con el de etapas un poco más ancho */
+/* 3 gráficos en una fila */
 .charts-row {
   display: grid;
-  grid-template-columns: 1.05fr 1.25fr; /* Deltas por Etapa del Proceso más ancho */
+  grid-template-columns: 1.05fr 1.25fr 0.9fr; /* Etapas ligeramente más ancho, comentarios más angosto */
   gap: 8px;
 }
 
 .gap-analysis-container,
-.stage-deltas-container {
-  height: 280px;          /* más alto para dar aire a la leyenda */
+.stage-deltas-container,
+.comments-chart-container {
+  height: 280px;
   display: flex;
   flex-direction: column;
 }
 
 .gap-analysis-container canvas,
-.stage-deltas-container canvas {
+.stage-deltas-container canvas,
+.comments-chart-container canvas {
   flex: 1;
   max-height: none;
 }
@@ -1066,7 +1074,7 @@ h1, h2, h3 { margin: 0; }
   cursor: pointer;
   padding: 2px 4px;
   border-radius: 3px;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease;
 }
 
 .orders-list.edit-mode-on .editable-date:hover,
