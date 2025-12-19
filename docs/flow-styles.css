@@ -335,7 +335,7 @@ h1, h2, h3 { margin: 0; }
 
 .calendar-checklist-orders {
   display: grid;
-  grid-template-columns: 1.1fr 2.1fr 2.3fr;
+  grid-template-columns: 0.9fr 2.2fr 2.4fr; /* calendario un poco más angosto, tablas más anchas */
   gap: 0;
   align-items: stretch;
 }
@@ -662,22 +662,22 @@ h1, h2, h3 { margin: 0; }
   background: var(--bg-light);
   font-weight: 600;
   text-align: left;
-  white-space: normal;      /* permite saltos de línea */
-  line-height: 1.2;         /* encabezado compacto en vertical */
+  white-space: normal;
+  line-height: 1.2;
 }
 
 /* F8 SALMI */
 .flow-table td:nth-child(1) {
   white-space: nowrap;
   font-weight: 600;
-  min-width: 120px;
-  max-width: 140px;
+  min-width: 130px;
+  max-width: 150px;
 }
 
 /* Unidad / Tipo / Grupo: ampliada */
 .flow-table td:nth-child(2) {
-  min-width: 280px;          /* antes 260 */
-  max-width: 320px;
+  min-width: 320px;
+  max-width: 380px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -692,7 +692,7 @@ h1, h2, h3 { margin: 0; }
   text-overflow: ellipsis;
 }
 
-/* Columnas de fecha: encabezado con 2 líneas, celdas en una sola línea */
+/* Columnas de fecha: headers cortos, texto centrado en celdas */
 .flow-table th:nth-child(4),
 .flow-table th:nth-child(5),
 .flow-table th:nth-child(6),
@@ -784,7 +784,7 @@ h1, h2, h3 { margin: 0; }
 /* 3 gráficos en una fila */
 .charts-row {
   display: grid;
-  grid-template-columns: 1.05fr 1.25fr 0.9fr; /* Etapas ligeramente más ancho, comentarios más angosto */
+  grid-template-columns: 1.05fr 1.25fr 0.9fr;
   gap: 8px;
 }
 
