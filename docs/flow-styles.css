@@ -802,8 +802,8 @@ h1, h2, h3 { margin: 0; }
   padding: 10px;
   text-align: center;
 
-  max-width: 200px;   /* limita lo que “invaden” hacia la izquierda */
-  margin-left: auto;  /* pegadas al borde derecho de su columna */
+  max-width: 200px;
+  margin-left: auto;
 }
 
 .kpi-label {
