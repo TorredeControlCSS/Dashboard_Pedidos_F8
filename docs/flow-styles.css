@@ -281,7 +281,7 @@ h1, h2, h3 { margin: 0; }
   line-height: 1;
 }
 
-/* QUICK STATS (a la derecha) */
+/* QUICK STATS */
 #quick-stats {
   flex-shrink: 0;
   display: grid;
@@ -339,9 +339,9 @@ h1, h2, h3 { margin: 0; }
 
 .calendar-checklist-orders {
   display: grid;
-  grid-template-columns: 1.4fr 1.4fr 2.2fr; /* calendario | checklist | tabla */
+  grid-template-columns: 1.5fr 1.7fr 2.3fr; /* calendario | checklist | tabla (más anchas) */
   gap: 8px;
-  align-items: start;
+  align-items: stretch;
 }
 
 /* Calendario */
@@ -426,7 +426,7 @@ h1, h2, h3 { margin: 0; }
   background: #fafafa;
 }
 
-/* Números del calendario */
+/* Números calendario */
 .calendar-day-number {
   font-size: 18px;
   font-weight: 600;
@@ -468,7 +468,7 @@ h1, h2, h3 { margin: 0; }
   border: 1px solid var(--border-color);
 }
 
-/* Mini contador de RECIBO F8 en el calendario */
+/* Mini contador RECIBO F8 */
 .calendar-mini-counter {
   position: absolute;
   bottom: 2px;
@@ -487,7 +487,7 @@ h1, h2, h3 { margin: 0; }
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 10px;
-  max-height: 260px;
+  max-height: 340px;          /* más alto */
   overflow-y: auto;
 }
 
@@ -516,19 +516,23 @@ h1, h2, h3 { margin: 0; }
   text-align: right;
 }
 
-/* Unidad: más angosta */
+/* Unidad: más ancha para mostrar nombre completo */
 .monthly-table th:nth-child(2),
 .monthly-table td:nth-child(2) {
-  width: 110px;
-  max-width: 110px;
+  width: 180px;
+  max-width: 200px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Columnas numéricas muy compactas */
+/* Requisiciones: abreviado, muy compacto */
 .monthly-table th:nth-child(3),
-.monthly-table td:nth-child(3),
+.monthly-table td:nth-child(3) {
+  width: 40px;
+}
+
+/* Otras columnas numéricas compactas */
 .monthly-table th:nth-child(4),
 .monthly-table td:nth-child(4),
 .monthly-table th:nth-child(5),
@@ -575,7 +579,7 @@ h1, h2, h3 { margin: 0; }
 }
 
 /* =========================
-   TABLA DE REQUISICIONES (INLINE ARRIBA)
+   TABLA DE REQUISICIONES INLINE
    ========================= */
 
 .orders-panel-inline {
@@ -585,7 +589,7 @@ h1, h2, h3 { margin: 0; }
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  max-height: 260px;
+  max-height: 340px;          /* más alto para menos scroll */
 }
 
 .panel-header.inline {
@@ -606,7 +610,7 @@ h1, h2, h3 { margin: 0; }
 }
 
 .orders-list {
-  max-height: 220px;
+  max-height: 300px;          /* más alto */
   overflow-y: auto;
   overflow-x: auto;
   padding: 0 6px 6px;
@@ -644,10 +648,10 @@ h1, h2, h3 { margin: 0; }
   font-weight: 600;
 }
 
-/* Unidad / Tipo / Grupo */
+/* Unidad / Tipo / Grupo: un poco más ancha */
 .flow-table td:nth-child(2) {
-  min-width: 150px;
-  max-width: 180px;
+  min-width: 190px;
+  max-width: 210px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -664,22 +668,21 @@ h1, h2, h3 { margin: 0; }
 
 /* Columnas de fecha con ancho fijo estrecho */
 .flow-table th:nth-child(4),
-.flow-table td:nth-child(4),  /* Recibo F8 */
+.flow-table td:nth-child(4),
 .flow-table th:nth-child(5),
-.flow-table td:nth-child(5),  /* Asignación */
+.flow-table td:nth-child(5),
 .flow-table th:nth-child(6),
-.flow-table td:nth-child(6),  /* Salida */
+.flow-table td:nth-child(6),
 .flow-table th:nth-child(7),
-.flow-table td:nth-child(7),  /* Despacho */
+.flow-table td:nth-child(7),
 .flow-table th:nth-child(8),
-.flow-table td:nth-child(8),  /* Facturación */
+.flow-table td:nth-child(8),
 .flow-table th:nth-child(9),
-.flow-table td:nth-child(9),  /* Empacado */
+.flow-table td:nth-child(9),
 .flow-table th:nth-child(10),
-.flow-table td:nth-child(10), /* Proy. Entrega */
+.flow-table td:nth-child(10),
 .flow-table th:nth-child(11),
-.flow-table td:nth-child(11)  /* Entrega Real */
-{
+.flow-table td:nth-child(11) {
   width: 60px;
   max-width: 60px;
   text-align: center;
@@ -1007,7 +1010,7 @@ h1, h2, h3 { margin: 0; }
 }
 
 /* =========================
-   EDIT MODE STYLES (tal como ya usamos)
+   EDIT MODE STYLES
    ========================= */
 
 .editable-date,
@@ -1048,7 +1051,7 @@ h1, h2, h3 { margin: 0; }
   border-color: var(--primary-color);
 }
 
-/* Modal (sin cambios funcionales) */
+/* Modal */
 .flow-edit-modal {
   position: fixed;
   top: 0;
