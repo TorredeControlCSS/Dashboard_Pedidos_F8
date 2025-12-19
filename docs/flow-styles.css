@@ -661,6 +661,8 @@ h1, h2, h3 { margin: 0; }
   background: var(--bg-light);
   font-weight: 600;
   text-align: left;
+  white-space: normal;     /* permite salto de línea */
+  line-height: 1.2;        /* más compacto en vertical */
 }
 
 /* F8 SALMI: más ancho */
@@ -673,8 +675,8 @@ h1, h2, h3 { margin: 0; }
 
 /* Unidad / Tipo / Grupo: más ancha */
 .flow-table td:nth-child(2) {
-  min-width: 260px;
-  max-width: 300px;
+  min-width: 300px;
+  max-width: 400px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
