@@ -364,11 +364,11 @@ if (window.__FLOW_APP_LOADED__) {
             <th>Unidad / Tipo / Grupo</th>
             <th>Comentario</th>
             <th>Recibo F8</th>
-            <th>Asignación</th>
+            <th>Asign.</th>
             <th>Salida</th>
-            <th>Despacho</th>
-            <th>Facturación</th>
-            <th>Empacado</th>
+            <th>Desp.</th>
+            <th>Fact.</th>
+            <th>Emp.</th>
             <th>Proy. Entrega</th>
             <th>Entrega Real</th>
             <th>Delta / Etapa</th>
