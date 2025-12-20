@@ -1301,3 +1301,9 @@ h1, h2, h3 { margin: 0; }
 .flow-edit-cancel:hover {
   background: var(--bg-light);
 }
+/* Celdas de fecha que corresponden al día seleccionado en el calendario */
+.flow-table td.highlight-day {
+  background-color: #fef9c3;      /* amarillo claro fosforescente */
+  box-shadow: inset 0 0 0 1px #facc15;
+  font-weight: 600;
+}
