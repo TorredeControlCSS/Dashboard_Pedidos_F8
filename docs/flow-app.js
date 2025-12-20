@@ -711,129 +711,184 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   // ============================
-  //  GAP ANALYSIS & TIME KPIS
-  // ============================
-  let _gapChart, _stageDeltasChart;
+//  GAP ANALYSIS & TIME KPIS
+// ============================
+let _gapChart, _stageDeltasChart, _commentsChart;
 
-  function updateGapAndTimeKpisFromRows(rows) {
-    const kTeor   = document.getElementById('kpi-teorico');
-    const kReal   = document.getElementById('kpi-real');
-    const kDelta  = document.getElementById('kpi-delta');
-    const kAcum   = document.getElementById('kpi-acumulado');
+function updateGapAndTimeKpisFromRows(rows) {
+  const kTeor   = document.getElementById('kpi-teorico');
+  const kReal   = document.getElementById('kpi-real');
+  const kDelta  = document.getElementById('kpi-delta');
+  const kAcum   = document.getElementById('kpi-acumulado');
 
-    if (!rows || !rows.length) {
-      if (kTeor)  kTeor.textContent  = '—';
-      if (kReal)  kReal.textContent  = '—';
-      if (kDelta) kDelta.textContent = '—';
-      if (kAcum)  kAcum.textContent  = '—';
-      if (_gapChart) _gapChart.destroy();
-      if (_stageDeltasChart) _stageDeltasChart.destroy();
-      return;
+  if (!rows || !rows.length) {
+    if (kTeor)  kTeor.textContent  = '—';
+    if (kReal)  kReal.textContent  = '—';
+    if (kDelta) kDelta.textContent = '—';
+    if (kAcum)  kAcum.textContent  = '—';
+    if (_gapChart) _gapChart.destroy();
+    if (_stageDeltasChart) _stageDeltasChart.destroy();
+    if (_commentsChart) _commentsChart.destroy();
+    return;
+  }
+
+  let sumTeor=0, nTeor=0;
+  let sumReal=0, nReal=0;
+  let sumDelta=0;
+
+  const deltaByProjDate = {};
+
+  rows.forEach(r => {
+    const recD  = parseIsoDate(r['RECIBO F8']);
+    const proyD = parseIsoDate(r['PROY. ENTREGA']);
+    const realD = parseIsoDate(r['ENTREGA REAL']);
+
+    if (recD && proyD) {
+      const t = daysBetween(recD, proyD);
+      if (t != null) { sumTeor += t; nTeor++; }
     }
+    if (recD && realD) {
+      const tr = daysBetween(recD, realD);
+      if (tr != null) { sumReal += tr; nReal++; }
+    }
+    if (recD && proyD && realD) {
+      const t  = daysBetween(recD, proyD);
+      const tr = daysBetween(recD, realD);
+      if (t != null && tr != null) {
+        const d = tr - t;
+        sumDelta += d;
+        const key = toDateKey(proyD);
+        if (!deltaByProjDate[key]) deltaByProjDate[key] = {sum:0,count:0};
+        deltaByProjDate[key].sum += d;
+        deltaByProjDate[key].count++;
+      }
+    }
+  });
 
-    let sumTeor=0, nTeor=0;
-    let sumReal=0, nReal=0;
-    let sumDelta=0;
+  const avgTeor = nTeor ? sumTeor/nTeor : null;
+  const avgReal = nReal ? sumReal/nReal : null;
+  const avgDelta = (nReal && nTeor) ? ( (sumReal - sumTeor) / Math.max(nReal,nTeor) ) : null;
 
-    const deltaByProjDate = {};
+  if (kTeor)  kTeor.textContent  = (avgTeor!=null) ? avgTeor.toFixed(1) : '—';
+  if (kReal)  kReal.textContent  = (avgReal!=null) ? avgReal.toFixed(1) : '—';
+  if (kDelta) kDelta.textContent = (avgDelta!=null) ? avgDelta.toFixed(1) : '—';
+  if (kAcum)  kAcum.textContent  = sumDelta ? sumDelta.toFixed(1) : '0.0';
 
+  if (typeof Chart === 'undefined') {
+    console.warn('Chart.js no está cargado; se omite dibujo de gráficos.');
+    return;
+  }
+
+  // ===== Gráfico 1: Análisis de deltas (línea acumulada) =====
+  const ctxGap = document.getElementById('gapChart');
+  if (ctxGap) {
+    const labels = Object.keys(deltaByProjDate).sort();
+    let acumulado = 0;
+    const dataAcum = labels.map(d => {
+      const obj = deltaByProjDate[d];
+      acumulado += obj.sum;
+      return acumulado;
+    });
+    if (_gapChart) _gapChart.destroy();
+    _gapChart = new Chart(ctxGap.getContext('2d'),{
+      type:'line',
+      data:{
+        labels,
+        datasets:[{
+          label:'Delta acumulado (días)',
+          data:dataAcum,
+          fill:false,
+          borderColor:'#f97316',
+          tension:0.25
+        }]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{ legend:{ position:'bottom' } },
+        scales:{ y:{ ticks:{ callback:v=>v+' d' } } }
+      }
+    });
+  }
+
+  // ===== Gráfico 2: Deltas por etapa del proceso =====
+  const ctxStage = document.getElementById('stageDeltas');
+  if (ctxStage) {
+    if (_stageDeltasChart) _stageDeltasChart.destroy();
+    _stageDeltasChart = new Chart(ctxStage.getContext('2d'),{
+      type:'bar',
+      data:{
+        labels:['Teórico','Real'],
+        datasets:[{
+          label:'Tiempo promedio (días)',
+          data:[
+            avgTeor!=null?avgTeor:0,
+            avgReal!=null?avgReal:0
+          ],
+          backgroundColor:['#3b82f6','#ef4444']
+        }]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{ legend:{ display:false } },
+        scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>v+' d' } } }
+      }
+    });
+  }
+
+  // ===== Gráfico 3: Comentarios (conteo de pedidos) =====
+  const ctxComments = document.getElementById('commentsChart');
+  if (ctxComments) {
+    // Contar cuántas requisiciones tiene cada comentario
+    const counts = {};
     rows.forEach(r => {
-      const recD  = parseIsoDate(r['RECIBO F8']);
-      const proyD = parseIsoDate(r['PROY. ENTREGA']);
-      const realD = parseIsoDate(r['ENTREGA REAL']);
+      let c = (r['COMENT.'] || '').trim();
+      if (!c) c = 'SIN COMENTARIO';
+      counts[c] = (counts[c] || 0) + 1;
+    });
 
-      if (recD && proyD) {
-        const t = daysBetween(recD, proyD);
-        if (t != null) { sumTeor += t; nTeor++; }
-      }
-      if (recD && realD) {
-        const tr = daysBetween(recD, realD);
-        if (tr != null) { sumReal += tr; nReal++; }
-      }
-      if (recD && proyD && realD) {
-        const t  = daysBetween(recD, proyD);
-        const tr = daysBetween(recD, realD);
-        if (t != null && tr != null) {
-          const d = tr - t;
-          sumDelta += d;
-          const key = toDateKey(proyD);
-          if (!deltaByProjDate[key]) deltaByProjDate[key] = {sum:0,count:0};
-          deltaByProjDate[key].sum += d;
-          deltaByProjDate[key].count++;
+    const labels = Object.keys(counts).sort((a,b) => counts[b] - counts[a]); // más frecuentes arriba
+    const data = labels.map(l => counts[l]);
+
+    if (_commentsChart) _commentsChart.destroy();
+    _commentsChart = new Chart(ctxComments.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Requisiciones',
+          data,
+          backgroundColor: '#60a5fa'
+        }]
+      },
+      options: {
+        indexAxis: 'y',              // barras horizontales
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `${ctx.raw} requisiciones`
+            }
+          }
+        },
+        scales: {
+          x: {
+            beginAtZero: true,
+            ticks: { precision: 0 }
+          },
+          y: {
+            ticks: {
+              autoSkip: false
+            }
+          }
         }
       }
     });
-
-    const avgTeor = nTeor ? sumTeor/nTeor : null;
-    const avgReal = nReal ? sumReal/nReal : null;
-    const avgDelta = (nReal && nTeor) ? ( (sumReal - sumTeor) / Math.max(nReal,nTeor) ) : null;
-
-    if (kTeor)  kTeor.textContent  = (avgTeor!=null) ? avgTeor.toFixed(1) : '—';
-    if (kReal)  kReal.textContent  = (avgReal!=null) ? avgReal.toFixed(1) : '—';
-    if (kDelta) kDelta.textContent = (avgDelta!=null) ? avgDelta.toFixed(1) : '—';
-    if (kAcum)  kAcum.textContent  = sumDelta ? sumDelta.toFixed(1) : '0.0';
-
-    if (typeof Chart === 'undefined') {
-      console.warn('Chart.js no está cargado; se omite dibujo de gráficos.');
-      return;
-    }
-
-    const ctxGap = document.getElementById('gapChart');
-    if (ctxGap) {
-      const labels = Object.keys(deltaByProjDate).sort();
-      let acumulado = 0;
-      const dataAcum = labels.map(d => {
-        const obj = deltaByProjDate[d];
-        acumulado += obj.sum;
-        return acumulado;
-      });
-      if (_gapChart) _gapChart.destroy();
-      _gapChart = new Chart(ctxGap.getContext('2d'),{
-        type:'line',
-        data:{
-          labels,
-          datasets:[{
-            label:'Delta acumulado (días)',
-            data:dataAcum,
-            fill:false,
-            borderColor:'#f97316',
-            tension:0.25
-          }]
-        },
-        options:{
-          responsive:true,
-          maintainAspectRatio:false,
-          plugins:{ legend:{ position:'bottom' } },
-          scales:{ y:{ ticks:{ callback:v=>v+' d' } } }
-        }
-      });
-    }
-
-    const ctxStage = document.getElementById('stageDeltas');
-    if (ctxStage) {
-      if (_stageDeltasChart) _stageDeltasChart.destroy();
-      _stageDeltasChart = new Chart(ctxStage.getContext('2d'),{
-        type:'bar',
-        data:{
-          labels:['Teórico','Real'],
-          datasets:[{
-            label:'Tiempo promedio (días)',
-            data:[
-              avgTeor!=null?avgTeor:0,
-              avgReal!=null?avgReal:0
-            ],
-            backgroundColor:['#3b82f6','#ef4444']
-          }]
-        },
-        options:{
-          responsive:true,
-          maintainAspectRatio:false,
-          plugins:{ legend:{ display:false } },
-          scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>v+' d' } } }
-        }
-      });
-    }
   }
+}
 
   // ============================
   //  CHECKLIST MENSUALES
