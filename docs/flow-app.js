@@ -3,8 +3,9 @@ console.log('flow-app.js v3.4 — Flow view with table inline editing');
 
 /* ===== NOTAS SOBRE MANEJO DE FECHAS =====
  *
- * Este frontend maneja fechas en formato YYYY-MM-DD (ISO 8601) con UTC para evitar
- * problemas de zona horaria.
+ * AHORA usamos fechas en formato YYYY-MM-DD interpretadas en HORA LOCAL
+ * (no UTC) para evitar desfases de un día. Esto debe alinearse con la
+ * zona horaria de Panamá donde corre el navegador.
  */
 
 if (window.__FLOW_APP_LOADED__) {
@@ -24,7 +25,7 @@ if (window.__FLOW_APP_LOADED__) {
     { key: 'FACTURACIÓN',  label: 'FACTURACIÓN',  blockId: 'count-facturacion' },
     { key: 'EMPACADO',     label: 'EMPACADO',     blockId: 'count-empacado' },
     { key: 'PROY. ENTREGA',label: 'PROY. ENTREGA',blockId: 'count-entrega' },
-    { key: 'ENTREGA REAL', label: 'ENTREGA REAL', blockId: 'count-entrega-real' } // NUEVO
+    { key: 'ENTREGA REAL', label: 'ENTREGA REAL', blockId: 'count-entrega-real' }
   ];
 
   const DATE_FIELDS = [
@@ -85,13 +86,24 @@ if (window.__FLOW_APP_LOADED__) {
     });
   }
 
+  // ===== NUEVA LÓGICA LOCAL PARA FECHAS =====
+
+  // Convierte "YYYY-MM-DD" (o Date) a Date en hora LOCAL
   function parseIsoDate(v) {
     if (!v) return null;
     if (v instanceof Date) return v;
+
     const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v));
     if (!m) return null;
-    const d = new Date(m[1] + '-' + m[2] + '-' + m[3] + 'T00:00:00Z');
-    if (DEBUG) console.log('[FLOW-DATE] parseIsoDate:', v, '→', d);
+
+    const year  = Number(m[1]);
+    const month = Number(m[2]) - 1; // 0-11
+    const day   = Number(m[3]);
+
+    // Date local (depende del timezone del navegador, Panamá en tu caso)
+    const d = new Date(year, month, day, 0, 0, 0, 0);
+
+    if (DEBUG) console.log('[FLOW-DATE] parseIsoDate(local):', v, '→', d);
     return d;
   }
 
@@ -100,31 +112,34 @@ if (window.__FLOW_APP_LOADED__) {
     return (d2.getTime() - d1.getTime()) / 86400000;
   }
 
+  // Clave YYYY-MM-DD desde Date LOCAL
   function toDateKey(d) {
     if (!d) return '';
-    const y = d.getUTCFullYear();
-    const m = String(d.getUTCMonth()+1).padStart(2,'0');
-    const day = String(d.getUTCDate()).padStart(2,'0');
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
     return `${y}-${m}-${day}`;
   }
 
+  // dd/mm/yy usando fecha LOCAL
   function formatDateShort(v) {
     const d = parseIsoDate(v);
     if (!d) return '—';
-    const dd = String(d.getUTCDate()).padStart(2,'0');
-    const mm = String(d.getUTCMonth()+1).padStart(2,'0');
-    const yy = String(d.getUTCFullYear()).slice(-2);
+    const dd = String(d.getDate()).padStart(2,'0');
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const yy = String(d.getFullYear()).slice(-2);
     return dd + '/' + mm + '/' + yy;
   }
 
+  // YYYY-MM-DD para <input type="date"> (LOCAL)
   function formatDateInput(v) {
     const d = parseIsoDate(v);
     if (!d) return '';
-    const dd = String(d.getUTCDate()).padStart(2,'0');
-    const mm = String(d.getUTCMonth()+1).padStart(2,'0');
-    const yy = d.getUTCFullYear();
+    const dd = String(d.getDate()).padStart(2,'0');
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const yy = d.getFullYear();
     const result = `${yy}-${mm}-${dd}`;
-    if (DEBUG) console.log('[FLOW-DATE] formatDateInput:', v, '→', result);
+    if (DEBUG) console.log('[FLOW-DATE] formatDateInput(local):', v, '→', result);
     return result;
   }
 
@@ -711,188 +726,135 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   // ============================
-//  GAP ANALYSIS & TIME KPIS
-// ============================
-let _gapChart, _stageDeltasChart, _commentsChart;
+  //  GAP ANALYSIS & TIME KPIS
+  // ============================
+  let _gapChart, _stageDeltasChart;
 
-function updateGapAndTimeKpisFromRows(rows) {
-  const kTeor   = document.getElementById('kpi-teorico');
-  const kReal   = document.getElementById('kpi-real');
-  const kDelta  = document.getElementById('kpi-delta');
-  const kAcum   = document.getElementById('kpi-acumulado');
+  function updateGapAndTimeKpisFromRows(rows) {
+    const kTeor   = document.getElementById('kpi-teorico');
+    const kReal   = document.getElementById('kpi-real');
+    const kDelta  = document.getElementById('kpi-delta');
+    const kAcum   = document.getElementById('kpi-acumulado');
 
-  if (!rows || !rows.length) {
-    if (kTeor)  kTeor.textContent  = '—';
-    if (kReal)  kReal.textContent  = '—';
-    if (kDelta) kDelta.textContent = '—';
-    if (kAcum)  kAcum.textContent  = '—';
-    if (_gapChart) _gapChart.destroy();
-    if (_stageDeltasChart) _stageDeltasChart.destroy();
-    if (_commentsChart) _commentsChart.destroy();
-    return;
-  }
-
-  let sumTeor=0, nTeor=0;
-  let sumReal=0, nReal=0;
-  let sumDelta=0;
-
-  const deltaByProjDate = {};
-
-  rows.forEach(r => {
-    const recD  = parseIsoDate(r['RECIBO F8']);
-    const proyD = parseIsoDate(r['PROY. ENTREGA']);
-    const realD = parseIsoDate(r['ENTREGA REAL']);
-
-    if (recD && proyD) {
-      const t = daysBetween(recD, proyD);
-      if (t != null) { sumTeor += t; nTeor++; }
+    if (!rows || !rows.length) {
+      if (kTeor)  kTeor.textContent  = '—';
+      if (kReal)  kReal.textContent  = '—';
+      if (kDelta) kDelta.textContent = '—';
+      if (kAcum)  kAcum.textContent  = '—';
+      if (_gapChart) _gapChart.destroy();
+      if (_stageDeltasChart) _stageDeltasChart.destroy();
+      return;
     }
-    if (recD && realD) {
-      const tr = daysBetween(recD, realD);
-      if (tr != null) { sumReal += tr; nReal++; }
-    }
-    if (recD && proyD && realD) {
-      const t  = daysBetween(recD, proyD);
-      const tr = daysBetween(recD, realD);
-      if (t != null && tr != null) {
-        const d = tr - t;
-        sumDelta += d;
-        const key = toDateKey(proyD);
-        if (!deltaByProjDate[key]) deltaByProjDate[key] = {sum:0,count:0};
-        deltaByProjDate[key].sum += d;
-        deltaByProjDate[key].count++;
-      }
-    }
-  });
 
-  const avgTeor = nTeor ? sumTeor/nTeor : null;
-  const avgReal = nReal ? sumReal/nReal : null;
-  const avgDelta = (nReal && nTeor) ? ( (sumReal - sumTeor) / Math.max(nReal,nTeor) ) : null;
+    let sumTeor=0, nTeor=0;
+    let sumReal=0, nReal=0;
+    let sumDelta=0;
 
-  if (kTeor)  kTeor.textContent  = (avgTeor!=null) ? avgTeor.toFixed(1) : '—';
-  if (kReal)  kReal.textContent  = (avgReal!=null) ? avgReal.toFixed(1) : '—';
-  if (kDelta) kDelta.textContent = (avgDelta!=null) ? avgDelta.toFixed(1) : '—';
-  if (kAcum)  kAcum.textContent  = sumDelta ? sumDelta.toFixed(1) : '0.0';
+    const deltaByProjDate = {};
 
-  if (typeof Chart === 'undefined') {
-    console.warn('Chart.js no está cargado; se omite dibujo de gráficos.');
-    return;
-  }
-
-  // ===== Gráfico 1: Análisis de deltas (línea acumulada) =====
-  const ctxGap = document.getElementById('gapChart');
-  if (ctxGap) {
-    const labels = Object.keys(deltaByProjDate).sort();
-    let acumulado = 0;
-    const dataAcum = labels.map(d => {
-      const obj = deltaByProjDate[d];
-      acumulado += obj.sum;
-      return acumulado;
-    });
-    if (_gapChart) _gapChart.destroy();
-    _gapChart = new Chart(ctxGap.getContext('2d'),{
-      type:'line',
-      data:{
-        labels,
-        datasets:[{
-          label:'Delta acumulado (días)',
-          data:dataAcum,
-          fill:false,
-          borderColor:'#f97316',
-          tension:0.25
-        }]
-      },
-      options:{
-        responsive:true,
-        maintainAspectRatio:false,
-        plugins:{ legend:{ position:'bottom' } },
-        scales:{ y:{ ticks:{ callback:v=>v+' d' } } }
-      }
-    });
-  }
-
-  // ===== Gráfico 2: Deltas por etapa del proceso =====
-  const ctxStage = document.getElementById('stageDeltas');
-  if (ctxStage) {
-    if (_stageDeltasChart) _stageDeltasChart.destroy();
-    _stageDeltasChart = new Chart(ctxStage.getContext('2d'),{
-      type:'bar',
-      data:{
-        labels:['Teórico','Real'],
-        datasets:[{
-          label:'Tiempo promedio (días)',
-          data:[
-            avgTeor!=null?avgTeor:0,
-            avgReal!=null?avgReal:0
-          ],
-          backgroundColor:['#3b82f6','#ef4444']
-        }]
-      },
-      options:{
-        responsive:true,
-        maintainAspectRatio:false,
-        plugins:{ legend:{ display:false } },
-        scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>v+' d' } } }
-      }
-    });
-  }
-
-  // ===== Gráfico 3: Comentarios (conteo de pedidos) =====
-  const ctxComments = document.getElementById('commentsChart');
-  if (ctxComments) {
-    // Contar cuántas requisiciones tiene cada comentario
-    const counts = {};
     rows.forEach(r => {
-      let c = (r['COMENT.'] || '').trim();
-      if (!c) c = 'SIN COMENTARIO';
-      counts[c] = (counts[c] || 0) + 1;
-    });
+      const recD  = parseIsoDate(r['RECIBO F8']);
+      const proyD = parseIsoDate(r['PROY. ENTREGA']);
+      const realD = parseIsoDate(r['ENTREGA REAL']);
 
-    const labels = Object.keys(counts).sort((a,b) => counts[b] - counts[a]); // más frecuentes arriba
-    const data = labels.map(l => counts[l]);
-
-    if (_commentsChart) _commentsChart.destroy();
-    _commentsChart = new Chart(ctxComments.getContext('2d'), {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [{
-          label: 'Requisiciones',
-          data,
-          backgroundColor: '#60a5fa'
-        }]
-      },
-      options: {
-        // indexAxis: 'y',              // barras horizontales
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => `${ctx.raw} requisiciones`
-            }
-          }
-        },
-        scales: {
-          x: {
-            beginAtZero: true,
-            ticks: { precision: 0 }
-          },
-          y: {
-            ticks: {
-              autoSkip: false
-            }
-          }
+      if (recD && proyD) {
+        const t = daysBetween(recD, proyD);
+        if (t != null) { sumTeor += t; nTeor++; }
+      }
+      if (recD && realD) {
+        const tr = daysBetween(recD, realD);
+        if (tr != null) { sumReal += tr; nReal++; }
+      }
+      if (recD && proyD && realD) {
+        const t  = daysBetween(recD, proyD);
+        const tr = daysBetween(recD, realD);
+        if (t != null && tr != null) {
+          const d = tr - t;
+          sumDelta += d;
+          const key = toDateKey(proyD);
+          if (!deltaByProjDate[key]) deltaByProjDate[key] = {sum:0,count:0};
+          deltaByProjDate[key].sum += d;
+          deltaByProjDate[key].count++;
         }
       }
     });
+
+    const avgTeor = nTeor ? sumTeor/nTeor : null;
+    const avgReal = nReal ? sumReal/nReal : null;
+    const avgDelta = (nReal && nTeor) ? ( (sumReal - sumTeor) / Math.max(nReal,nTeor) ) : null;
+
+    if (kTeor)  kTeor.textContent  = (avgTeor!=null) ? avgTeor.toFixed(1) : '—';
+    if (kReal)  kReal.textContent  = (avgReal!=null) ? avgReal.toFixed(1) : '—';
+    if (kDelta) kDelta.textContent = (avgDelta!=null) ? avgDelta.toFixed(1) : '—';
+    if (kAcum)  kAcum.textContent  = sumDelta ? sumDelta.toFixed(1) : '0.0';
+
+    if (typeof Chart === 'undefined') {
+      console.warn('Chart.js no está cargado; se omite dibujo de gráficos.');
+      return;
+    }
+
+    const ctxGap = document.getElementById('gapChart');
+    if (ctxGap) {
+      const labels = Object.keys(deltaByProjDate).sort();
+      let acumulado = 0;
+      const dataAcum = labels.map(d => {
+        const obj = deltaByProjDate[d];
+        acumulado += obj.sum;
+        return acumulado;
+      });
+      if (_gapChart) _gapChart.destroy();
+      _gapChart = new Chart(ctxGap.getContext('2d'),{
+        type:'line',
+        data:{
+          labels,
+          datasets:[{
+            label:'Delta acumulado (días)',
+            data:dataAcum,
+            fill:false,
+            borderColor:'#f97316',
+            tension:0.25
+          }]
+        },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{ legend:{ position:'bottom' } },
+          scales:{ y:{ ticks:{ callback:v=>v+' d' } } }
+        }
+      });
+    }
+
+    const ctxStage = document.getElementById('stageDeltas');
+    if (ctxStage) {
+      if (_stageDeltasChart) _stageDeltasChart.destroy();
+      _stageDeltasChart = new Chart(ctxStage.getContext('2d'),{
+        type:'bar',
+        data:{
+          labels:['Teórico','Real'],
+          datasets:[{
+            label:'Tiempo promedio (días)',
+            data:[
+              avgTeor!=null?avgTeor:0,
+              avgReal!=null?avgReal:0
+            ],
+            backgroundColor:['#3b82f6','#ef4444']
+          }]
+        },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{ legend:{ display:false } },
+          scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>v+' d' } } }
+        }
+      });
+    }
   }
-}
 
   // ============================
-  //  CHECKLIST MENSUALES
+  //  CHECKLIST MENSUALES (igual que antes)
   // ============================
+  /* ... NO MODIFICADO: desde loadMonthlyChecklist hasta el final de esa sección ... */
+
   async function loadMonthlyChecklist(dateKey) {
     const labelEl = document.getElementById('monthlyDateLabel');
     const contEl  = document.getElementById('monthlyChecklist');
@@ -1067,7 +1029,7 @@ function updateGapAndTimeKpisFromRows(rows) {
   }
 
   // ============================
-  //  CALENDARIO
+  //  CALENDARIO (ajustado a fechas locales)
   // ============================
   let currentCalYear, currentCalMonth;
   let currentCalData = {};
@@ -1093,11 +1055,13 @@ function updateGapAndTimeKpisFromRows(rows) {
     if (!calEl || !titleEl) return;
 
     const year = currentCalYear;
-    const month = currentCalMonth;
+    const month = currentCalMonth; // 1‑12
 
-    const firstDay = new Date(Date.UTC(year, month - 1, 1));
-    const startDow = firstDay.getUTCDay();
-    const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    // primer día del mes en LOCAL
+    const firstDay = new Date(year, month - 1, 1, 0, 0, 0, 0);
+    const startDow = firstDay.getDay(); // 0 = domingo
+
+    const daysInMonth = new Date(year, month, 0).getDate();
 
     const monthNames = [
       'Enero','Febrero','Marzo','Abril','Mayo','Junio',
@@ -1115,6 +1079,7 @@ function updateGapAndTimeKpisFromRows(rows) {
       calEl.appendChild(div);
     });
 
+    // Queremos semanas L‑D, así que rotamos startDow (0=Dom) -> 6,1,2...
     let dow = (startDow + 6) % 7;
     for (let i = 0; i < dow; i++) {
       const empty = document.createElement('div');
@@ -1122,10 +1087,10 @@ function updateGapAndTimeKpisFromRows(rows) {
       calEl.appendChild(empty);
     }
 
-    const todayKey = toDateKey(new Date());
+    const todayKey = toDateKey(new Date()); // Date LOCAL
 
     for (let day = 1; day <= daysInMonth; day++) {
-      const d = new Date(Date.UTC(year, month - 1, day));
+      const d = new Date(year, month - 1, day, 0, 0, 0, 0); // LOCAL
       const key = toDateKey(d);
       const info = currentCalData[key] || { total: 0, byStage: {}, reciboF8: 0 };
       const total = info.total || 0;
@@ -1219,7 +1184,7 @@ function updateGapAndTimeKpisFromRows(rows) {
       'FACTURACION':'FACTURACIÓN',
       'EMPACADO':'EMPACADO',
       'ENTREGA':'PROY. ENTREGA',
-      'ENTREGA_REAL':'ENTREGA REAL'          // NUEVO
+      'ENTREGA_REAL':'ENTREGA REAL'
     };
     const colKey = map[stageKey] || 'RECIBO F8';
 
@@ -1486,7 +1451,7 @@ function updateGapAndTimeKpisFromRows(rows) {
     const now = new Date();
     currentDayFilter = toDateKey(now);
 
-    await loadCalendarMonth(now.getUTCFullYear(), now.getUTCMonth()+1);
+    await loadCalendarMonth(now.getFullYear(), now.getMonth()+1);
     await onCalendarDayClick(currentDayFilter);
   }
 
