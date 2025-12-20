@@ -863,7 +863,7 @@ function updateGapAndTimeKpisFromRows(rows) {
         }]
       },
       options: {
-        indexAxis: 'y',              // barras horizontales
+        // indexAxis: 'y',              // barras horizontales
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
