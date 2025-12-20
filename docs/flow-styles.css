@@ -653,8 +653,8 @@ h1, h2, h3 { margin: 0; }
 .flow-table th,
 .flow-table td {
   border: 1px solid var(--border-color);
-  padding: 3px 4px;
-  vertical-align: top;
+  padding: 4px 6px;
+  vertical-align: middle;
 }
 
 /* Encabezado: permitir 2 líneas para optimizar espacio horizontal */
@@ -703,6 +703,7 @@ h1, h2, h3 { margin: 0; }
 .flow-table th:nth-child(11) {
   width: 56px;
   max-width: 56px;
+  text-align: center;
 }
 
 .flow-table td:nth-child(4),
