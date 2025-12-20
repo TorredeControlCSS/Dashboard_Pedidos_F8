@@ -773,11 +773,13 @@ h1, h2, h3 { margin: 0; }
 /* Contenedor general:
    - Izquierda: gráficos (charts-row)
    - Derecha: tarjetas KPI (time-kpis) */
+/* Contenedor general: gráficos + tarjetas KPI */
 .time-kpis-wrapper {
   margin-top: 10px;
   display: grid;
-  grid-template-columns: 4.4fr 0.8fr;
-  gap: 8px;
+  /* Más espacio para gráficos, solo el necesario para las tarjetas */
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 8px;
   align-items: stretch;
 }
 
