@@ -3,9 +3,8 @@ console.log('flow-app.js v3.4 — Flow view with table inline editing');
 
 /* ===== NOTAS SOBRE MANEJO DE FECHAS =====
  *
- * AHORA usamos fechas en formato YYYY-MM-DD interpretadas en HORA LOCAL
- * (no UTC) para evitar desfases de un día. Esto debe alinearse con la
- * zona horaria de Panamá donde corre el navegador.
+ * Ahora manejamos fechas en formato YYYY-MM-DD en HORA LOCAL
+ * (sin UTC ni "Z") para alinearnos con la hoja de Google (Panamá).
  */
 
 if (window.__FLOW_APP_LOADED__) {
@@ -86,23 +85,16 @@ if (window.__FLOW_APP_LOADED__) {
     });
   }
 
-  // ===== NUEVA LÓGICA LOCAL PARA FECHAS =====
-
-  // Convierte "YYYY-MM-DD" (o Date) a Date en hora LOCAL
+  // Convierte "YYYY-MM-DD" a Date LOCAL (sin UTC)
   function parseIsoDate(v) {
     if (!v) return null;
     if (v instanceof Date) return v;
-
     const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v));
     if (!m) return null;
-
     const year  = Number(m[1]);
-    const month = Number(m[2]) - 1; // 0-11
+    const month = Number(m[2]) - 1;
     const day   = Number(m[3]);
-
-    // Date local (depende del timezone del navegador, Panamá en tu caso)
     const d = new Date(year, month, day, 0, 0, 0, 0);
-
     if (DEBUG) console.log('[FLOW-DATE] parseIsoDate(local):', v, '→', d);
     return d;
   }
@@ -121,7 +113,6 @@ if (window.__FLOW_APP_LOADED__) {
     return `${y}-${m}-${day}`;
   }
 
-  // dd/mm/yy usando fecha LOCAL
   function formatDateShort(v) {
     const d = parseIsoDate(v);
     if (!d) return '—';
@@ -131,7 +122,6 @@ if (window.__FLOW_APP_LOADED__) {
     return dd + '/' + mm + '/' + yy;
   }
 
-  // YYYY-MM-DD para <input type="date"> (LOCAL)
   function formatDateInput(v) {
     const d = parseIsoDate(v);
     if (!d) return '';
@@ -399,7 +389,7 @@ if (window.__FLOW_APP_LOADED__) {
     container.classList.toggle('edit-mode-on', editMode);
   }
 
-  // ========== LÓGICA DE EDICIÓN INLINE (usa handleInlineSave) ==========
+  // ========== LÓGICA DE EDICIÓN INLINE ==========
   async function handleInlineSave(f8Id, field, newValue, displayEl) {
     const rows = currentRows || [];
     const row = rows.find(r => r['F8 SALMI'] === f8Id);
@@ -418,8 +408,6 @@ if (window.__FLOW_APP_LOADED__) {
     const oldRaw = row[field] || '';
     const oldDisplay = displayEl.textContent || '';
 
-    console.log('[FLOW-EDIT] Starting save:', { id, field, oldRaw, newValue });
-
     if (!idToken) {
       alert('Inicia sesión con "Acceder" antes de editar.');
       displayEl.textContent = oldDisplay;
@@ -432,7 +420,6 @@ if (window.__FLOW_APP_LOADED__) {
     if (DATE_FIELDS.includes(field)) {
       const oldNorm = formatDateInput(oldRaw);
       if (norm(newValue) === norm(oldNorm)) {
-        console.log('[FLOW-EDIT] No change detected, skipping save');
         displayEl.textContent = oldDisplay;
         return;
       }
@@ -441,12 +428,10 @@ if (window.__FLOW_APP_LOADED__) {
         const yy2 = +yy;
         const mm2 = String(+mm).padStart(2, '0');
         const dd2 = String(+dd).padStart(2, '0');
-        valueToSend = `${yy2}-${mm2}-${dd2}`;
-        console.log('[FLOW-EDIT] Date field - sending value:', valueToSend);
+        valueToSend = `${yy2}-${mm2}-${dd2}`; // siempre YYYY-MM-DD
       }
     } else {
       if (norm(newValue) === norm(oldRaw)) {
-        console.log('[FLOW-EDIT] No change detected, skipping save');
         displayEl.textContent = oldDisplay;
         return;
       }
@@ -462,11 +447,7 @@ if (window.__FLOW_APP_LOADED__) {
         + `&field=${encodeURIComponent(field)}`
         + `&value=${encodeURIComponent(valueToSend)}`;
 
-      console.log('[FLOW-EDIT] Sending update:', { url: url.replace(/idToken=[^&]+/, 'idToken=***'), id, field, valueToSend });
-
       const res = await jsonp(url);
-
-      console.log('[FLOW-EDIT] Backend response:', res);
 
       if (!res || res.status !== 'ok') {
         displayEl.textContent = oldDisplay;
@@ -474,12 +455,8 @@ if (window.__FLOW_APP_LOADED__) {
         return;
       }
 
-      console.log('[FLOW-EDIT] Save successful');
-
-      // Actualizamos la fila en memoria sin recargar todo el dashboard
       row[field] = valueToSend;
 
-      // Actualizamos solo el display de la celda
       if (DATE_FIELDS.includes(field)) {
         displayEl.textContent = formatDateShort(valueToSend);
       } else {
@@ -493,7 +470,6 @@ if (window.__FLOW_APP_LOADED__) {
     }
   }
 
-  // Editor tipo clásica sobre la tabla flow-table
   function attachFlowTableEditor() {
     const container = document.getElementById('ordersList');
     if (!container) return;
@@ -666,7 +642,6 @@ if (window.__FLOW_APP_LOADED__) {
       if (procEl)  procEl.textContent  = '0';
       if (compEl)  compEl.textContent  = '0';
       if (retrEl)  retrEl.textContent  = '0';
-      console.log('[QS] 0 filas');
       return;
     }
 
@@ -682,8 +657,6 @@ if (window.__FLOW_APP_LOADED__) {
       else enProceso++;
       if (realD && proyD && realD > proyD) retraso++;
     });
-
-    console.log('[QS] total:', total, 'comp:', completados, 'proc:', enProceso, 'retr:', retraso);
 
     if (totalEl) totalEl.textContent = total;
     if (procEl)  procEl.textContent  = enProceso;
@@ -717,8 +690,6 @@ if (window.__FLOW_APP_LOADED__) {
       });
     });
 
-    console.log('[BLOCKS] para día', dateKey, counts);
-
     FLOW_COLUMNS.forEach(col => {
       const el = document.getElementById(col.blockId);
       if (el) el.textContent = counts[col.label] || 0;
@@ -726,9 +697,9 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   // ============================
-  //  GAP ANALYSIS & TIME KPIS
+  //  GRÁFICOS + KPIS
   // ============================
-  let _gapChart, _stageDeltasChart;
+  let _gapChart, _stageDeltasChart, _commentsChart;
 
   function updateGapAndTimeKpisFromRows(rows) {
     const kTeor   = document.getElementById('kpi-teorico');
@@ -743,6 +714,7 @@ if (window.__FLOW_APP_LOADED__) {
       if (kAcum)  kAcum.textContent  = '—';
       if (_gapChart) _gapChart.destroy();
       if (_stageDeltasChart) _stageDeltasChart.destroy();
+      if (_commentsChart) _commentsChart.destroy();
       return;
     }
 
@@ -793,6 +765,7 @@ if (window.__FLOW_APP_LOADED__) {
       return;
     }
 
+    // Gráfico 1: Análisis de Deltas (línea acumulada)
     const ctxGap = document.getElementById('gapChart');
     if (ctxGap) {
       const labels = Object.keys(deltaByProjDate).sort();
@@ -824,6 +797,7 @@ if (window.__FLOW_APP_LOADED__) {
       });
     }
 
+    // Gráfico 2: Deltas por Etapa del Proceso
     const ctxStage = document.getElementById('stageDeltas');
     if (ctxStage) {
       if (_stageDeltasChart) _stageDeltasChart.destroy();
@@ -848,13 +822,59 @@ if (window.__FLOW_APP_LOADED__) {
         }
       });
     }
+
+    // Gráfico 3: Comentarios (conteo de pedidos)
+    const ctxComments = document.getElementById('commentsChart');
+    if (ctxComments) {
+      const counts = {};
+      rows.forEach(r => {
+        let c = (r['COMENT.'] || '').trim();
+        if (!c) c = 'SIN COMENTARIO';
+        counts[c] = (counts[c] || 0) + 1;
+      });
+
+      const labels = Object.keys(counts).sort((a,b) => counts[b] - counts[a]);
+      const data = labels.map(l => counts[l]);
+
+      if (_commentsChart) _commentsChart.destroy();
+      _commentsChart = new Chart(ctxComments.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Requisiciones',
+            data,
+            backgroundColor: '#60a5fa'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.raw} requisiciones`
+              }
+            }
+          },
+          scales: {
+            x: {
+              beginAtZero: true,
+              ticks: { precision: 0 }
+            },
+            y: {
+              ticks: { autoSkip: false }
+            }
+          }
+        }
+      });
+    }
   }
 
   // ============================
-  //  CHECKLIST MENSUALES (igual que antes)
+  //  CHECKLIST MENSUALES
   // ============================
-  /* ... NO MODIFICADO: desde loadMonthlyChecklist hasta el final de esa sección ... */
-
   async function loadMonthlyChecklist(dateKey) {
     const labelEl = document.getElementById('monthlyDateLabel');
     const contEl  = document.getElementById('monthlyChecklist');
@@ -1029,7 +1049,7 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   // ============================
-  //  CALENDARIO (ajustado a fechas locales)
+  //  CALENDARIO
   // ============================
   let currentCalYear, currentCalMonth;
   let currentCalData = {};
@@ -1055,9 +1075,8 @@ if (window.__FLOW_APP_LOADED__) {
     if (!calEl || !titleEl) return;
 
     const year = currentCalYear;
-    const month = currentCalMonth; // 1‑12
+    const month = currentCalMonth; // 1-12
 
-    // primer día del mes en LOCAL
     const firstDay = new Date(year, month - 1, 1, 0, 0, 0, 0);
     const startDow = firstDay.getDay(); // 0 = domingo
 
@@ -1079,18 +1098,17 @@ if (window.__FLOW_APP_LOADED__) {
       calEl.appendChild(div);
     });
 
-    // Queremos semanas L‑D, así que rotamos startDow (0=Dom) -> 6,1,2...
-    let dow = (startDow + 6) % 7;
+    let dow = (startDow + 6) % 7; // para que lunes sea la primera columna
     for (let i = 0; i < dow; i++) {
       const empty = document.createElement('div');
       empty.className = 'calendar-day other-month';
       calEl.appendChild(empty);
     }
 
-    const todayKey = toDateKey(new Date()); // Date LOCAL
+    const todayKey = toDateKey(new Date());
 
     for (let day = 1; day <= daysInMonth; day++) {
-      const d = new Date(year, month - 1, day, 0, 0, 0, 0); // LOCAL
+      const d = new Date(year, month - 1, day, 0, 0, 0, 0);
       const key = toDateKey(d);
       const info = currentCalData[key] || { total: 0, byStage: {}, reciboF8: 0 };
       const total = info.total || 0;
@@ -1138,7 +1156,6 @@ if (window.__FLOW_APP_LOADED__) {
     const title = document.getElementById('panel-title');
     if (title) title.textContent = `Requisiciones del ${dateKey}`;
 
-    // 1) Cargamos las filas del día (tabla) y mostramos lo antes posible
     const res = await jsonp(`${A}?route=calendar.daydetails&date=${dateKey}`);
     if (!res || res.status !== 'ok') {
       console.warn('calendar.daydetails error', res && res.error);
@@ -1148,14 +1165,13 @@ if (window.__FLOW_APP_LOADED__) {
     currentRows = data.rows || [];
 
     populateFlowFilterOptionsFromRows(currentRows);
-    applyFlowFilters(); // esto ya pinta la tabla
+    applyFlowFilters();
 
     const btnClear = document.getElementById('btnClearFilter');
     if (btnClear) btnClear.style.display = 'inline-block';
 
     renderCalendar();
 
-    // 2) Checklist mensuales EN SEGUNDO PLANO
     loadMonthlyChecklist(dateKey).catch(e => {
       console.warn('loadMonthlyChecklist error', e);
     });
@@ -1445,7 +1461,6 @@ if (window.__FLOW_APP_LOADED__) {
 
     await loadInitialData();
 
-    // Activar editor sobre la tabla
     attachFlowTableEditor();
 
     const now = new Date();
