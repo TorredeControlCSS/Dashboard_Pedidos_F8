@@ -8,18 +8,16 @@
   <link rel="icon" href="assets/logo.png"/>
 
   <!-- Librerías -->
-  <!-- Usamos unpkg en lugar de jsDelivr para evitar el error de conexión -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-  <!-- Iconos tipo texto (Material Symbols) -->
+  <!-- Iconos -->
   <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400;600&display=swap" />
 
-  <!-- PWA manifest -->
   <link rel="manifest" href="manifest.json"/>
-
-  <link rel="stylesheet" href="flow-styles.css?v=2.7"/>
+  <!-- Asegúrate de tener el CSS nuevo v3.0 aquí -->
+  <link rel="stylesheet" href="flow-styles.css?v=3.0"/>
 </head>
 <body>
   <header class="app-header">
@@ -27,7 +25,7 @@
       <img src="assets/logo.png" alt="logo" width="40" height="40"/>
       <div>
         <h1>Dashboard de Procesamiento de F8</h1>
-        <small>Seguimiento de Flujo de Requisiciones - v2.0 - Torre de Control</small>
+        <small>Seguimiento de Flujo de Requisiciones - v2.1 - Torre de Control</small>
       </div>
     </div>
     <div class="header-actions">
@@ -38,7 +36,7 @@
     </div>
   </header>
 
-  <!-- Franja superior: FILTROS + BLOQUES + KPIs -->
+  <!-- Franja superior: FILTROS + BLOQUES + TODAS LAS ESTADÍSTICAS -->
   <div class="top-wrapper">
     <div class="top-row">
       <!-- Columna izquierda: filtros -->
@@ -73,9 +71,7 @@
       <!-- Bloques del Flujo de Proceso (centro) -->
       <section id="process-flow">
         <div class="flow-block" data-stage="RECIBO" data-days="0">
-          <div class="flow-block-icon">
-            <span class="material-symbols-outlined">mark_email_unread</span>
-          </div>
+          <div class="flow-block-icon"><span class="material-symbols-outlined">mark_email_unread</span></div>
           <div class="flow-block-header">RECIBO F8</div>
           <div class="flow-block-count" id="count-recibo">0</div>
           <div class="flow-block-label">Requisiciones</div>
@@ -83,9 +79,7 @@
         </div>
         <div class="flow-arrow">→</div>
         <div class="flow-block" data-stage="ASIGNACION" data-days="1">
-          <div class="flow-block-icon">
-            <span class="material-symbols-outlined">assignment_ind</span>
-          </div>
+          <div class="flow-block-icon"><span class="material-symbols-outlined">assignment_ind</span></div>
           <div class="flow-block-header">ASIGNACIÓN</div>
           <div class="flow-block-count" id="count-asignacion">0</div>
           <div class="flow-block-label">Requisiciones</div>
@@ -93,9 +87,7 @@
         </div>
         <div class="flow-arrow">→</div>
         <div class="flow-block" data-stage="SALIDA" data-days="2">
-          <div class="flow-block-icon">
-            <span class="material-symbols-outlined">exit_to_app</span>
-          </div>
+          <div class="flow-block-icon"><span class="material-symbols-outlined">exit_to_app</span></div>
           <div class="flow-block-header">SALIDA</div>
           <div class="flow-block-count" id="count-salida">0</div>
           <div class="flow-block-label">Requisiciones</div>
@@ -103,9 +95,7 @@
         </div>
         <div class="flow-arrow">→</div>
         <div class="flow-block" data-stage="DESPACHO" data-days="3">
-          <div class="flow-block-icon">
-            <span class="material-symbols-outlined">outbox</span>
-          </div>
+          <div class="flow-block-icon"><span class="material-symbols-outlined">outbox</span></div>
           <div class="flow-block-header">DESPACHO</div>
           <div class="flow-block-count" id="count-despacho">0</div>
           <div class="flow-block-label">Requisiciones</div>
@@ -113,9 +103,7 @@
         </div>
         <div class="flow-arrow">→</div>
         <div class="flow-block" data-stage="FACTURACION" data-days="4">
-          <div class="flow-block-icon">
-            <span class="material-symbols-outlined">request_quote</span>
-          </div>
+          <div class="flow-block-icon"><span class="material-symbols-outlined">request_quote</span></div>
           <div class="flow-block-header">FACTURACIÓN</div>
           <div class="flow-block-count" id="count-facturacion">0</div>
           <div class="flow-block-label">Requisiciones</div>
@@ -123,9 +111,7 @@
         </div>
         <div class="flow-arrow">→</div>
         <div class="flow-block" data-stage="EMPACADO" data-days="5">
-          <div class="flow-block-icon">
-            <span class="material-symbols-outlined">inventory_2</span>
-          </div>
+          <div class="flow-block-icon"><span class="material-symbols-outlined">inventory_2</span></div>
           <div class="flow-block-header">EMPACADO</div>
           <div class="flow-block-count" id="count-empacado">0</div>
           <div class="flow-block-label">Requisiciones</div>
@@ -133,9 +119,7 @@
         </div>
         <div class="flow-arrow">→</div>
         <div class="flow-block" data-stage="ENTREGA" data-days="9">
-          <div class="flow-block-icon">
-            <span class="material-symbols-outlined">local_shipping</span>
-          </div>
+          <div class="flow-block-icon"><span class="material-symbols-outlined">local_shipping</span></div>
           <div class="flow-block-header">PROY. ENTREGA</div>
           <div class="flow-block-count" id="count-entrega">0</div>
           <div class="flow-block-label">Requisiciones</div>
@@ -143,9 +127,7 @@
         </div>
         <div class="flow-arrow">→</div>
         <div class="flow-block" data-stage="ENTREGA_REAL" data-days="10">
-          <div class="flow-block-icon">
-            <span class="material-symbols-outlined">check_circle</span>
-          </div>
+          <div class="flow-block-icon"><span class="material-symbols-outlined">check_circle</span></div>
           <div class="flow-block-header">ENTREGA REAL</div>
           <div class="flow-block-count" id="count-entrega-real">0</div>
           <div class="flow-block-label">Requisiciones</div>
@@ -153,8 +135,9 @@
         </div>
       </section>
 
-      <!-- KPIs a la derecha -->
+      <!-- KPIs a la derecha (Fusionados: Estadísticas Rápidas + KPIs de Tiempo) -->
       <section id="quick-stats">
+        <!-- Fila 1: Cantidades -->
         <div class="stat-card">
           <div class="stat-label">Total</div>
           <div class="stat-value" id="stat-total">0</div>
@@ -171,6 +154,24 @@
           <div class="stat-label">Con Retraso</div>
           <div class="stat-value stat-danger" id="stat-retraso">0</div>
         </div>
+        
+        <!-- Fila 2: Tiempos (Movidos desde abajo) -->
+        <div class="stat-card kpi-time">
+            <div class="stat-label">Prom. Teórico</div>
+            <div class="stat-value" id="kpi-teorico" style="font-size:16px;">—</div>
+        </div>
+        <div class="stat-card kpi-time">
+            <div class="stat-label">Prom. Real</div>
+            <div class="stat-value" id="kpi-real" style="font-size:16px;">—</div>
+        </div>
+        <div class="stat-card kpi-time">
+            <div class="stat-label">Delta Prom.</div>
+            <div class="stat-value" id="kpi-delta" style="font-size:16px;">—</div>
+        </div>
+        <div class="stat-card kpi-time">
+            <div class="stat-label">Delta Acum.</div>
+            <div class="stat-value" id="kpi-acumulado" style="font-size:16px;">—</div>
+        </div>
       </section>
     </div>
   </div>
@@ -179,32 +180,9 @@
   <div class="main-container">
     <section class="right-panel">
 
-      <!-- Fila: CALENDARIO + CHECKLIST + TABLA REQUISICIONES -->
-      <div class="calendar-checklist-orders">
-        <!-- Calendario -->
-        <div class="calendar-container">
-          <div class="calendar-header">
-            <button id="btnPrevMonth">◀</button>
-            <h3 id="calendarTitle">Diciembre 2025</h3>
-            <button id="btnNextMonth">▶</button>
-          </div>
-          <div id="calendar" class="calendar-grid"></div>
-          <div class="calendar-legend">
-            <div class="legend-item">
-              <span class="legend-color" style="background:#ef4444"></span>
-              <span>Vencido</span>
-            </div>
-            <div class="legend-item">
-              <span class="legend-color" style="background:#f59e0b"></span>
-              <span>Hoy</span>
-            </div>
-            <div class="legend-item">
-              <span class="legend-color" style="background:#3b82f6"></span>
-              <span>Programado</span>
-            </div>
-          </div>
-        </div>
-
+      <!-- Fila Media: SOLO CHECKLIST Y REQUISICIONES -->
+      <div class="checklist-orders-row">
+        
         <!-- Checklist mensuales -->
         <div class="monthly-checklist-container">
           <h3>Checklist Mensuales <span id="monthlyDateLabel"></span></h3>
@@ -216,7 +194,7 @@
         <!-- Tabla de requisiciones -->
         <section class="orders-panel-inline">
           <div class="panel-header inline">
-            <h2 id="panel-title">Requisiciones del 2025-12-12</h2>
+            <h2 id="panel-title">Requisiciones del día</h2>
           </div>
           <div class="orders-list" id="ordersList">
             <p class="loading-message">Cargando requisiciones...</p>
@@ -224,8 +202,25 @@
         </section>
       </div>
 
-      <!-- Fila: GRÁFICOS + KPIs TIEMPO -->
-      <div class="time-kpis-wrapper">
+      <!-- Fila Inferior: CALENDARIO + GRÁFICOS -->
+      <div class="bottom-panel-wrapper">
+        
+        <!-- Calendario (Movido aquí para optimizar espacio) -->
+        <div class="calendar-container">
+            <div class="calendar-header">
+              <button id="btnPrevMonth">◀</button>
+              <h3 id="calendarTitle">Diciembre 2025</h3>
+              <button id="btnNextMonth">▶</button>
+            </div>
+            <div id="calendar" class="calendar-grid"></div>
+            <div class="calendar-legend">
+              <div class="legend-item"><span class="legend-color" style="background:#ef4444"></span><span>Vencido</span></div>
+              <div class="legend-item"><span class="legend-color" style="background:#f59e0b"></span><span>Hoy</span></div>
+              <div class="legend-item"><span class="legend-color" style="background:#3b82f6"></span><span>Programado</span></div>
+            </div>
+          </div>
+
+        <!-- Gráficos -->
         <div class="charts-row">
           <div class="gap-analysis-container">
             <h3>Análisis de Deltas (Teórico vs Real)</h3>
@@ -233,39 +228,21 @@
           </div>
 
           <div class="stage-deltas-container">
-            <h3>Deltas por Etapa del Proceso</h3>
+            <h3>Deltas por Etapa</h3>
             <canvas id="stageDeltas"></canvas>
           </div>
 
           <div class="comments-chart-container">
-            <h3>Comentarios (conteo de pedidos)</h3>
+            <h3>Comentarios</h3>
             <canvas id="commentsChart"></canvas>
           </div>
         </div>
-
-        <div class="time-kpis">
-          <div class="time-kpi">
-            <div class="kpi-label">Tiempo promedio teórico</div>
-            <div class="kpi-value" id="kpi-teorico">—</div>
-          </div>
-          <div class="time-kpi">
-            <div class="kpi-label">Tiempo promedio real</div>
-            <div class="kpi-value" id="kpi-real">—</div>
-          </div>
-          <div class="time-kpi">
-            <div class="kpi-label">Delta promedio</div>
-            <div class="kpi-value" id="kpi-delta">—</div>
-          </div>
-          <div class="time-kpi">
-            <div class="kpi-label">Delta acumulado</div>
-            <div class="kpi-value" id="kpi-acumulado">—</div>
-          </div>
-        </div>
       </div>
+      
     </section>
   </div>
-
-  <!-- MODAL DE EDICIÓN PARA VISTA FLUJO (sin cambios) -->
+  
+  <!-- MODAL DE EDICIÓN PARA VISTA FLUJO -->
   <div id="editModal" class="flow-edit-modal" style="display:none;">
     <div class="flow-edit-backdrop"></div>
     <div class="flow-edit-dialog">
@@ -278,48 +255,23 @@
           <label>F8 SALMI</label>
           <div id="editFieldId" class="flow-edit-readonly">—</div>
         </div>
-
         <div class="flow-edit-row">
           <label>Unidad</label>
           <div id="editFieldUnidad" class="flow-edit-readonly">—</div>
         </div>
-
         <div class="flow-edit-row">
           <label>Grupo</label>
           <div id="editFieldGrupo" class="flow-edit-readonly">—</div>
         </div>
-
         <div class="flow-edit-grid">
-          <div>
-            <label>Asignación</label>
-            <input type="date" id="editFieldAsignacion"/>
-          </div>
-          <div>
-            <label>Salida</label>
-            <input type="date" id="editFieldSalida"/>
-          </div>
-          <div>
-            <label>Despacho</label>
-            <input type="date" id="editFieldDespacho"/>
-          </div>
-          <div>
-            <label>Facturación</label>
-            <input type="date" id="editFieldFacturacion"/>
-          </div>
-          <div>
-            <label>Empacado</label>
-            <input type="date" id="editFieldEmpacado"/>
-          </div>
-          <div>
-            <label>Proy. Entrega</label>
-            <input type="date" id="editFieldProy"/>
-          </div>
-          <div>
-            <label>Entrega Real</label>
-            <input type="date" id="editFieldReal"/>
-          </div>
+          <div><label>Asignación</label><input type="date" id="editFieldAsignacion"/></div>
+          <div><label>Salida</label><input type="date" id="editFieldSalida"/></div>
+          <div><label>Despacho</label><input type="date" id="editFieldDespacho"/></div>
+          <div><label>Facturación</label><input type="date" id="editFieldFacturacion"/></div>
+          <div><label>Empacado</label><input type="date" id="editFieldEmpacado"/></div>
+          <div><label>Proy. Entrega</label><input type="date" id="editFieldProy"/></div>
+          <div><label>Entrega Real</label><input type="date" id="editFieldReal"/></div>
         </div>
-
         <div class="flow-edit-row">
           <label>Comentario</label>
           <select id="editFieldComent">
@@ -336,7 +288,6 @@
             <option value="ENTREGADO">ENTREGADO</option>
           </select>
         </div>
-
         <div id="editModalMessage" class="flow-edit-message"></div>
       </div>
       <div class="flow-edit-footer">
