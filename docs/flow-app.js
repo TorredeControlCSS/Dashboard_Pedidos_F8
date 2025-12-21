@@ -941,7 +941,7 @@ if (window.__FLOW_APP_LOADED__) {
             <tr>
               <th style="width:32px;"></th>
               <th>Unidad</th>
-              <th>Requisiciones</th>
+              <th>Req.</th>
               <th>Con Asig.</th>
               <th>Con Salida</th>
               <th>Con Fact.</th>
