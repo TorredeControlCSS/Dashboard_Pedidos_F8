@@ -16,8 +16,8 @@
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400;600&display=swap" />
 
   <link rel="manifest" href="manifest.json"/>
-  <!-- Asegúrate de tener el CSS nuevo v3.0 aquí -->
-  <link rel="stylesheet" href="flow-styles.css?v=3.0"/>
+  <!-- Apuntando al CSS nuevo v3.1 -->
+  <link rel="stylesheet" href="flow-styles.css?v=3.1"/>
 </head>
 <body>
   <header class="app-header">
@@ -136,6 +136,7 @@
       </section>
 
       <!-- KPIs a la derecha (Fusionados: Estadísticas Rápidas + KPIs de Tiempo) -->
+      <!-- IMPORTANTE: Aquí se movieron los KPIs que antes estaban abajo -->
       <section id="quick-stats">
         <!-- Fila 1: Cantidades -->
         <div class="stat-card">
@@ -181,6 +182,7 @@
     <section class="right-panel">
 
       <!-- Fila Media: SOLO CHECKLIST Y REQUISICIONES -->
+      <!-- Calendario fue movido abajo para liberar espacio horizontal -->
       <div class="checklist-orders-row">
         
         <!-- Checklist mensuales -->
@@ -205,7 +207,8 @@
       <!-- Fila Inferior: CALENDARIO + GRÁFICOS -->
       <div class="bottom-panel-wrapper">
         
-        <!-- Calendario (Movido aquí para optimizar espacio) -->
+        <!-- Calendario (Aquí está su nueva ubicación) -->
+        <!-- El JS busca el id="calendar", así que funcionará perfecto -->
         <div class="calendar-container">
             <div class="calendar-header">
               <button id="btnPrevMonth">◀</button>
@@ -241,8 +244,8 @@
       
     </section>
   </div>
-  
-  <!-- MODAL DE EDICIÓN PARA VISTA FLUJO -->
+
+  <!-- MODAL DE EDICIÓN PARA VISTA FLUJO (Mismo código original) -->
   <div id="editModal" class="flow-edit-modal" style="display:none;">
     <div class="flow-edit-backdrop"></div>
     <div class="flow-edit-dialog">
@@ -305,6 +308,7 @@
     };
   </script>
 
+  <!-- Mantenemos la v3.4 original de tu JS -->
   <script src="flow-app.js?v=3.4"></script>
 </body>
 </html>
