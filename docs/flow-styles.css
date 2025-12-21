@@ -50,7 +50,7 @@ h1, h2, h3 { margin: 0; }
 .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 600, 'GRAD' 0, 'opsz' 24; font-size: 20px; vertical-align: middle; }
 
 /* =========================
-   FRANJA SUPERIOR (3 Áreas Definidas)
+   FRANJA SUPERIOR (LÓGICA CORREGIDA)
    ========================= */
 .top-wrapper {
   width: 100%;
@@ -59,38 +59,26 @@ h1, h2, h3 { margin: 0; }
 }
 
 .top-row {
-  display: grid;
-  /* IZQ: Filtros (220px) | CENTRO: Flujo (auto) | DER: KPIs (auto) */
-  grid-template-columns: 220px 1fr auto; 
-  align-items: stretch;
+  display: flex; /* Flexbox para ordenar horizontalmente */
+  flex-direction: row;
+  align-items: flex-start; /* IMPORTANTE: flex-start evita que se estiren los bloques */
   gap: 12px;
 }
 
-/* 1. FILTROS (Izquierda) */
-.top-filters {
-  display: flex;
-  flex-direction: column;
-  justify-content: center; /* Centrar verticalmente respecto a los bloques */
-  gap: 6px;
-}
-.filters-buttons-row { display: flex; gap: 6px; }
-.filters-buttons-row button { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-color); background: white; font-size: 11px; cursor: pointer; }
-.filters-selects-column { display: flex; flex-direction: column; gap: 4px; width: 100%; }
-.filters-selects-column select { font-size: 11px; padding: 4px; border-radius: 6px; border: 1px solid var(--border-color); width: 100%; }
-
-/* 2. FLUJO DE PROCESO (Centro - Restaurado Original) */
+/* 1. FLUJO DE PROCESO (Izquierda - Flexible) */
 #process-flow {
+  flex: 1; /* Ocupa el espacio sobrante */
   display: flex;
-  align-items: stretch;
-  justify-content: center;
+  align-items: center; /* Centrado vertical de las flechas */
+  justify-content: flex-start;
   gap: 6px;
   overflow-x: auto;
+  padding-bottom: 4px; /* Espacio para scrollbar si fuera necesario */
 }
 
 .flow-block {
-  flex: 0 0 110px; /* Ancho fijo original */
-  min-width: 100px;
-  min-height: 100px; /* Altura forzada original */
+  flex: 0 0 100px; /* Ancho fijo */
+  height: 95px;    /* Altura fija razonable */
   background: white;
   border: 2px solid var(--border-color);
   border-radius: 10px;
@@ -104,12 +92,12 @@ h1, h2, h3 { margin: 0; }
 }
 
 .flow-block-icon { display: flex; justify-content: center; margin-bottom: 2px; }
-.flow-block-header { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-.flow-block-count { font-size: 20px; font-weight: 700; margin: 0; }
+.flow-block-header { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.flow-block-count { font-size: 18px; font-weight: 700; margin: 0; line-height: 1; }
 .flow-block-days { font-size: 9px; font-weight: 600; color: #444; }
-.flow-arrow { font-size: 24px; color: var(--text-light); display: flex; align-items: center; }
+.flow-arrow { font-size: 20px; color: var(--text-light); display: flex; align-items: center; }
 
-/* RECUPERACIÓN DE COLORES Y GRADIENTES */
+/* COLORES Y GRADIENTES ORIGINALES */
 .flow-block[data-stage="RECIBO"] { background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%); border-color: #f87171; }
 .flow-block[data-stage="ASIGNACION"] { background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%); border-color: #fb923c; }
 .flow-block[data-stage="SALIDA"] { background: linear-gradient(135deg, #fef3c7 0%, #fde047 100%); border-color: #facc15; }
@@ -122,32 +110,46 @@ h1, h2, h3 { margin: 0; }
 .flow-block:hover { transform: translateY(-3px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-color: var(--secondary-color); }
 .flow-block.active { transform: scale(1.05); border-color: var(--primary-color) !important; box-shadow: 0 0 0 2px var(--primary-color); }
 
-/* 3. KPIs / STATS (Derecha - 4 Columnas x 2 Filas) */
+/* 2. KPIs / STATS (Centro/Derecha - 4 columnas x 2 filas) */
 #quick-stats {
+  flex: 0 0 auto; /* No se encoge */
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* 4 columnas */
-  grid-template-rows: repeat(2, 1fr);    /* 2 filas */
+  grid-template-columns: repeat(4, 1fr); /* 4 COLUMNAS EXACTAS */
+  grid-template-rows: repeat(2, auto);   /* 2 FILAS EXACTAS */
   gap: 6px;
-  min-width: 320px; /* Ancho suficiente para que no se aplasten */
+  width: 440px; /* Ancho fijo para garantizar formato */
 }
 
 .stat-card {
   background: white;
   border: 1px solid var(--border-color);
   border-radius: 6px;
-  padding: 4px;
+  padding: 4px 2px;
   text-align: center;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  height: 45px; /* Altura compacta para que 2 filas sumen ~90-100px */
 }
 
 /* Diferenciar visualmente los de tiempo */
 .stat-card.kpi-time { background: #f1f5f9; border-color: #cbd5e1; }
 
-.stat-label { font-size: 9px; color: var(--text-light); text-transform: uppercase; font-weight: 600; margin-bottom: 2px; }
-.stat-value { font-size: 15px; font-weight: 700; color: var(--text-dark); }
+.stat-label { font-size: 8px; color: var(--text-light); text-transform: uppercase; font-weight: 600; margin-bottom: 2px; line-height: 1; }
+.stat-value { font-size: 13px; font-weight: 700; color: var(--text-dark); line-height: 1; }
 .stat-value.stat-danger { color: var(--danger-color); }
+
+/* 3. FILTROS (Extrema Derecha) */
+.top-filters {
+  flex: 0 0 180px; /* Ancho fijo */
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.filters-buttons-row { display: flex; gap: 4px; justify-content: flex-end; }
+.filters-buttons-row button { padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color); background: white; font-size: 10px; cursor: pointer; }
+.filters-selects-column { display: flex; flex-direction: column; gap: 4px; width: 100%; }
+.filters-selects-column select { font-size: 10px; padding: 3px; border-radius: 4px; border: 1px solid var(--border-color); width: 100%; }
 
 
 /* =========================
@@ -159,7 +161,7 @@ h1, h2, h3 { margin: 0; }
 /* FILA MEDIA: Checklist + Tabla (Proporción 45% / 55%) */
 .checklist-orders-row {
   display: grid;
-  grid-template-columns: 45% 55%; /* Ajuste solicitado */
+  grid-template-columns: 45% 55%; /* PROPORCIÓN AJUSTADA */
   gap: 10px;
   align-items: stretch;
   height: 480px;
@@ -178,7 +180,7 @@ h1, h2, h3 { margin: 0; }
 .monthly-table th { position: sticky; top: 0; background: #f8fafc; z-index: 1; text-align: center; }
 .monthly-table th:first-child, .monthly-table td:first-child { text-align: left; }
 
-/* ESTO FALTABA PARA QUE LOS BOTONES (+) FUNCIONEN */
+/* CORRECCIÓN BOTONES (+) */
 .monthly-row-grupo-hidden { display: none; }
 .monthly-row-grupo td { background-color: #f9fafb; border-top: none; }
 .monthly-toggle-btn { cursor: pointer; border: 1px solid #ccc; background: #eee; border-radius: 4px; padding: 0 4px; font-size: 9px; }
@@ -195,14 +197,14 @@ h1, h2, h3 { margin: 0; }
 .flow-table th { position: sticky; top: 0; background: #f1f5f9; z-index: 10; padding: 6px; text-align: left; border-bottom: 2px solid #ddd; font-weight: 700; color: #475569; }
 .flow-table td { border-bottom: 1px solid #eee; padding: 4px 6px; vertical-align: middle; }
 
-/* AJUSTE DE COLUMNAS TABLA REQUISICIONES */
-.flow-table td:nth-child(1) { width: 100px; min-width: 100px; font-weight: 600; white-space: nowrap; } /* F8 SALMI Reducido pero legible */
+/* ANCHOS DE COLUMNAS REDUCIDOS */
+.flow-table td:nth-child(1) { width: 70px; min-width: 70px; font-weight: 600; white-space: nowrap; font-size: 10px; } /* F8 SALMI reducido */
 .flow-table td:nth-child(2) { max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* Unidad */
 .flow-table td:nth-child(3) { max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* Comentario */
 /* Fechas */
 .flow-table th:nth-child(n+4):nth-child(-n+11), 
 .flow-table td:nth-child(n+4):nth-child(-n+11) {
-  width: 80px; min-width: 80px; text-align: center; white-space: nowrap;
+  width: 75px; min-width: 75px; text-align: center; white-space: nowrap;
 }
 
 
@@ -211,8 +213,8 @@ h1, h2, h3 { margin: 0; }
    ========================= */
 .bottom-panel-wrapper {
   display: flex; gap: 10px; align-items: stretch;
-  height: 280px; /* LIMITE ESTRICTO DE ALTURA */
-  overflow: hidden; /* Evitar desbordes */
+  height: 280px; /* ALTURA FIJA PARA EVITAR ESTIRAMIENTO */
+  overflow: hidden; 
 }
 
 /* Calendario */
@@ -253,8 +255,10 @@ canvas { flex: 1; width: 100% !important; height: 100% !important; min-height: 0
 
 /* Responsive */
 @media (max-width: 1300px) {
-  .top-row { grid-template-columns: 200px 1fr; }
-  #quick-stats { grid-column: 1 / -1; grid-template-columns: repeat(8, 1fr); }
+  .top-row { flex-wrap: wrap; }
+  #process-flow { min-width: 100%; order: 1; }
+  #quick-stats { order: 2; flex: 1; }
+  .top-filters { order: 3; }
 }
 @media (max-width: 1000px) {
   .checklist-orders-row { grid-template-columns: 1fr; }
@@ -273,7 +277,7 @@ canvas { flex: 1; width: 100% !important; height: 100% !important; min-height: 0
 .flow-table td.highlight-day { background-color: #fef9c3; font-weight: 600; }
 .loading-message { text-align: center; color: #888; padding: 20px; }
 
-/* Modal Styles (Standard) */
+/* Modal Styles */
 .flow-edit-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: flex; align-items: center; justify-content: center; }
 .flow-edit-backdrop { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
 .flow-edit-dialog { position: relative; background: white; border-radius: 12px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; z-index: 10000; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
