@@ -16,8 +16,8 @@
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400;600&display=swap" />
 
   <link rel="manifest" href="manifest.json"/>
-  <!-- Apuntando al CSS nuevo v3.1 -->
-  <link rel="stylesheet" href="flow-styles.css?v=3.1"/>
+  <!-- Asegúrate que la v coincida para refrescar -->
+  <link rel="stylesheet" href="flow-styles.css?v=4.0"/>
 </head>
 <body>
   <header class="app-header">
@@ -36,10 +36,10 @@
     </div>
   </header>
 
-  <!-- Franja superior: FILTROS + BLOQUES + TODAS LAS ESTADÍSTICAS -->
+  <!-- Franja superior -->
   <div class="top-wrapper">
     <div class="top-row">
-      <!-- Columna izquierda: filtros -->
+      <!-- Filtros -->
       <section class="top-filters">
         <div class="filters-buttons-row">
           <button id="btnClearFilter" style="display:none;">Limpiar filtro</button>
@@ -68,7 +68,7 @@
         </div>
       </section>
 
-      <!-- Bloques del Flujo de Proceso (centro) -->
+      <!-- Bloques Flujo (Tus colores originales están en el CSS restaurado) -->
       <section id="process-flow">
         <div class="flow-block" data-stage="RECIBO" data-days="0">
           <div class="flow-block-icon"><span class="material-symbols-outlined">mark_email_unread</span></div>
@@ -135,8 +135,7 @@
         </div>
       </section>
 
-      <!-- KPIs a la derecha (Fusionados: Estadísticas Rápidas + KPIs de Tiempo) -->
-      <!-- IMPORTANTE: Aquí se movieron los KPIs que antes estaban abajo -->
+      <!-- Panel derecho: Quick Stats + KPIs Tiempo -->
       <section id="quick-stats">
         <!-- Fila 1: Cantidades -->
         <div class="stat-card">
@@ -155,45 +154,39 @@
           <div class="stat-label">Con Retraso</div>
           <div class="stat-value stat-danger" id="stat-retraso">0</div>
         </div>
-        
-        <!-- Fila 2: Tiempos (Movidos desde abajo) -->
+        <!-- Fila 2: Tiempos -->
         <div class="stat-card kpi-time">
             <div class="stat-label">Prom. Teórico</div>
-            <div class="stat-value" id="kpi-teorico" style="font-size:16px;">—</div>
+            <div class="stat-value" id="kpi-teorico">—</div>
         </div>
         <div class="stat-card kpi-time">
             <div class="stat-label">Prom. Real</div>
-            <div class="stat-value" id="kpi-real" style="font-size:16px;">—</div>
+            <div class="stat-value" id="kpi-real">—</div>
         </div>
         <div class="stat-card kpi-time">
             <div class="stat-label">Delta Prom.</div>
-            <div class="stat-value" id="kpi-delta" style="font-size:16px;">—</div>
+            <div class="stat-value" id="kpi-delta">—</div>
         </div>
         <div class="stat-card kpi-time">
             <div class="stat-label">Delta Acum.</div>
-            <div class="stat-value" id="kpi-acumulado" style="font-size:16px;">—</div>
+            <div class="stat-value" id="kpi-acumulado">—</div>
         </div>
       </section>
     </div>
   </div>
 
-  <!-- Contenedor principal -->
   <div class="main-container">
     <section class="right-panel">
-
-      <!-- Fila Media: SOLO CHECKLIST Y REQUISICIONES -->
-      <!-- Calendario fue movido abajo para liberar espacio horizontal -->
+      <!-- Fila Media: Checklist + Tabla Requisiciones -->
       <div class="checklist-orders-row">
-        
-        <!-- Checklist mensuales -->
+        <!-- Checklist -->
         <div class="monthly-checklist-container">
           <h3>Checklist Mensuales <span id="monthlyDateLabel"></span></h3>
           <div id="monthlyChecklist">
             <p class="loading-message">Seleccione un día con mensuales para ver el resumen.</p>
           </div>
         </div>
-
-        <!-- Tabla de requisiciones -->
+        <!-- Tabla Requisiciones -->
         <section class="orders-panel-inline">
           <div class="panel-header inline">
             <h2 id="panel-title">Requisiciones del día</h2>
@@ -204,11 +197,9 @@
         </section>
       </div>
 
-      <!-- Fila Inferior: CALENDARIO + GRÁFICOS -->
+      <!-- Fila Inferior: Calendario + Gráficos -->
       <div class="bottom-panel-wrapper">
-        
-        <!-- Calendario (Aquí está su nueva ubicación) -->
-        <!-- El JS busca el id="calendar", así que funcionará perfecto -->
+        <!-- Calendario (Tu lógica JS lo llenará aquí) -->
         <div class="calendar-container">
             <div class="calendar-header">
               <button id="btnPrevMonth">◀</button>
@@ -221,7 +212,7 @@
               <div class="legend-item"><span class="legend-color" style="background:#f59e0b"></span><span>Hoy</span></div>
               <div class="legend-item"><span class="legend-color" style="background:#3b82f6"></span><span>Programado</span></div>
             </div>
-          </div>
+        </div>
 
         <!-- Gráficos -->
         <div class="charts-row">
@@ -229,23 +220,20 @@
             <h3>Análisis de Deltas (Teórico vs Real)</h3>
             <canvas id="gapChart"></canvas>
           </div>
-
           <div class="stage-deltas-container">
             <h3>Deltas por Etapa</h3>
             <canvas id="stageDeltas"></canvas>
           </div>
-
           <div class="comments-chart-container">
             <h3>Comentarios</h3>
             <canvas id="commentsChart"></canvas>
           </div>
         </div>
       </div>
-      
     </section>
   </div>
 
-  <!-- MODAL DE EDICIÓN PARA VISTA FLUJO (Mismo código original) -->
+  <!-- MODAL DE EDICIÓN -->
   <div id="editModal" class="flow-edit-modal" style="display:none;">
     <div class="flow-edit-backdrop"></div>
     <div class="flow-edit-dialog">
@@ -308,7 +296,6 @@
     };
   </script>
 
-  <!-- Mantenemos la v3.4 original de tu JS -->
   <script src="flow-app.js?v=3.4"></script>
 </body>
 </html>
