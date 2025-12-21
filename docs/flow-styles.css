@@ -12,29 +12,15 @@
 
 * { box-sizing: border-box; }
 
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  color: var(--text-dark);
-  background: #ffffff;
-}
-
+body { margin: 0; font-family: system-ui, sans-serif; color: var(--text-dark); background: #ffffff; }
 h1, h2, h3 { margin: 0; }
 
 /* HEADER */
-.app-header {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 8px 16px; background: var(--primary-color); color: #fff;
-  position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,.08);
-}
+.app-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: var(--primary-color); color: #fff; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,.08); }
 .app-header .brand { display: flex; gap: 10px; align-items: center; }
 .app-header .brand img { border-radius: 6px; width: 40px; height: 40px; object-fit: contain; }
 .header-actions { display: flex; gap: 8px; align-items: center; }
-.header-actions button, .header-actions .btn-link {
-  padding: 5px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3);
-  background: rgba(255,255,255,0.1); color: #fff; font-size: 12px; cursor: pointer;
-  text-decoration: none; display: inline-block;
-}
+.header-actions button, .header-actions .btn-link { padding: 5px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff; font-size: 12px; cursor: pointer; text-decoration: none; display: inline-block; }
 .header-actions button:hover, .header-actions .btn-link:hover { background: rgba(255,255,255,0.2); }
 #btnEditMode.edit-on { background: var(--warning-color); border-color: var(--warning-color); }
 .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 600, 'GRAD' 0, 'opsz' 24; font-size: 20px; vertical-align: middle; }
@@ -45,17 +31,17 @@ h1, h2, h3 { margin: 0; }
 .top-wrapper { width: 100%; margin: 0; padding: 10px 16px 4px; }
 
 .top-row {
-  display: flex; /* Flexbox para controlar el espacio */
+  display: flex; 
   flex-direction: row;
   align-items: flex-start;
-  justify-content: space-between; /* Distribuye el espacio sobrante */
+  justify-content: space-between; 
   gap: 16px;
 }
 
-/* 1. FLUJO (Izquierda - Expandido con flechas más grandes) */
+/* 1. FLUJO */
 #process-flow {
-  flex: 1; /* Ocupa el espacio disponible */
-  display: flex; align-items: center; justify-content: flex-start; /* Alineado a la izquierda */
+  flex: 1; 
+  display: flex; align-items: center; justify-content: flex-start; 
   overflow-x: auto; gap: 4px; padding-bottom: 4px;
 }
 
@@ -69,14 +55,10 @@ h1, h2, h3 { margin: 0; }
 .flow-block-header { font-size: 10px; font-weight: 700; text-transform: uppercase; }
 .flow-block-count { font-size: 24px; font-weight: 700; margin: 0; }
 .flow-block-days { font-size: 10px; font-weight: 600; color: #444; }
-
-/* FLECHAS MÁS GRANDES PARA LLENAR ESPACIO VISUALMENTE */
 .flow-arrow {
-  font-size: 32px; /* Aumentado de 24px a 32px */
-  color: var(--text-light);
-  font-weight: 700;
-  display: flex; align-items: center;
-  padding: 0 8px; /* Más padding horizontal */
+  font-size: 32px; 
+  color: var(--text-light); font-weight: 700; display: flex; align-items: center;
+  padding: 0 8px;
 }
 
 /* Colores */
@@ -91,16 +73,15 @@ h1, h2, h3 { margin: 0; }
 .flow-block:hover { transform: translateY(-3px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-color: var(--secondary-color); }
 .flow-block.active { transform: scale(1.05); border-color: var(--primary-color) !important; box-shadow: 0 0 0 2px var(--primary-color); }
 
-/* 2. KPIs (Centro - SIN CAMBIOS DE TAMAÑO) */
+/* 2. KPIs */
 #quick-stats {
-  flex: 0 0 400px; /* Ancho fijo original */
+  flex: 0 0 400px; 
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   grid-template-rows: repeat(2, auto);
   gap: 6px;
-  height: 110px; /* Alineado con flujo */
+  height: 110px;
 }
-
 .stat-card {
   background: white; border: 1px solid var(--border-color);
   border-radius: 6px; padding: 4px; text-align: center;
@@ -112,11 +93,8 @@ h1, h2, h3 { margin: 0; }
 .stat-value { font-size: 13px; font-weight: 700; color: var(--text-dark); }
 .stat-value.stat-danger { color: var(--danger-color); }
 
-/* 3. FILTROS (Derecha - Un poco más anchos para ayudar al balance) */
-.top-filters {
-  flex: 0 0 200px; /* Ligeramente más ancho */
-  display: flex; flex-direction: column; gap: 6px;
-}
+/* 3. FILTROS */
+.top-filters { flex: 0 0 200px; display: flex; flex-direction: column; gap: 6px; }
 .filters-buttons-row { display: flex; gap: 4px; justify-content: flex-end; }
 .filters-buttons-row button { padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color); background: white; font-size: 10px; cursor: pointer; }
 .filters-selects-column { display: flex; flex-direction: column; gap: 4px; width: 100%; }
@@ -129,20 +107,17 @@ h1, h2, h3 { margin: 0; }
 .main-container { padding: 4px 16px 12px; min-height: calc(100vh - 180px); }
 .right-panel { display: flex; flex-direction: column; gap: 10px; }
 
-/* FILA MEDIA: Checklist (42%) | Tabla (58%) y ALTURA REDUCIDA */
+/* FILA MEDIA: Checklist (42%) | Tabla (58%) */
 .checklist-orders-row {
   display: grid;
-  grid-template-columns: 42% 58%; /* Ajuste solicitado */
+  grid-template-columns: 42% 58%; 
   gap: 10px;
   align-items: stretch;
-  height: 380px; /* Reducido de 480px para que quepan los gráficos abajo */
+  height: 380px; 
 }
 
 /* Checklist */
-.monthly-checklist-container {
-  background: white; border: 1px solid var(--border-color); border-radius: 8px;
-  padding: 8px; display: flex; flex-direction: column; overflow: hidden;
-}
+.monthly-checklist-container { background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; overflow: hidden; }
 .monthly-checklist-container h3 { font-size: 14px; margin-bottom: 4px; flex-shrink: 0; font-weight: 700; }
 #monthlyChecklist { overflow-y: auto; flex: 1; }
 .monthly-table { width: 100%; border-collapse: collapse; font-size: 10px; }
@@ -155,54 +130,74 @@ h1, h2, h3 { margin: 0; }
 .badge-warn { background: #fef9c3; color: #854d0e; font-weight: 600; padding: 1px 4px; border-radius: 4px; }
 .badge-err { background: #fee2e2; color: #991b1b; font-weight: 600; padding: 1px 4px; border-radius: 4px; }
 
-/* Tabla Requisiciones */
-.orders-panel-inline {
-  background: white; border: 1px solid var(--border-color); border-radius: 8px;
-  display: flex; flex-direction: column; overflow: hidden;
-}
-/* TÍTULO MÁS PEQUEÑO */
+/* Tabla Requisiciones (COLUMNAS FIJAS AGREGADAS) */
+.orders-panel-inline { background: white; border: 1px solid var(--border-color); border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; }
 .panel-header.inline { padding: 8px 10px; border-bottom: 1px solid #eee; background: white; }
-.panel-header.inline h2 { font-size: 14px; margin: 0; font-weight: 700; } /* Ajustado a 14px */
+.panel-header.inline h2 { font-size: 14px; margin: 0; font-weight: 700; } 
 .orders-list { flex: 1; overflow: auto; padding: 0; }
 
 .flow-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 11px; }
+/* Headers básicos */
 .flow-table th { position: sticky; top: 0; background: #f1f5f9; z-index: 10; padding: 6px; text-align: left; border-bottom: 2px solid #ddd; font-weight: 700; color: #475569; }
 .flow-table td { border-bottom: 1px solid #eee; padding: 4px 6px; vertical-align: middle; }
 
-/* RESALTADO AMARILLO RESTAURADO */
-.flow-table td.highlight-day {
-  background-color: #fef9c3;
-  box-shadow: inset 0 0 0 1px #facc15;
-  font-weight: 600;
-}
+/* ==========================================================
+   COLUMNAS FIJAS (STICKY) - REQUERIMIENTO CUMPLIDO
+   ========================================================== */
+/* 1era Columna: F8 SALMI */
+.flow-table th:nth-child(1) { position: sticky; left: 0; z-index: 20; width: 70px; min-width: 70px; }
+.flow-table td:nth-child(1) { position: sticky; left: 0; z-index: 15; background-color: #ffffff; /* Fondo blanco para tapar scroll */ font-weight: 600; white-space: nowrap; font-size: 10px; border-right: 1px solid #eee; }
 
-/* Anchos Tabla */
-.flow-table td:nth-child(1) { width: 70px; min-width: 70px; font-weight: 600; white-space: nowrap; font-size: 10px; }
-.flow-table td:nth-child(2) { max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 2da Columna: Unidad */
+.flow-table th:nth-child(2) { position: sticky; left: 70px; z-index: 20; width: 220px; min-width: 220px; }
+.flow-table td:nth-child(2) { position: sticky; left: 70px; z-index: 15; background-color: #ffffff; border-right: 1px solid #eee; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Efecto hover sobre filas (debe aplicarse también a las celdas sticky) */
+.flow-table tr:hover td { background-color: #f0f9ff !important; }
+
+/* Resto de columnas */
 .flow-table td:nth-child(3) { max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .flow-table th:nth-child(n+4):nth-child(-n+11), .flow-table td:nth-child(n+4):nth-child(-n+11) { width: 75px; min-width: 75px; text-align: center; white-space: nowrap; }
+.flow-table th:last-child, .flow-table td:last-child { width: 70px; min-width: 70px; }
+
+/* Resaltado amarillo (debe ganar al sticky white background) */
+.flow-table td.highlight-day { background-color: #fef9c3 !important; box-shadow: inset 0 0 0 1px #facc15; font-weight: 600; }
+
 .date-delta.positive { color: #16a34a; font-weight: bold; }
 .date-delta.negative { color: #dc2626; font-weight: bold; }
 .date-delta.zero { color: #9ca3af; }
 
-/* FILA INFERIOR */
+/* FILA INFERIOR (AJUSTE DE ANCHOS DE GRÁFICOS) */
 .bottom-panel-wrapper { display: flex; gap: 10px; align-items: stretch; height: 280px; overflow: hidden; }
-.calendar-container { flex: 0 0 300px; background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 6px; display: flex; flex-direction: column; }
+
+/* Calendario más ancho */
+.calendar-container { 
+  flex: 0 0 380px; /* Aumentado de 300 a 380px */
+  background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 6px; display: flex; flex-direction: column; 
+}
 .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
 .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; flex: 1; align-content: start; }
-.calendar-day { aspect-ratio: 1; border: 1px solid var(--border-color); border-radius: 3px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+.calendar-day { aspect-ratio: 1; border: 1px solid var(--border-color); border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; position: relative; }
 .calendar-day.today { background: var(--warning-color); color: white; border-color: var(--warning-color); }
 .calendar-day.selected { background: #e0ecff; border-color: var(--secondary-color); }
 .calendar-day:hover { background: var(--bg-light); border-color: var(--secondary-color); }
-.calendar-day-header { text-align: center; font-size: 9px; font-weight: 600; color: #666; }
-.calendar-day-number { font-size: 11px; font-weight: 600; }
+.calendar-day-header { text-align: center; font-size: 10px; font-weight: 600; color: #666; }
+.calendar-day-number { font-size: 12px; font-weight: 600; }
 .calendar-day-badge { position: absolute; top: 1px; right: 1px; background: var(--danger-color); color: white; font-size: 8px; padding: 0 3px; border-radius: 4px; }
 .calendar-mini-counter { position: absolute; bottom: 1px; left: 1px; font-size: 8px; background: rgba(255,255,255,0.9); padding: 0 2px; border-radius: 4px; }
 .calendar-legend { display: flex; gap: 8px; margin-top: 4px; padding-top: 4px; border-top: 1px solid #eee; font-size: 10px; justify-content: center; }
 .legend-color { width: 10px; height: 10px; border-radius: 2px; }
 
-/* Gráficos */
-.charts-row { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; height: 100%; overflow: hidden; }
+/* Gráficos con Grid Ajustado */
+.charts-row { 
+  flex: 1; 
+  display: grid; 
+  /* Col 1 (Deltas Lineal): 1.2fr | Col 2 (Etapa): 0.6fr (Más angosto) | Col 3 (Comentarios): 1fr */
+  grid-template-columns: 1.2fr 0.6fr 1fr; 
+  gap: 8px; 
+  height: 100%; 
+  overflow: hidden; 
+}
 .gap-analysis-container, .stage-deltas-container, .comments-chart-container { background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
 .gap-analysis-container h3, .stage-deltas-container h3, .comments-chart-container h3 { font-size: 13px; margin-bottom: 4px; flex-shrink: 0; }
 canvas { width: 100% !important; height: 100% !important; min-height: 0; }
