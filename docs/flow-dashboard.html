@@ -4,20 +4,11 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Dashboard de Procesamiento de F8</title>
-  
   <link rel="icon" href="assets/logo.png"/>
-
-  <!-- Librerías -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-
-  <!-- Iconos -->
-  <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400;600&display=swap" />
-
-  <link rel="manifest" href="manifest.json"/>
-  <!-- CSS v4.0 Corrección de Layout -->
-  <link rel="stylesheet" href="flow-styles.css?v=4.0"/>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400;600&display=swap" />
+  <link rel="stylesheet" href="flow-styles.css?v=5.0"/>
 </head>
 <body>
   <header class="app-header">
@@ -25,7 +16,7 @@
       <img src="assets/logo.png" alt="logo" width="40" height="40"/>
       <div>
         <h1>Dashboard de Procesamiento de F8</h1>
-        <small>Seguimiento de Flujo de Requisiciones - v2.2 - Torre de Control</small>
+        <small>Seguimiento de Flujo de Requisiciones - v2.3</small>
       </div>
     </div>
     <div class="header-actions">
@@ -36,13 +27,11 @@
     </div>
   </header>
 
-  <!-- ==========================================
-       FRANJA SUPERIOR (NUEVO ORDEN: FLUJO -> KPIS -> FILTROS)
-       ========================================== -->
+  <!-- FRANJA SUPERIOR -->
   <div class="top-wrapper">
     <div class="top-row">
       
-      <!-- 1. BLOQUES DEL FLUJO (IZQUIERDA) -->
+      <!-- 1. FLUJO (Izquierda) -->
       <section id="process-flow">
         <div class="flow-block" data-stage="RECIBO" data-days="0">
           <div class="flow-block-icon"><span class="material-symbols-outlined">mark_email_unread</span></div>
@@ -101,137 +90,81 @@
         </div>
       </section>
 
-      <!-- 2. GRUPO DE KPIS (CENTRO - 2 FILAS) -->
-      <section class="kpi-group-wrapper">
-        <!-- Fila Superior: Totales -->
-        <div class="stat-card">
-          <div class="stat-label">Total</div>
-          <div class="stat-value" id="stat-total">0</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">En Proceso</div>
-          <div class="stat-value" id="stat-proceso">0</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Completados</div>
-          <div class="stat-value" id="stat-completados">0</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Con Retraso</div>
-          <div class="stat-value stat-danger" id="stat-retraso">0</div>
-        </div>
-        
-        <!-- Fila Inferior: Tiempos -->
-        <div class="stat-card kpi-time">
-            <div class="stat-label">Prom. Teórico</div>
-            <div class="stat-value" id="kpi-teorico">—</div>
-        </div>
-        <div class="stat-card kpi-time">
-            <div class="stat-label">Prom. Real</div>
-            <div class="stat-value" id="kpi-real">—</div>
-        </div>
-        <div class="stat-card kpi-time">
-            <div class="stat-label">Delta Prom.</div>
-            <div class="stat-value" id="kpi-delta">—</div>
-        </div>
-        <div class="stat-card kpi-time">
-            <div class="stat-label">Delta Acum.</div>
-            <div class="stat-value" id="kpi-acumulado">—</div>
-        </div>
+      <!-- 2. KPIs (Centro - AQUI ESTÁN LAS 8 TARJETAS JUNTAS AHORA) -->
+      <section id="quick-stats">
+        <!-- Fila 1 -->
+        <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value" id="stat-total">0</div></div>
+        <div class="stat-card"><div class="stat-label">En Proceso</div><div class="stat-value" id="stat-proceso">0</div></div>
+        <div class="stat-card"><div class="stat-label">Completados</div><div class="stat-value" id="stat-completados">0</div></div>
+        <div class="stat-card"><div class="stat-label">Con Retraso</div><div class="stat-value stat-danger" id="stat-retraso">0</div></div>
+        <!-- Fila 2 (Movidos desde abajo) -->
+        <div class="stat-card kpi-time"><div class="stat-label">Prom. Teórico</div><div class="stat-value" id="kpi-teorico">—</div></div>
+        <div class="stat-card kpi-time"><div class="stat-label">Prom. Real</div><div class="stat-value" id="kpi-real">—</div></div>
+        <div class="stat-card kpi-time"><div class="stat-label">Delta Prom.</div><div class="stat-value" id="kpi-delta">—</div></div>
+        <div class="stat-card kpi-time"><div class="stat-label">Delta Acum.</div><div class="stat-value" id="kpi-acumulado">—</div></div>
       </section>
 
-      <!-- 3. FILTROS (DERECHA - COMPACTO) -->
+      <!-- 3. Filtros (Derecha) -->
       <section class="top-filters">
         <div class="filters-buttons-row">
           <button id="btnClearFilter" style="display:none;">Limpiar</button>
-          <button id="btnExport" title="Exportar datos">Exportar</button>
+          <button id="btnExport">Exportar</button>
         </div>
         <div class="filters-selects-column">
           <select id="flowFilterComent">
-            <option value="">Todos los comentarios</option>
-            <option value="DISCREPANCIA DE INVENTARIO">DISCREPANCIA DE INVENTARIO</option>
-            <option value="FALTA DE PERSONAL">FALTA DE PERSONAL</option>
-            <option value="VIATICOS PARA VIAJES">VIATICOS PARA VIAJES</option>
-            <option value="FALTA MONTACARGA">FALTA MONTACARGA</option>
-            <option value="CONGESTIONAMIENTO EN SALIDAS">CONGESTIONAMIENTO EN SALIDAS</option>
-            <option value="FACTURACION RETRASADA">FACTURACION RETRASADA</option>
-            <option value="FALLAS EN SISTEMA">FALLAS EN SISTEMA</option>
-            <option value="DEMORA EN DOCUMENTACION">DEMORA EN DOCUMENTACION</option>
-            <option value="ERROR DE CAPTACION">ERROR DE CAPTACION</option>
-            <option value="ENTREGADO">ENTREGADO</option>
+             <option value="">Todos los comentarios</option>
+             <!-- Opciones omitidas por brevedad, se generan igual o usar JS -->
+             <option value="DISCREPANCIA DE INVENTARIO">DISCREPANCIA DE INVENTARIO</option>
+             <option value="FALTA DE PERSONAL">FALTA DE PERSONAL</option>
+             <option value="VIATICOS PARA VIAJES">VIATICOS PARA VIAJES</option>
+             <option value="FALTA MONTACARGA">FALTA MONTACARGA</option>
+             <option value="CONGESTIONAMIENTO EN SALIDAS">CONGESTIONAMIENTO EN SALIDAS</option>
+             <option value="FACTURACION RETRASADA">FACTURACION RETRASADA</option>
+             <option value="FALLAS EN SISTEMA">FALLAS EN SISTEMA</option>
+             <option value="DEMORA EN DOCUMENTACION">DEMORA EN DOCUMENTACION</option>
+             <option value="ERROR DE CAPTACION">ERROR DE CAPTACION</option>
+             <option value="ENTREGADO">ENTREGADO</option>
           </select>
-          <select id="flowFilterUnidad">
-            <option value="">Todas las unidades</option>
-          </select>
-          <select id="flowFilterGrupo">
-            <option value="">Todos los grupos</option>
-          </select>
+          <select id="flowFilterUnidad"><option value="">Todas las unidades</option></select>
+          <select id="flowFilterGrupo"><option value="">Todos los grupos</option></select>
         </div>
       </section>
     </div>
   </div>
 
-  <!-- Contenedor principal -->
   <div class="main-container">
     <section class="right-panel">
-
-      <!-- Fila Media: CHECKLIST (45%) + TABLA (55%) -->
+      <!-- Fila Media -->
       <div class="checklist-orders-row">
-        
-        <!-- Checklist mensuales -->
         <div class="monthly-checklist-container">
           <h3>Checklist Mensuales <span id="monthlyDateLabel"></span></h3>
-          <div id="monthlyChecklist">
-            <p class="loading-message">Seleccione un día con mensuales para ver el resumen.</p>
-          </div>
+          <div id="monthlyChecklist"><p class="loading-message">Seleccione un día...</p></div>
         </div>
-
-        <!-- Tabla de requisiciones -->
         <section class="orders-panel-inline">
-          <div class="panel-header inline">
-            <h2 id="panel-title">Requisiciones del día</h2>
-          </div>
-          <div class="orders-list" id="ordersList">
-            <p class="loading-message">Cargando requisiciones...</p>
-          </div>
+          <div class="panel-header inline"><h2 id="panel-title">Requisiciones</h2></div>
+          <div class="orders-list" id="ordersList"><p class="loading-message">Cargando...</p></div>
         </section>
       </div>
 
-      <!-- Fila Inferior: CALENDARIO + GRÁFICOS -->
+      <!-- Fila Inferior (Sin KPIs porque se movieron arriba) -->
       <div class="bottom-panel-wrapper">
         <div class="calendar-container">
             <div class="calendar-header">
-              <button id="btnPrevMonth">◀</button>
-              <h3 id="calendarTitle">Diciembre 2025</h3>
-              <button id="btnNextMonth">▶</button>
+              <button id="btnPrevMonth">◀</button><h3 id="calendarTitle">Diciembre 2025</h3><button id="btnNextMonth">▶</button>
             </div>
             <div id="calendar" class="calendar-grid"></div>
             <div class="calendar-legend">
-              <div class="legend-item"><span class="legend-color" style="background:#ef4444"></span><span>Vencido</span></div>
-              <div class="legend-item"><span class="legend-color" style="background:#f59e0b"></span><span>Hoy</span></div>
-              <div class="legend-item"><span class="legend-color" style="background:#3b82f6"></span><span>Programado</span></div>
+              <div class="legend-item"><span class="legend-color" style="background:#ef4444"></span>Vencido</div>
+              <div class="legend-item"><span class="legend-color" style="background:#f59e0b"></span>Hoy</div>
+              <div class="legend-item"><span class="legend-color" style="background:#3b82f6"></span>Prog.</div>
             </div>
-          </div>
-
-        <!-- Gráficos -->
+        </div>
         <div class="charts-row">
-          <div class="gap-analysis-container">
-            <h3>Análisis de Deltas (Teórico vs Real)</h3>
-            <canvas id="gapChart"></canvas>
-          </div>
-
-          <div class="stage-deltas-container">
-            <h3>Deltas por Etapa</h3>
-            <canvas id="stageDeltas"></canvas>
-          </div>
-
-          <div class="comments-chart-container">
-            <h3>Comentarios</h3>
-            <canvas id="commentsChart"></canvas>
-          </div>
+          <div class="gap-analysis-container"><h3>Análisis de Deltas</h3><canvas id="gapChart"></canvas></div>
+          <div class="stage-deltas-container"><h3>Deltas por Etapa</h3><canvas id="stageDeltas"></canvas></div>
+          <div class="comments-chart-container"><h3>Comentarios</h3><canvas id="commentsChart"></canvas></div>
         </div>
       </div>
-      
     </section>
   </div>
   
@@ -239,23 +172,11 @@
   <div id="editModal" class="flow-edit-modal" style="display:none;">
     <div class="flow-edit-backdrop"></div>
     <div class="flow-edit-dialog">
-      <div class="flow-edit-header">
-        <h3 id="editModalTitle">Editar requisición</h3>
-        <button id="editModalClose" class="flow-edit-close">✕</button>
-      </div>
+      <div class="flow-edit-header"><h3 id="editModalTitle">Editar</h3><button id="editModalClose" class="flow-edit-close">✕</button></div>
       <div class="flow-edit-body">
-        <div class="flow-edit-row">
-          <label>F8 SALMI</label>
-          <div id="editFieldId" class="flow-edit-readonly">—</div>
-        </div>
-        <div class="flow-edit-row">
-          <label>Unidad</label>
-          <div id="editFieldUnidad" class="flow-edit-readonly">—</div>
-        </div>
-        <div class="flow-edit-row">
-          <label>Grupo</label>
-          <div id="editFieldGrupo" class="flow-edit-readonly">—</div>
-        </div>
+        <div class="flow-edit-row"><label>F8 SALMI</label><div id="editFieldId" class="flow-edit-readonly">—</div></div>
+        <div class="flow-edit-row"><label>Unidad</label><div id="editFieldUnidad" class="flow-edit-readonly">—</div></div>
+        <div class="flow-edit-row"><label>Grupo</label><div id="editFieldGrupo" class="flow-edit-readonly">—</div></div>
         <div class="flow-edit-grid">
           <div><label>Asignación</label><input type="date" id="editFieldAsignacion"/></div>
           <div><label>Salida</label><input type="date" id="editFieldSalida"/></div>
@@ -284,7 +205,7 @@
         <div id="editModalMessage" class="flow-edit-message"></div>
       </div>
       <div class="flow-edit-footer">
-        <button id="editModalSave" class="flow-edit-save">Guardar cambios</button>
+        <button id="editModalSave" class="flow-edit-save">Guardar</button>
         <button id="editModalCancel" class="flow-edit-cancel">Cancelar</button>
       </div>
     </div>
@@ -297,7 +218,6 @@
       CLIENT_ID: '63868073848-8bfis5g0f8mt14oia3flmbqksg69tejq.apps.googleusercontent.com'
     };
   </script>
-
-  <script src="flow-app.js?v=3.4"></script>
+  <script src="flow-app.js?v=3.5"></script>
 </body>
 </html>
