@@ -188,6 +188,8 @@ if (window.__FLOW_APP_LOADED__) {
     
     // *** CAMBIO 1: Actualizar el Checklist con los datos filtrados ***
     // Si hay un filtro activo, usamos 'filtered'. Si no, 'currentRows' (que es lo mismo en ese punto)
+    // --- CAMBIO CLAVE: Actualizar Checklist con datos filtrados ---
+    if (currentDayFilter) {
     loadMonthlyChecklist(currentDayFilter, filtered);
   }
 
@@ -1457,11 +1459,11 @@ if (window.__FLOW_APP_LOADED__) {
 
     if (selGrupo) selGrupo.addEventListener('change', () => {
       applyFlowFilters();
-      if (currentDayFilter) loadMonthlyChecklist(currentDayFilter);
+      //if (currentDayFilter) loadMonthlyChecklist(currentDayFilter);
     });
     if (selUnidad) selUnidad.addEventListener('change', () => {
       applyFlowFilters();
-      if (currentDayFilter) loadMonthlyChecklist(currentDayFilter);
+      //if (currentDayFilter) loadMonthlyChecklist(currentDayFilter);
     });
     if (selComent) selComent.addEventListener('change', applyFlowFilters);
 
