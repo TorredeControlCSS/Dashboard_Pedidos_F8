@@ -811,7 +811,7 @@ if (window.__FLOW_APP_LOADED__) {
               avgTeor!=null?avgTeor:0,
               avgReal!=null?avgReal:0
             ],
-            backgroundColor:['#3b82f6','#ef4444']
+            backgroundColor:['#3b82f6','#ef4444'],
             barThickness: 40, // <--- AGREGA ESTA LÍNEA (Ancho máximo en px)
             maxBarThickness: 50 // <--- O ESTA LÍNEA  
           }]
