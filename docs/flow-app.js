@@ -186,6 +186,8 @@ if (window.__FLOW_APP_LOADED__) {
     updateQuickStatsFromRows(filtered);
     updateGapAndTimeKpisFromRows(filtered);
     updateFlowBlockCounts(filtered);
+     // AGREGAR ESTA LÍNEA:
+    syncChecklistWithFilters(); 
   }
 
   function populateFlowFilterOptionsFromRows(rows) {
@@ -875,75 +877,108 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   // ============================
-  //  CHECKLIST MENSUALES
+  //  CHECKLIST MENSUALES (MODIFICADO PARA FILTROS LOCALES)
   // ============================
-  async function loadMonthlyChecklist(dateKey) {
+  async function loadMonthlyChecklist(dateKey, filteredRows = null) {
     const labelEl = document.getElementById('monthlyDateLabel');
     const contEl  = document.getElementById('monthlyChecklist');
     if (!contEl) return;
 
-    if (labelEl) labelEl.textContent = `(${dateKey})`;
-    contEl.innerHTML = '<p class="loading-message">Cargando checklist de mensuales...</p>';
+    if (labelEl) labelEl.textContent = `(${dateKey || '...'})`;
+    
+    // USAR FILAS FILTRADAS SI EXISTEN, SI NO, USAR CURRENTROWS
+    const rowsToProcess = filteredRows || currentRows || [];
 
-    try {
-      const res = await jsonp(`${A}?route=monthly.checklist&date=${dateKey}`);
-      if (!res || res.status !== 'ok') {
-        console.warn('monthly.checklist error', res && res.error);
-        contEl.innerHTML = '<p class="loading-message">No se pudo cargar el checklist.</p>';
-        return;
+    if (!rowsToProcess.length) {
+      contEl.innerHTML = '<p class="loading-message">No hay datos para mostrar con el filtro actual.</p>';
+      return;
+    }
+
+    // --- CÁLCULO LOCAL DE DATOS (Reemplaza la llamada al servidor) ---
+    const resumenUnidades = new Map();
+    const detallePorUnidad = new Map();
+
+    rowsToProcess.forEach(r => {
+      const unidad = String(r['UNIDAD'] || '').trim();
+      const grupo  = String(r['GRUPO']  || '').trim();
+      // Solo procesamos si es un item de mensual (podrías filtrar por TIPO si fuera necesario)
+      // Asumiremos que todo lo que entra aquí es relevante.
+      if (!unidad) return;
+
+      // Inicializar Estructura Unidad
+      if (!resumenUnidades.has(unidad)) {
+        resumenUnidades.set(unidad, {
+          unidad,
+          totalRequisiciones: 0, conAsignacion: 0, conSalida: 0, conFact: 0, conEmpacado: 0, conProy: 0, conEntregaReal: 0,
+          factAntesSalida: 0, factMuyTarde: 0, soloSalida: 0, soloFact: 0
+        });
       }
+      const uStats = resumenUnidades.get(unidad);
 
-      const data = res.data || {};
-      const unidadesResumen = data.grupos || [];
-
-      if (!unidadesResumen.length) {
-        contEl.innerHTML = '<p class="loading-message">No hay mensuales para esta fecha.</p>';
-        return;
+      // Inicializar Estructura Grupo
+      if (!detallePorUnidad.has(unidad)) {
+        detallePorUnidad.set(unidad, new Map());
       }
+      const mapGrupos = detallePorUnidad.get(unidad);
+      if (!mapGrupos.has(grupo)) {
+        mapGrupos.set(grupo, {
+          grupo, total: 0, conAsignacion: 0, conSalida: 0, conFact: 0, conEmpacado: 0, conProy: 0, conEntregaReal: 0
+        });
+      }
+      const gStats = mapGrupos.get(grupo);
 
-      const detallePorUnidad = new Map();
-      const rows = currentRows || [];
+      // --- CONTADORES ---
+      const hasAsig = !!r['ASIGNACIÓN'];
+      const hasSal  = !!r['SALIDA'];
+      const hasFact = !!r['FACTURACIÓN'];
+      const hasEmp  = !!r['EMPACADO'];
+      const hasProy = !!r['PROY. ENTREGA'];
+      const hasEnt  = !!r['ENTREGA REAL'];
 
-      rows.forEach(r => {
-        const unidad = String(r['UNIDAD'] || '').trim();
-        const grupo  = String(r['GRUPO']  || '').trim();
-        if (!unidad || !grupo) return;
+      // Incoherencias
+      const dSal = parseIsoDate(r['SALIDA']);
+      const dFact = parseIsoDate(r['FACTURACIÓN']);
+      let incFactAntes = 0, incFactTarde = 0;
+      if (dSal && dFact) {
+        if (dFact < dSal) incFactAntes = 1;
+        if (daysBetween(dSal, dFact) > 7) incFactTarde = 1;
+      }
+      const incSoloSal = (hasSal && !hasFact) ? 1 : 0;
+      const incSoloFact = (!hasSal && hasFact) ? 1 : 0;
 
-        if (!detallePorUnidad.has(unidad)) {
-          detallePorUnidad.set(unidad, new Map());
-        }
-        const mapGrupos = detallePorUnidad.get(unidad);
+      // Actualizar Unidad
+      uStats.totalRequisiciones++;
+      if (hasAsig) uStats.conAsignacion++;
+      if (hasSal)  uStats.conSalida++;
+      if (hasFact) uStats.conFact++;
+      if (hasEmp)  uStats.conEmpacado++;
+      if (hasProy) uStats.conProy++;
+      if (hasEnt)  uStats.conEntregaReal++;
+      uStats.factAntesSalida += incFactAntes;
+      uStats.factMuyTarde += incFactTarde;
+      uStats.soloSalida += incSoloSal;
+      uStats.soloFact += incSoloFact;
 
-        if (!mapGrupos.has(grupo)) {
-          mapGrupos.set(grupo, {
-            unidad,
-            grupo,
-            total: 0,
-            conAsignacion: 0,
-            conSalida: 0,
-            conFact: 0,
-            conEmpacado: 0,
-            conProy: 0,
-            conEntregaReal: 0
-          });
-        }
-        const acc = mapGrupos.get(grupo);
-        acc.total++;
-        if (r['ASIGNACIÓN'])    acc.conAsignacion++;
-        if (r['SALIDA'])        acc.conSalida++;
-        if (r['FACTURACIÓN'])   acc.conFact++;
-        if (r['EMPACADO'])      acc.conEmpacado++;
-        if (r['PROY. ENTREGA']) acc.conProy++;
-        if (r['ENTREGA REAL'])  acc.conEntregaReal++;
-      });
+      // Actualizar Grupo
+      gStats.total++;
+      if (hasAsig) gStats.conAsignacion++;
+      if (hasSal)  gStats.conSalida++;
+      if (hasFact) gStats.conFact++;
+      if (hasEmp)  gStats.conEmpacado++;
+      if (hasProy) gStats.conProy++;
+      if (hasEnt)  gStats.conEntregaReal++;
+    });
 
-      const html = `
+    const unidadesResumen = Array.from(resumenUnidades.values()).sort((a,b) => a.unidad.localeCompare(b.unidad));
+
+    // --- RENDERIZADO (Igual que antes, solo cambia la fuente de datos) ---
+    const html = `
         <table class="monthly-table" id="monthlyTableMain">
           <thead>
             <tr>
               <th style="width:32px;"></th>
               <th>Unidad</th>
-              <th>Req.</th>
+              <th>Req.</th> <!-- CAMBIADO A REQ. COMO PEDISTE -->
               <th>Con Asig.</th>
               <th>Con Salida</th>
               <th>Con Fact.</th>
@@ -958,9 +993,8 @@ if (window.__FLOW_APP_LOADED__) {
           </thead>
           <tbody>
             ${unidadesResumen.map(u => {
-              const inco = u.incoherencias || {};
-              const hayErr = (inco.factAntesSalida || inco.soloFact);
-              const hayWarn = inco.factMuyTarde || inco.soloSalida || u.conSalida === 0;
+              const hayErr = (u.factAntesSalida > 0 || u.soloFact > 0);
+              const hayWarn = (u.factMuyTarde > 0 || u.soloSalida > 0 || (u.totalRequisiciones > 0 && u.conSalida === 0));
               const cls = hayErr ? 'badge-err' : (hayWarn ? 'badge-warn' : 'badge-ok');
 
               const unidad = String(u.unidad || '').trim();
@@ -979,10 +1013,10 @@ if (window.__FLOW_APP_LOADED__) {
                   <td>${u.conEmpacado}</td>
                   <td>${u.conProy}</td>
                   <td>${u.conEntregaReal}</td>
-                  <td>${inco.factAntesSalida || 0}</td>
-                  <td>${inco.factMuyTarde || 0}</td>
-                  <td>${inco.soloSalida || 0}</td>
-                  <td>${inco.soloFact || 0}</td>
+                  <td>${u.factAntesSalida || 0}</td>
+                  <td>${u.factMuyTarde || 0}</td>
+                  <td>${u.soloSalida || 0}</td>
+                  <td>${u.soloFact || 0}</td>
                 </tr>
               `;
 
@@ -1043,11 +1077,6 @@ if (window.__FLOW_APP_LOADED__) {
           else tr.classList.add('monthly-row-grupo-hidden');
         });
       });
-
-    } catch (e) {
-      console.warn('loadMonthlyChecklist error', e);
-      contEl.innerHTML = '<p class="loading-message">Error de red al cargar checklist.</p>';
-    }
   }
 
   // ============================
@@ -1473,4 +1502,48 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   document.addEventListener('DOMContentLoaded', initFlowDashboard);
+
+  // --- PEGAR AL FINAL DE flow-app.js ---
+
+  function syncChecklistWithFilters() {
+    const table = document.getElementById('monthlyTableMain');
+    if (!table) return;
+
+    const uVal = document.getElementById('flowFilterUnidad')?.value || '';
+    const gVal = document.getElementById('flowFilterGrupo')?.value || '';
+
+    // 1. Manejar filas de UNIDAD (Padres)
+    table.querySelectorAll('tr.monthly-row-unidad').forEach(tr => {
+      const u = tr.getAttribute('data-unidad');
+      // Si hay filtro de unidad y no coincide, ocultar a la fuerza
+      if (uVal && u !== uVal) {
+        tr.style.display = 'none';
+      } else {
+        // Si coincide (o no hay filtro), quitar el estilo inline para que se vea
+        tr.style.display = ''; 
+      }
+    });
+
+    // 2. Manejar filas de GRUPO (Hijos)
+    table.querySelectorAll('tr.monthly-row-grupo').forEach(tr => {
+      const u = tr.getAttribute('data-unidad');
+      const g = tr.getAttribute('data-grupo');
+      
+      // Lógica combinada: 
+      // Debe coincidir Unidad (si está filtrada) Y Grupo (si está filtrado)
+      let shouldHide = false;
+      if (uVal && u !== uVal) shouldHide = true;
+      if (gVal && g !== gVal) shouldHide = true;
+
+      if (shouldHide) {
+        tr.classList.add('force-hidden-by-filter'); // Usamos clase auxiliar o style
+        tr.style.display = 'none';
+      } else {
+        tr.classList.remove('force-hidden-by-filter');
+        // IMPORTANTE: Dejamos display '' para que el acordeón (clase monthly-row-grupo-hidden)
+        // siga controlando si se ve o no al expandir con el botón (+)
+        tr.style.display = ''; 
+      }
+    });
+  }
 }
