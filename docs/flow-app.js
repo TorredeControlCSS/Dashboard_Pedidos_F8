@@ -1509,3 +1509,4 @@ if (window.__FLOW_APP_LOADED__) {
 
   document.addEventListener('DOMContentLoaded', initFlowDashboard);
 }
+}
