@@ -692,7 +692,7 @@ h1, h2, h3 { margin: 0; }
   text-overflow: ellipsis;
 }
 
-/* Columnas de fecha: headers cortos, texto centrado en celdas */
+/* Columnas de fecha: Aumentamos ancho para que quepa "03/12/25" */
 .flow-table th:nth-child(4),
 .flow-table th:nth-child(5),
 .flow-table th:nth-child(6),
@@ -701,9 +701,10 @@ h1, h2, h3 { margin: 0; }
 .flow-table th:nth-child(9),
 .flow-table th:nth-child(10),
 .flow-table th:nth-child(11) {
-  width: 56px;
-  max-width: 56px;
+  width: 75px;        /* Aumentado de 56px a 75px */
+  min-width: 75px;    /* Asegura que no se encoja */
   text-align: center;
+  padding: 4px 2px;   /* Reducimos un poco el padding lateral */
 }
 
 .flow-table td:nth-child(4),
@@ -715,7 +716,9 @@ h1, h2, h3 { margin: 0; }
 .flow-table td:nth-child(10),
 .flow-table td:nth-child(11) {
   white-space: nowrap;
-  text-align: center;
+  text-align: center !important; /* Forzamos el centrado */
+  overflow: visible;             /* Permitimos que se vea el texto completo */
+  text-overflow: clip;           /* Quitamos los puntos suspensivos (...) */
 }
 
 /* Delta / Etapa */
