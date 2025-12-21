@@ -1,8 +1,7 @@
-// flow-app.js v3.4 — Vista flujo con edición inline tipo clásica en tabla
-console.log('flow-app.js v3.4 — Flow view with table inline editing');
+// flow-app.js v3.7 — Filtros Globales (Checklist Integrado)
+console.log('flow-app.js v3.7 — Flow view with table inline editing');
 
 /* ===== NOTAS SOBRE MANEJO DE FECHAS =====
- *
  * Ahora manejamos fechas en formato YYYY-MM-DD en HORA LOCAL
  * (sin UTC ni "Z") para alinearnos con la hoja de Google (Panamá).
  */
@@ -186,8 +185,10 @@ if (window.__FLOW_APP_LOADED__) {
     updateQuickStatsFromRows(filtered);
     updateGapAndTimeKpisFromRows(filtered);
     updateFlowBlockCounts(filtered);
-     // AGREGAR ESTA LÍNEA:
-    syncChecklistWithFilters(); 
+    
+    // *** CAMBIO 1: Actualizar el Checklist con los datos filtrados ***
+    // Si hay un filtro activo, usamos 'filtered'. Si no, 'currentRows' (que es lo mismo en ese punto)
+    loadMonthlyChecklist(currentDayFilter, filtered);
   }
 
   function populateFlowFilterOptionsFromRows(rows) {
@@ -814,8 +815,8 @@ if (window.__FLOW_APP_LOADED__) {
               avgReal!=null?avgReal:0
             ],
             backgroundColor:['#3b82f6','#ef4444'],
-            barThickness: 40, // <--- AGREGA ESTA LÍNEA (Ancho máximo en px)
-            maxBarThickness: 50 // <--- O ESTA LÍNEA  
+            barThickness: 40, 
+            maxBarThickness: 50 
           }]
         },
         options:{
@@ -877,8 +878,9 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   // ============================
-  //  CHECKLIST MENSUALES (MODIFICADO PARA FILTROS LOCALES)
+  //  CHECKLIST MENSUALES (MODIFICADO PARA FILTROS GLOBALES)
   // ============================
+  // *** CAMBIO 2: La función acepta filas filtradas como parámetro opcional ***
   async function loadMonthlyChecklist(dateKey, filteredRows = null) {
     const labelEl = document.getElementById('monthlyDateLabel');
     const contEl  = document.getElementById('monthlyChecklist');
@@ -886,7 +888,8 @@ if (window.__FLOW_APP_LOADED__) {
 
     if (labelEl) labelEl.textContent = `(${dateKey || '...'})`;
     
-    // USAR FILAS FILTRADAS SI EXISTEN, SI NO, USAR CURRENTROWS
+    // *** CAMBIO 3: Usar filas filtradas si existen, si no, usar currentRows ***
+    // Esto es lo que permite que el checklist reaccione al filtro global.
     const rowsToProcess = filteredRows || currentRows || [];
 
     if (!rowsToProcess.length) {
@@ -895,14 +898,13 @@ if (window.__FLOW_APP_LOADED__) {
     }
 
     // --- CÁLCULO LOCAL DE DATOS (Reemplaza la llamada al servidor) ---
+    // Calculamos los totales usando SOLO las filas visibles/filtradas
     const resumenUnidades = new Map();
     const detallePorUnidad = new Map();
 
     rowsToProcess.forEach(r => {
       const unidad = String(r['UNIDAD'] || '').trim();
       const grupo  = String(r['GRUPO']  || '').trim();
-      // Solo procesamos si es un item de mensual (podrías filtrar por TIPO si fuera necesario)
-      // Asumiremos que todo lo que entra aquí es relevante.
       if (!unidad) return;
 
       // Inicializar Estructura Unidad
@@ -971,112 +973,112 @@ if (window.__FLOW_APP_LOADED__) {
 
     const unidadesResumen = Array.from(resumenUnidades.values()).sort((a,b) => a.unidad.localeCompare(b.unidad));
 
-    // --- RENDERIZADO (Igual que antes, solo cambia la fuente de datos) ---
+    // --- RENDERIZADO HTML ---
     const html = `
-        <table class="monthly-table" id="monthlyTableMain">
-          <thead>
-            <tr>
-              <th style="width:32px;"></th>
-              <th>Unidad</th>
-              <th>Req.</th> <!-- CAMBIADO A REQ. COMO PEDISTE -->
-              <th>Con Asig.</th>
-              <th>Con Salida</th>
-              <th>Con Fact.</th>
-              <th>Con Emp.</th>
-              <th>Con Proy.</th>
-              <th>Con Entrega</th>
-              <th title="Facturación antes de salida">Fact &lt; Sal</th>
-              <th title="Facturación &gt; 7 días después de salida">Fact &gt;7d</th>
-              <th>Solo Salida</th>
-              <th>Solo Fact.</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${unidadesResumen.map(u => {
-              const hayErr = (u.factAntesSalida > 0 || u.soloFact > 0);
-              const hayWarn = (u.factMuyTarde > 0 || u.soloSalida > 0 || (u.totalRequisiciones > 0 && u.conSalida === 0));
-              const cls = hayErr ? 'badge-err' : (hayWarn ? 'badge-warn' : 'badge-ok');
+      <table class="monthly-table" id="monthlyTableMain">
+        <thead>
+          <tr>
+            <th style="width:32px;"></th>
+            <th>Unidad</th>
+            <th>Req.</th> <!-- TU CAMBIO PERSONALIZADO "Req." MANTENIDO -->
+            <th>Con Asig.</th>
+            <th>Con Salida</th>
+            <th>Con Fact.</th>
+            <th>Con Emp.</th>
+            <th>Con Proy.</th>
+            <th>Con Entrega</th>
+            <th title="Facturación antes de salida">Fact &lt; Sal</th>
+            <th title="Facturación &gt; 7 días después de salida">Fact &gt;7d</th>
+            <th>Solo Salida</th>
+            <th>Solo Fact.</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${unidadesResumen.map(u => {
+            const hayErr = (u.factAntesSalida > 0 || u.soloFact > 0);
+            const hayWarn = (u.factMuyTarde > 0 || u.soloSalida > 0 || (u.totalRequisiciones > 0 && u.conSalida === 0));
+            const cls = hayErr ? 'badge-err' : (hayWarn ? 'badge-warn' : 'badge-ok');
 
-              const unidad = String(u.unidad || '').trim();
-              const tieneDetalle = detallePorUnidad.has(unidad);
+            const unidad = String(u.unidad || '').trim();
+            const tieneDetalle = detallePorUnidad.has(unidad);
 
-              let filas = `
-                <tr class="monthly-row-unidad" data-unidad="${unidad.replace(/"/g,'&quot;')}">
-                  <td class="monthly-toggle-cell">
-                    ${tieneDetalle ? `<button class="monthly-toggle-btn" data-unidad="${unidad.replace(/"/g,'&quot;')}">+</button>` : ''}
-                  </td>
-                  <td>${unidad}</td>
-                  <td class="${cls}">${u.totalRequisiciones}</td>
-                  <td>${u.conAsignacion}</td>
-                  <td>${u.conSalida}</td>
-                  <td>${u.conFact}</td>
-                  <td>${u.conEmpacado}</td>
-                  <td>${u.conProy}</td>
-                  <td>${u.conEntregaReal}</td>
-                  <td>${u.factAntesSalida || 0}</td>
-                  <td>${u.factMuyTarde || 0}</td>
-                  <td>${u.soloSalida || 0}</td>
-                  <td>${u.soloFact || 0}</td>
+            let filas = `
+              <tr class="monthly-row-unidad" data-unidad="${unidad.replace(/"/g,'&quot;')}">
+                <td class="monthly-toggle-cell">
+                  ${tieneDetalle ? `<button class="monthly-toggle-btn" data-unidad="${unidad.replace(/"/g,'&quot;')}">+</button>` : ''}
+                </td>
+                <td>${unidad}</td>
+                <td class="${cls}">${u.totalRequisiciones}</td>
+                <td>${u.conAsignacion}</td>
+                <td>${u.conSalida}</td>
+                <td>${u.conFact}</td>
+                <td>${u.conEmpacado}</td>
+                <td>${u.conProy}</td>
+                <td>${u.conEntregaReal}</td>
+                <td>${u.factAntesSalida || 0}</td>
+                <td>${u.factMuyTarde || 0}</td>
+                <td>${u.soloSalida || 0}</td>
+                <td>${u.soloFact || 0}</td>
+              </tr>
+            `;
+
+            if (tieneDetalle) {
+              const gruposMap = detallePorUnidad.get(unidad);
+              const gruposArr = Array.from(gruposMap.values())
+                .sort((a,b) => a.grupo.localeCompare(b.grupo));
+
+              filas += gruposArr.map(g => `
+                <tr class="monthly-row-grupo monthly-row-grupo-hidden"
+                    data-unidad="${unidad.replace(/"/g,'&quot;')}"
+                    data-grupo="${g.grupo.replace(/"/g,'&quot;')}">
+                  <td></td>
+                  <td style="padding-left:20px;">${g.grupo}</td>
+                  <td>${g.total}</td>
+                  <td>${g.conAsignacion}</td>
+                  <td>${g.conSalida}</td>
+                  <td>${g.conFact}</td>
+                  <td>${g.conEmpacado}</td>
+                  <td>${g.conProy}</td>
+                  <td>${g.conEntregaReal}</td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
                 </tr>
-              `;
+              `).join('');
+            }
 
-              if (tieneDetalle) {
-                const gruposMap = detallePorUnidad.get(unidad);
-                const gruposArr = Array.from(gruposMap.values())
-                  .sort((a,b) => a.grupo.localeCompare(b.grupo));
+            return filas;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
 
-                filas += gruposArr.map(g => `
-                  <tr class="monthly-row-grupo monthly-row-grupo-hidden"
-                      data-unidad="${unidad.replace(/"/g,'&quot;')}"
-                      data-grupo="${g.grupo.replace(/"/g,'&quot;')}">
-                    <td></td>
-                    <td style="padding-left:20px;">${g.grupo}</td>
-                    <td>${g.total}</td>
-                    <td>${g.conAsignacion}</td>
-                    <td>${g.conSalida}</td>
-                    <td>${g.conFact}</td>
-                    <td>${g.conEmpacado}</td>
-                    <td>${g.conProy}</td>
-                    <td>${g.conEntregaReal}</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                  </tr>
-                `).join('');
-              }
+    contEl.innerHTML = html;
 
-              return filas;
-            }).join('')}
-          </tbody>
-        </table>
-      `;
+    const table = document.getElementById('monthlyTableMain');
+    if (!table) return;
 
-      contEl.innerHTML = html;
+    table.addEventListener('click', ev => {
+      const btn = ev.target.closest('.monthly-toggle-btn');
+      if (!btn) return;
 
-      const table = document.getElementById('monthlyTableMain');
-      if (!table) return;
+      const unidad = btn.getAttribute('data-unidad') || '';
 
-      table.addEventListener('click', ev => {
-        const btn = ev.target.closest('.monthly-toggle-btn');
-        if (!btn) return;
-
-        const unidad = btn.getAttribute('data-unidad') || '';
-
-        const rowsGrupo = table.querySelectorAll('tr.monthly-row-grupo');
-        const targetRows = [];
-        rowsGrupo.forEach(tr => {
-          if (tr.getAttribute('data-unidad') === unidad) targetRows.push(tr);
-        });
-
-        const isCollapsed = btn.textContent.trim() === '+';
-        btn.textContent = isCollapsed ? '−' : '+';
-
-        targetRows.forEach(tr => {
-          if (isCollapsed) tr.classList.remove('monthly-row-grupo-hidden');
-          else tr.classList.add('monthly-row-grupo-hidden');
-        });
+      const rowsGrupo = table.querySelectorAll('tr.monthly-row-grupo');
+      const targetRows = [];
+      rowsGrupo.forEach(tr => {
+        if (tr.getAttribute('data-unidad') === unidad) targetRows.push(tr);
       });
+
+      const isCollapsed = btn.textContent.trim() === '+';
+      btn.textContent = isCollapsed ? '−' : '+';
+
+      targetRows.forEach(tr => {
+        if (isCollapsed) tr.classList.remove('monthly-row-grupo-hidden');
+        else tr.classList.add('monthly-row-grupo-hidden');
+      });
+    });
   }
 
   // ============================
@@ -1203,6 +1205,8 @@ if (window.__FLOW_APP_LOADED__) {
 
     renderCalendar();
 
+    // *** CAMBIO 4: Cargar Checklist con datos iniciales del día ***
+    // (Ahora usa currentRows internamente porque filteredRows será null aquí)
     loadMonthlyChecklist(dateKey).catch(e => {
       console.warn('loadMonthlyChecklist error', e);
     });
@@ -1502,48 +1506,4 @@ if (window.__FLOW_APP_LOADED__) {
   }
 
   document.addEventListener('DOMContentLoaded', initFlowDashboard);
-
-  // --- PEGAR AL FINAL DE flow-app.js ---
-
-  function syncChecklistWithFilters() {
-    const table = document.getElementById('monthlyTableMain');
-    if (!table) return;
-
-    const uVal = document.getElementById('flowFilterUnidad')?.value || '';
-    const gVal = document.getElementById('flowFilterGrupo')?.value || '';
-
-    // 1. Manejar filas de UNIDAD (Padres)
-    table.querySelectorAll('tr.monthly-row-unidad').forEach(tr => {
-      const u = tr.getAttribute('data-unidad');
-      // Si hay filtro de unidad y no coincide, ocultar a la fuerza
-      if (uVal && u !== uVal) {
-        tr.style.display = 'none';
-      } else {
-        // Si coincide (o no hay filtro), quitar el estilo inline para que se vea
-        tr.style.display = ''; 
-      }
-    });
-
-    // 2. Manejar filas de GRUPO (Hijos)
-    table.querySelectorAll('tr.monthly-row-grupo').forEach(tr => {
-      const u = tr.getAttribute('data-unidad');
-      const g = tr.getAttribute('data-grupo');
-      
-      // Lógica combinada: 
-      // Debe coincidir Unidad (si está filtrada) Y Grupo (si está filtrado)
-      let shouldHide = false;
-      if (uVal && u !== uVal) shouldHide = true;
-      if (gVal && g !== gVal) shouldHide = true;
-
-      if (shouldHide) {
-        tr.classList.add('force-hidden-by-filter'); // Usamos clase auxiliar o style
-        tr.style.display = 'none';
-      } else {
-        tr.classList.remove('force-hidden-by-filter');
-        // IMPORTANTE: Dejamos display '' para que el acordeón (clase monthly-row-grupo-hidden)
-        // siga controlando si se ve o no al expandir con el botón (+)
-        tr.style.display = ''; 
-      }
-    });
-  }
 }
