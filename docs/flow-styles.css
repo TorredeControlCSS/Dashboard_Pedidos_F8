@@ -233,3 +233,74 @@ canvas { width: 100% !important; height: 100% !important; min-height: 0; }
   #quick-stats { display: flex; flex-wrap: wrap; gap: 6px; }
   .stat-card { flex: 1 1 120px; }
 }
+/* =========================================
+   AJUSTE DE FUENTES (AUMENTO DE LEGIBILIDAD)
+   ========================================= */
+
+/* 1. FILTROS (Más fáciles de leer y clicar) */
+.filters-buttons-row button, 
+.filters-selects-column select {
+    font-size: 12px !important;
+    padding: 4px 6px;
+}
+
+/* 2. TARJETAS KPI (Superiores Centro) */
+.stat-label {
+    font-size: 10px !important; /* Antes 8px */
+}
+.stat-value {
+    font-size: 15px !important; /* Antes 13px */
+}
+
+/* 3. BLOQUES DE FLUJO (Izquierda) */
+.flow-block-header {
+    font-size: 11px !important; /* Antes 10px */
+}
+.flow-block-count {
+    font-size: 26px !important; /* Antes 24px */
+}
+.flow-block-days {
+    font-size: 11px !important; /* Antes 10px */
+}
+
+/* 4. TABLA CHECKLIST (Mensuales) */
+.monthly-table {
+    font-size: 11px !important; /* Antes 10px */
+}
+/* Aumentar un poco los botones de acordeón */
+.monthly-toggle-btn {
+    font-size: 11px !important;
+    padding: 0 5px;
+}
+
+/* 5. TABLA REQUISICIONES (Principal) */
+.flow-table {
+    font-size: 12px !important; /* Antes 11px */
+}
+/* La primera columna (F8) solía ser más pequeña */
+.flow-table td:nth-child(1) {
+    font-size: 11px !important; /* Antes 10px */
+}
+
+/* 6. CALENDARIO */
+.calendar-day-header {
+    font-size: 11px !important; /* Antes 9px */
+    font-weight: 700;
+}
+.calendar-day-number {
+    font-size: 13px !important; /* Antes 11-12px */
+}
+/* Los badges (contadores rojos) en el calendario */
+.calendar-day-badge {
+    font-size: 10px !important; /* Antes 8px */
+    padding: 1px 4px;
+}
+
+/* 7. TÍTULOS DE PANELES */
+.monthly-checklist-container h3, 
+.panel-header.inline h2,
+.gap-analysis-container h3, 
+.stage-deltas-container h3, 
+.comments-chart-container h3 {
+    font-size: 15px !important; /* Unificar títulos un poco más grandes */
+}
