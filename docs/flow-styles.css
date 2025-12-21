@@ -335,7 +335,7 @@ h1, h2, h3 { margin: 0; }
 
 .calendar-checklist-orders {
   display: grid;
-  grid-template-columns: 0.9fr 2.2fr 2.4fr; /* calendario un poco más angosto, tablas más anchas */
+  grid-template-columns: 0.9fr 2.2fr 2.4fr;
   gap: 0;
   align-items: stretch;
 }
@@ -747,6 +747,13 @@ h1, h2, h3 { margin: 0; }
   background-color: #e5f0ff;
 }
 
+/* Celdas de fecha que corresponden al día seleccionado en el calendario */
+.flow-table td.highlight-day {
+  background-color: #fef9c3;
+  box-shadow: inset 0 0 0 1px #facc15;
+  font-weight: 600;
+}
+
 /* ====== GRÁFICOS + KPIS ====== */
 
 .gap-analysis-container,
@@ -771,14 +778,10 @@ h1, h2, h3 { margin: 0; }
   max-height: 220px;
 }
 
-/* Contenedor general:
-   - Izquierda: gráficos (charts-row)
-   - Derecha: tarjetas KPI (time-kpis) */
 /* Contenedor general: gráficos + tarjetas KPI */
 .time-kpis-wrapper {
   margin-top: 10px;
   display: grid;
-  /* Más espacio para gráficos, solo el necesario para las tarjetas */
   grid-template-columns: minmax(0, 1fr) auto;
   column-gap: 8px;
   align-items: stretch;
@@ -871,7 +874,6 @@ h1, h2, h3 { margin: 0; }
     grid-template-columns: 1fr;
   }
 
-  /* En tablet: gráficos arriba, KPIs debajo */
   .time-kpis-wrapper {
     display: flex;
     flex-direction: column;
@@ -1302,12 +1304,7 @@ h1, h2, h3 { margin: 0; }
 .flow-edit-cancel:hover {
   background: var(--bg-light);
 }
-/* Celdas de fecha que corresponden al día seleccionado en el calendario */
-.flow-table td.highlight-day {
-  background-color: #fef9c3;      /* amarillo claro fosforescente */
-  box-shadow: inset 0 0 0 1px #facc15;
-  font-weight: 600;
-}
+
 /* Fuerza centrado en columnas de fechas de la tabla de requisiciones */
 .flow-table td:nth-child(4),
 .flow-table td:nth-child(5),
