@@ -32,45 +32,54 @@ h1, h2, h3 { margin: 0; }
 .header-actions { display: flex; gap: 8px; align-items: center; }
 .header-actions button, .header-actions .btn-link {
   padding: 5px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3);
-  background: rgba(255,255,255,0.1); color: #fff; font-size: 12px; cursor: pointer; text-decoration: none; display: inline-block;
+  background: rgba(255,255,255,0.1); color: #fff; font-size: 12px; cursor: pointer;
+  text-decoration: none; display: inline-block;
 }
 .header-actions button:hover, .header-actions .btn-link:hover { background: rgba(255,255,255,0.2); }
 #btnEditMode.edit-on { background: var(--warning-color); border-color: var(--warning-color); }
 .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 600, 'GRAD' 0, 'opsz' 24; font-size: 20px; vertical-align: middle; }
 
 /* =========================
-   FRANJA SUPERIOR
+   TOP WRAPPER
    ========================= */
 .top-wrapper { width: 100%; margin: 0; padding: 10px 16px 4px; }
 
 .top-row {
-  display: flex; /* Flexbox para layout general */
+  display: flex; /* Flexbox para controlar el espacio */
   flex-direction: row;
-  align-items: flex-start; /* CRUCIAL: Evita que el flujo se estire a la altura de los KPIs */
+  align-items: flex-start;
+  justify-content: space-between; /* Distribuye el espacio sobrante */
   gap: 16px;
 }
 
-/* 1. FLUJO (Izquierda - Flexible) */
+/* 1. FLUJO (Izquierda - Expandido con flechas más grandes) */
 #process-flow {
-  flex: 1; 
-  display: flex; align-items: center; justify-content: flex-start;
-  overflow-x: auto; gap: 6px; padding-bottom: 4px;
+  flex: 1; /* Ocupa el espacio disponible */
+  display: flex; align-items: center; justify-content: flex-start; /* Alineado a la izquierda */
+  overflow-x: auto; gap: 4px; padding-bottom: 4px;
 }
 
 .flow-block {
-  flex: 0 0 110px; /* Ancho fijo */
-  height: 95px;    /* Altura fija */
+  flex: 0 0 110px; min-width: 110px; height: 110px;
   background: white; border: 2px solid var(--border-color); border-radius: 10px;
   padding: 8px 4px; text-align: center; cursor: pointer; transition: all 0.2s;
   display: flex; flex-direction: column; justify-content: space-between;
 }
 .flow-block-icon { margin-bottom: 2px; }
-.flow-block-header { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-.flow-block-count { font-size: 18px; font-weight: 700; margin: 0; line-height: 1; }
-.flow-block-days { font-size: 9px; font-weight: 600; color: #444; }
-.flow-arrow { font-size: 20px; color: var(--text-light); display: flex; align-items: center; }
+.flow-block-header { font-size: 10px; font-weight: 700; text-transform: uppercase; }
+.flow-block-count { font-size: 24px; font-weight: 700; margin: 0; }
+.flow-block-days { font-size: 10px; font-weight: 600; color: #444; }
 
-/* COLORES */
+/* FLECHAS MÁS GRANDES PARA LLENAR ESPACIO VISUALMENTE */
+.flow-arrow {
+  font-size: 32px; /* Aumentado de 24px a 32px */
+  color: var(--text-light);
+  font-weight: 700;
+  display: flex; align-items: center;
+  padding: 0 8px; /* Más padding horizontal */
+}
+
+/* Colores */
 .flow-block[data-stage="RECIBO"] { background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%); border-color: #f87171; }
 .flow-block[data-stage="ASIGNACION"] { background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%); border-color: #fb923c; }
 .flow-block[data-stage="SALIDA"] { background: linear-gradient(135deg, #fef3c7 0%, #fde047 100%); border-color: #facc15; }
@@ -82,13 +91,14 @@ h1, h2, h3 { margin: 0; }
 .flow-block:hover { transform: translateY(-3px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-color: var(--secondary-color); }
 .flow-block.active { transform: scale(1.05); border-color: var(--primary-color) !important; box-shadow: 0 0 0 2px var(--primary-color); }
 
-/* 2. KPIs (Centro - 4x2) */
+/* 2. KPIs (Centro - SIN CAMBIOS DE TAMAÑO) */
 #quick-stats {
-  flex: 0 0 400px; /* Ancho fijo para 4 columnas */
+  flex: 0 0 400px; /* Ancho fijo original */
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* 4 Columnas forzadas */
-  grid-template-rows: repeat(2, auto);   /* 2 Filas forzadas */
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(2, auto);
   gap: 6px;
+  height: 110px; /* Alineado con flujo */
 }
 
 .stat-card {
@@ -98,13 +108,13 @@ h1, h2, h3 { margin: 0; }
   height: 45px;
 }
 .stat-card.kpi-time { background: #f1f5f9; border-color: #cbd5e1; }
-.stat-label { font-size: 8px; color: var(--text-light); text-transform: uppercase; font-weight: 600; margin-bottom: 2px; line-height: 1; }
-.stat-value { font-size: 13px; font-weight: 700; color: var(--text-dark); line-height: 1; }
+.stat-label { font-size: 8px; color: var(--text-light); text-transform: uppercase; font-weight: 600; margin-bottom: 2px; }
+.stat-value { font-size: 13px; font-weight: 700; color: var(--text-dark); }
 .stat-value.stat-danger { color: var(--danger-color); }
 
-/* 3. FILTROS (Derecha) */
+/* 3. FILTROS (Derecha - Un poco más anchos para ayudar al balance) */
 .top-filters {
-  flex: 0 0 180px;
+  flex: 0 0 200px; /* Ligeramente más ancho */
   display: flex; flex-direction: column; gap: 6px;
 }
 .filters-buttons-row { display: flex; gap: 4px; justify-content: flex-end; }
@@ -119,9 +129,13 @@ h1, h2, h3 { margin: 0; }
 .main-container { padding: 4px 16px 12px; min-height: calc(100vh - 180px); }
 .right-panel { display: flex; flex-direction: column; gap: 10px; }
 
-/* FILA MEDIA: Checklist + Tabla (45% / 55%) */
+/* FILA MEDIA: Checklist (42%) | Tabla (58%) y ALTURA REDUCIDA */
 .checklist-orders-row {
-  display: grid; grid-template-columns: 45% 55%; gap: 10px; align-items: stretch; height: 480px;
+  display: grid;
+  grid-template-columns: 42% 58%; /* Ajuste solicitado */
+  gap: 10px;
+  align-items: stretch;
+  height: 380px; /* Reducido de 480px para que quepan los gráficos abajo */
 }
 
 /* Checklist */
@@ -129,7 +143,7 @@ h1, h2, h3 { margin: 0; }
   background: white; border: 1px solid var(--border-color); border-radius: 8px;
   padding: 8px; display: flex; flex-direction: column; overflow: hidden;
 }
-.monthly-checklist-container h3 { font-size: 14px; margin-bottom: 4px; flex-shrink: 0; }
+.monthly-checklist-container h3 { font-size: 14px; margin-bottom: 4px; flex-shrink: 0; font-weight: 700; }
 #monthlyChecklist { overflow-y: auto; flex: 1; }
 .monthly-table { width: 100%; border-collapse: collapse; font-size: 10px; }
 .monthly-table th, .monthly-table td { border: 1px solid #eee; padding: 2px 4px; }
@@ -146,11 +160,21 @@ h1, h2, h3 { margin: 0; }
   background: white; border: 1px solid var(--border-color); border-radius: 8px;
   display: flex; flex-direction: column; overflow: hidden;
 }
-.panel-header.inline { padding: 8px; border-bottom: 1px solid #eee; background: white; }
+/* TÍTULO MÁS PEQUEÑO */
+.panel-header.inline { padding: 8px 10px; border-bottom: 1px solid #eee; background: white; }
+.panel-header.inline h2 { font-size: 14px; margin: 0; font-weight: 700; } /* Ajustado a 14px */
 .orders-list { flex: 1; overflow: auto; padding: 0; }
+
 .flow-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 11px; }
 .flow-table th { position: sticky; top: 0; background: #f1f5f9; z-index: 10; padding: 6px; text-align: left; border-bottom: 2px solid #ddd; font-weight: 700; color: #475569; }
 .flow-table td { border-bottom: 1px solid #eee; padding: 4px 6px; vertical-align: middle; }
+
+/* RESALTADO AMARILLO RESTAURADO */
+.flow-table td.highlight-day {
+  background-color: #fef9c3;
+  box-shadow: inset 0 0 0 1px #facc15;
+  font-weight: 600;
+}
 
 /* Anchos Tabla */
 .flow-table td:nth-child(1) { width: 70px; min-width: 70px; font-weight: 600; white-space: nowrap; font-size: 10px; }
@@ -177,26 +201,16 @@ h1, h2, h3 { margin: 0; }
 .calendar-legend { display: flex; gap: 8px; margin-top: 4px; padding-top: 4px; border-top: 1px solid #eee; font-size: 10px; justify-content: center; }
 .legend-color { width: 10px; height: 10px; border-radius: 2px; }
 
+/* Gráficos */
 .charts-row { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; height: 100%; overflow: hidden; }
 .gap-analysis-container, .stage-deltas-container, .comments-chart-container { background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
 .gap-analysis-container h3, .stage-deltas-container h3, .comments-chart-container h3 { font-size: 13px; margin-bottom: 4px; flex-shrink: 0; }
-canvas { width: 100% !important; height: 100% !important; }
+canvas { width: 100% !important; height: 100% !important; min-height: 0; }
 
-/* Responsive */
-@media (max-width: 1300px) {
-  .top-row { flex-wrap: wrap; }
-  #process-flow { min-width: 100%; order: 1; }
-  #quick-stats { order: 2; flex: 1; }
-  .top-filters { order: 3; }
-}
-@media (max-width: 1000px) {
-  .checklist-orders-row { grid-template-columns: 1fr; }
-  .bottom-panel-wrapper { flex-direction: column; height: auto; }
-  .calendar-container { width: 100%; height: 300px; flex: none; }
-  .charts-row { height: 250px; }
-}
-
+/* Utils */
 .loading-message { text-align: center; color: #888; padding: 20px; }
+
+/* Modal Styles */
 .flow-edit-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: flex; align-items: center; justify-content: center; }
 .flow-edit-backdrop { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
 .flow-edit-dialog { position: relative; background: white; border-radius: 12px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; z-index: 10000; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
@@ -217,3 +231,10 @@ canvas { width: 100% !important; height: 100% !important; }
 .flow-edit-message { margin-top: 10px; padding: 10px; border-radius: 6px; font-size: 13px; display: none; }
 .flow-edit-message.success { background: #d1fae5; color: #065f46; }
 .flow-edit-message.error { background: #fee2e2; color: #991b1b; }
+
+/* Responsive */
+@media (max-width: 1300px) {
+  .top-row { grid-template-columns: 1fr; }
+  #quick-stats { display: flex; flex-wrap: wrap; gap: 6px; }
+  .stat-card { flex: 1 1 120px; }
+}
